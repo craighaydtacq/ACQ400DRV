@@ -379,7 +379,7 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 
 #define GET_MOD_ID(adev) 	 ((adev)->mod_id>>MOD_ID_TYPE_SHL)
 #define GET_MOD_ID_VERSION(adev) (((adev)->mod_id>>MOD_ID_VERSION_SHL)&0xff)
-#define GET_MOD_IDV(adev) 	 (((adev)->mod_id>>MOD_ID_VERSION_SHL)&0x1f)
+#define GET_MOD_IDV(adev) 	 (((adev)->mod_id>>MOD_ID_VERSION_SHL)&0x3f)
 
 #define GET_FPGA_REV(adev)	((adev)->mod_id&0x0000ffff)
 
@@ -500,9 +500,12 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define IS_DIO482TD(adev)	(GET_MOD_ID(adev) == MOD_ID_DIO482TD)
 #define IS_DIO422ELF(adev)	(GET_MOD_ID(adev) == MOD_ID_DIO422ELF && GET_MOD_IDV(adev) == MOD_IDV_DIO422_DIO)
 #define IS_DIO422AQB(adev)	(GET_MOD_ID(adev) == MOD_ID_DIO422ELF && GET_MOD_IDV(adev) == MOD_IDV_DIO422_AQB)
-#define IS_DIO482PPW(adev)	(GET_MOD_ID(adev) == MOD_ID_DIO482TD && GET_MOD_IDV(adev) == MOD_IDV_PPW)
+#define IS_DIO482PPW(adev)	(GET_MOD_ID(adev) == MOD_ID_DIO482TD &&  GET_MOD_IDV(adev) == MOD_IDV_PPW)
+#define IS_DIO482_SS_CNTR(adev)	(GET_MOD_ID(adev) == MOD_ID_DIO482FMC && GET_MOD_IDV(adev) == MOD_IDV_CNTR)
+#define IS_DIO482_HS_CNTR(adev)	(GET_MOD_ID(adev) == MOD_ID_DIO482FMC && GET_MOD_IDV(adev) == MOD_IDV_HSCNTR)
 
 #define IS_DIO482_PG(adev)	(IS_DIO482ELF_PG(adev)||IS_DIO482TD_PG(adev))
+#define IS_DIO482_CNTR(adev)	(IS_DIO482_SS_CNTR(adev) || IS_DIO482_HS_CNTR(adev))
 
 #define IS_DIO432X(adev)	(IS_DIO432FMC(adev)||IS_DIO432PMOD(adev)||IS_DIO482FMC(adev)||IS_DIO482TD(adev)||IS_DIO422ELF(adev))
 
@@ -900,6 +903,8 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define DIO482_PG_FPTRG_COUNT	0x20
 #define DIO482_PG_WDT		0x28
 
+#define DIO482_DI_DWELL		0x50
+
 #define DIO482_PG_GPGCR		0x80
 #define DIO482_PG_GPGDR		0x84
 #define DIO482_PG_IMM_MASK	0x88
@@ -1144,6 +1149,7 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define PPW_REP_SINGLE		0
 #define PPW_REP_FREE		0x0000ffff
 
+#define DIO_CTRL_ACCUM_NOT_RESET	(1<<23)            // known by FPGA as ACCUM_MODE
 
 #include "acq400_structs.h"
 

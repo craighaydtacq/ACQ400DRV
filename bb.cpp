@@ -53,7 +53,7 @@
 
 #include <syslog.h>
 
-#define VERID	"B1007"
+#define VERID	"B1008"
 
 #define NCHAN	4
 
@@ -104,6 +104,7 @@ namespace G {
 	char* port = 0;				// 0 no server (inetd), else make a server
 	char* host = 0;
 	char *abcde = 0;				// set start of segment
+	unsigned max_seg = 'D';
 };
 
 using namespace std;
@@ -516,8 +517,13 @@ RUN_MODE ui(int argc, const char** argv)
 	while ( (rc = poptGetNextOpt( opt_context )) >= 0 ){
 		switch(rc){
 		case 'A':
-			if (!(*G::abcde >= 'A' && *G::abcde <= 'E')){
-				fprintf(stderr, "ERROR bad pram abcde must be A..E \%s\"\n", G::abcde);
+			getKnob(-1, "/etc/acq400/0/awg_max_seg", &G::max_seg);
+			if (!(G::max_seg >= 'A' && G::max_seg <= 'Z')){
+				 G::max_seg = 'A';
+			}
+
+			if (!(*G::abcde >= 'A' && *G::abcde <= G::max_seg)){
+				fprintf(stderr, "ERROR bad pram abcde must be A..H \%s\"\n", G::abcde);
 				exit(1);
 			}
 			set_segment_start(*G::abcde - 'A');

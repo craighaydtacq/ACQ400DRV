@@ -490,7 +490,9 @@ build_knobs_device() {
         	echo $num_pg >${ek}/num_pg;;
         6B)
             source  /dev/sites/${site}/details
-			if [ "$(cat ${dk}/module_variant)" = "F" ]; then
+            mv=$(cat ${dk}/module_variant)
+            case $mv in
+			F)
 				if [ "$FRU_PART_NUM" != "${FRU_PART_NUM#*FBR}" ]; then
 					echo "FBR part detected in site ${site}: $FRU_PART_NUM"
 					echo 1 > ${dk}/active_low
@@ -498,10 +500,19 @@ build_knobs_device() {
 				else
 					num_pg=32
 				fi
-				echo $num_pg >${ek}/num_pg
-			fi
-            ln -s $ULB/clocks_to_first_edge ${ek}/
-            set_max_min_khz ${site} 25000 10;;
+				echo $num_pg >${ek}/num_pg;;
+			20|21)
+				echo 32 > ${ek}/NCHAN
+				if [ "$mv" = "20" ]; then
+					_maxkhz=50000
+				else
+					_maxkhz=250000
+				fi
+				set_max_min_khz ${site} $_maxkhz 10;;
+			*)
+				ln -s $ULB/clocks_to_first_edge ${ek}/
+				set_max_min_khz ${site} 25000 10;;
+            esac;;
         *)
             ln -s $ULB/clocks_to_first_edge ${ek}/
             set_max_min_khz ${site} 1000 10;;
@@ -798,13 +809,18 @@ build_knobs() {
     elif [ "x${ACQ465_SITES}" != "x" ]; then
         for site in $ACQ465_SITES; do
             web_append acq465.$site nomon
-        done        
-        $ULB/acq465.init ${ACQ465_SITES}
+        done
+        acq465_init=$ULB/acq465.init
+        if [ -e /mnt/local/acq465.init ]; then
+        	acq465_init=/mnt/local/acq465.init
+        	echo "++ Warning using patch $acq465_init"
+        fi
+        $acq465_init ${ACQ465_SITES}
     elif [ "x${ACQ494_SITES}" != "x" ]; then
         [ -z $ACQ494_STUB ] && nice $ULB/acq494.init ${ACQ494_SITES} &
     elif [ "x${ACQ400T_SITES}" != "x" ]; then
-        echo ACQ400T : "calling $ULB/acq400t.init ${ACQ400T_SITES}"
-        $ULB/acq400t.init ${ACQ400T_SITES}
+		echo ACQ400T : "calling $ULB/acq400t.init ${ACQ400T_SITES}"
+		$ULB/acq400t.init ${ACQ400T_SITES}
     fi
     has_sfp=0
     for dir in ${spd}/*mgt400; do
