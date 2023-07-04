@@ -48,12 +48,13 @@ struct InodeMap {
 
 #define IS_RAW(map)     ((map)->channel == XX)
 
+/* word: the size of a sample element for single channel, generally 2byte or 4byte */
 struct A400_FS_PDESC {
 	struct InodeMap *map;
-	int word_offset;
-	unsigned buffer_offset;
-	int stride;
-	int lbuf_len;
+	int word_offset;          /* number of words in the the data set */
+	unsigned buffer_offset;   /* number of bytes into the buffer */
+	int stride;               /* number of words to skip to get to next element */
+	int lbuf_len;		  /* optional local bounce buffer */
 	void* lbuf;
 };
 
@@ -81,6 +82,8 @@ struct CaptureData {
 	char typ[8];	/* "short" or "long" */
 } CAPDAT;
 
+static struct file_operations a400fs_chan_file_muxdata_ops;
+
 struct InodeMap* lookup_ino(unsigned ino)
 {
 	int ii;
@@ -104,19 +107,11 @@ static unsigned update_inode_stats(struct inode *inode)
 	}else if (pmap->channel > pmap->adev->nchan_enabled){
 		return 0;
 	}else{
-		loff_t i_size = 0;
-		if (CAPDAT.is_cooked){
-			if (pmap->site == XX){
-				i_size = 0;
-			}else{
-				i_size = CAPDAT.nsamples * pmap->adev->word_size;
-			}
-		}else{
-			if (pmap->site == XX && pmap->site == 0){
-				/* valid site 0 only .. */
-				i_size = CAPDAT.nsamples *
-						pmap->adev->word_size *
-						CAPDAT.nchan;
+		loff_t i_size = CAPDAT.nsamples * pmap->adev->word_size; /* valid for CH */
+
+		if (pmap->site == XX && pmap->site == 0){
+			if (!CAPDAT.is_cooked){
+				i_size *= CAPDAT.nchan;			/* XX valid RAW only */
 			}else{
 				i_size = 0;
 			}
@@ -129,6 +124,7 @@ static unsigned update_inode_stats(struct inode *inode)
 static int ai_getattr(const struct path *path, struct kstat *stat,
 		 u32 request_mask, unsigned int query_flags)
 {
+	struct acq400_dev* adev0 = FSN.site0->adev;
 	struct inode *inode = d_inode(path->dentry);
 	int was;
 
@@ -137,7 +133,7 @@ static int ai_getattr(const struct path *path, struct kstat *stat,
 	stat->size = update_inode_stats(inode);
 	stat->mtime = inode->i_mtime;
 
-	dev_dbg(0, "%s 99 inode:%lu was:%d size:%lld", __FUNCTION__, inode->i_ino,  was, stat->size);
+	dev_dbg(DEVP(adev0), "%s 99 inode:%lu was:%d size:%lld", __FUNCTION__, inode->i_ino,  was, stat->size);
 	return 0;
 }
 
@@ -217,24 +213,45 @@ static int a400fs_open(struct inode *inode, struct file *file)
 
 	if (pd == 0){
 		RETERR(-ENODEV);
+
 	}else if ((pd->map = lookup_ino(inode->i_ino)) == 0){
 		RETERR(-ENODEV);
-	}else if ((pd->word_offset = IS_RAW(pd->map)? 0: chan_offset_w(pd->map)) < 0){
-		RETERR(-ENODEV);
-	}else{
+	}else if (IS_RAW(pd->map)){
+		file->private_data = pd;
 		pd->buffer_offset = get_buffer_offset_b(pd->word_offset);
 		pd->stride = 1;
-
-		dev_dbg(DEVP(pd->map->adev), "a400fs_open() %d.%d wo:%d bo:%d",
-				pd->map->site, pd->map->channel, pd->word_offset, pd->buffer_offset);
-
-		file->private_data = pd;
 		return 0;
+	}else if ((pd->word_offset = chan_offset_w(pd->map)) < 0){
+		RETERR(-ENODEV);
+	}else{
+		file->private_data = pd;
+		if (CAPDAT.is_cooked == 0){
+			file->f_op = &a400fs_chan_file_muxdata_ops;
+			return file->f_op->open(inode, file);
+		}else{
+			pd->buffer_offset = get_buffer_offset_b(pd->word_offset);
+			pd->stride = 1;
+
+			dev_dbg(DEVP(pd->map->adev), "%s %d.%d wo:%d bo:%d", __FUNCTION__,
+					pd->map->site, pd->map->channel, pd->word_offset, pd->buffer_offset);
+			return 0;
+		}
 	}
 
 	dev_err(0, "a400fs_open FAIL\n");
 	if (pd) kfree(pd);
 	return rc;
+}
+
+static int a400fs_open_chan_file_muxdata(struct inode *inode, struct file *file)
+/* here with pd already part configured. */
+{
+	struct A400_FS_PDESC* pd = FS_DESC(file);
+	struct acq400_dev* adev0 = FSN.site0->adev;
+
+	pd->buffer_offset = pd->word_offset * adev0->word_size;
+	pd->stride = CAPDAT.nchan;
+	return 0;
 }
 
 int _a400fs_open_raw(struct inode *inode, struct file *file)
@@ -369,8 +386,8 @@ static ssize_t a400fs_read_chan_file(struct file *file, char *buf,
 	}else if (set_headroom <= 0){
 		return 0;
 	}else if (!(ibuf >= 0 || ibuf < adev0->nbuffers)){
-		dev_err(DEVP(adev0), "bad ibuf %d", ibuf);
-		return -1;
+		dev_err(DEVP(adev0), "%s bad ibuf %d", __FUNCTION__, ibuf);
+		return -ENOMEM;
 	}else{
 		char *bp = (char*)(adev0->hb[ibuf]->va);
 
@@ -417,6 +434,113 @@ static ssize_t a400fs_read_chan_file(struct file *file, char *buf,
 		return count;
 	}
 }
+
+int32_t thing;
+int16_t other_thin;
+
+static void cp_muxdata_lbuf_int32_t(int32_t* dst, int32_t* src, int headsam, int stride){
+	int iw;
+
+	dev_dbg(DEVP(FSN.site0->adev), "%s src:%p dst:%p headsam:%d stride:%d",
+			__FUNCTION__, src, dst, headsam, stride);
+
+	for (iw = 0; iw < headsam; ++iw){
+		dst[iw] = src[iw*stride];
+	}
+}
+
+static void cp_muxdata_lbuf_int16_t(int16_t* dst, int16_t* src, int headsam, int stride){
+	int iw;
+
+	dev_dbg(DEVP(FSN.site0->adev), "%s src:%p dst:%p headsam:%d stride:%d",
+			__FUNCTION__, src, dst, headsam, stride);
+
+	for (iw = 0; iw < headsam; ++iw){
+		dst[iw] = src[iw*stride];
+	}
+}
+
+static ssize_t a400fs_read_chan_file_muxdata(struct file *file, char *buf,
+		size_t count, loff_t *offset)
+/* offset in bytes */
+{
+	struct A400_FS_PDESC* pd = FS_DESC(file);
+	struct acq400_dev* adev0 = FSN.site0->adev;
+	const int bufferlen = adev0->bufferlen;
+	const int word_size = adev0->word_size;
+	const int ssb = CAPDAT.nchan*word_size;
+
+	int rc = -EINVAL;
+
+	int foffset = *offset == 0? *offset += pcomp: *offset;          /* file offset bytes 		*/
+	int fsam = foffset/word_size;					/* file offset samples 		*/
+	int buffer_sam = bufferlen/ssb;					/* samples in buffer 		*/
+
+	int ibuf = fsam/buffer_sam;					/* buffer index 		*/
+	int buff_offset_sam = fsam - ibuf*buffer_sam;			/* sample offset in this buffer */
+	int buf_headsam = buffer_sam - buff_offset_sam;
+	int buff_offset = buff_offset_sam*ssb + pd->buffer_offset;	/* byte offset of data in buffer */
+	int buff_offset_w = buff_offset/word_size;			/* word offset of data in buffer */
+
+	int set_headsam = CAPDAT.nsamples - fsam;			/* total set headroom, samples	*/
+
+	int headsam = min(buf_headsam, set_headsam);			/* current call headroom, samples */
+	int headcount = headsam * word_size;
+
+	dev_dbg(DEVP(adev0), "%s 01 count:%d offset:%d buflen:%d ssb:%d headsam:%d stride:%d",
+			__FUNCTION__, count, foffset, bufferlen, ssb, headsam, pd->stride);
+
+	if (count > headcount){
+		count = headcount;
+	}else if (headcount > count){
+		headcount = count;
+		headsam = headcount/word_size;
+	}
+	dev_dbg(DEVP(adev0), "%s 02 count:%d offset:%d buflen:%d ssb:%d headsam:%d",
+			__FUNCTION__, count, foffset, bufferlen, ssb, headsam);
+
+	if (pd->map->channel > pd->map->adev->nchan_enabled){
+		dev_err(DEVP(adev0), "%s channel %d not enabled", __FUNCTION__, pd->map->channel);
+		rc = -ENODEV;
+	}else if (headsam <= 0){
+		return 0; 		/* finished */
+	}else if (!(ibuf >= 0 && ibuf < adev0->nbuffers)){
+		dev_err(DEVP(adev0), "%s bad ibuf %d", __FUNCTION__, ibuf);
+		rc = -ENOMEM;
+	}else if (word_size != sizeof(short) && word_size != sizeof(int)){
+		dev_err(DEVP(adev0), "%s bad word size %d", __FUNCTION__, word_size);
+		rc = -ENODEV;
+	}else{
+
+		dev_dbg(DEVP(adev0), "%s channel %d, bo:%d ibuf:%d buff_offset:%d ssb:%d",
+				__FUNCTION__, pd->map->channel, pd->buffer_offset, ibuf, buff_offset, ssb);
+
+		if (count > pd->lbuf_len){
+			if (pd->lbuf){
+				kfree(pd->lbuf);
+			}
+			/* lazy allocation .. chances are all calls to
+			 * read() in a single session will have same (or smaller) count
+			 * free() on release.
+			 */
+			pd->lbuf = kmalloc(pd->lbuf_len = count, GFP_KERNEL);
+		}
+
+		if (word_size == sizeof(short)){
+			cp_muxdata_lbuf_int16_t((int16_t*)pd->lbuf, (int16_t*)(adev0->hb[ibuf]->va)+buff_offset_w, headsam, pd->stride);
+		}else{    /* it's OK we checked earlier */
+			cp_muxdata_lbuf_int32_t((int32_t*)pd->lbuf, (int32_t*)(adev0->hb[ibuf]->va)+buff_offset_w, headsam, pd->stride);
+		}
+		if (copy_to_user(buf, pd->lbuf, count)){
+			rc = -EFAULT;
+		}else{
+			*offset += count;
+			rc = count;
+		}
+	}
+	dev_dbg(DEVP(adev0), "%s 99 rc:%d", __FUNCTION__, rc);
+	return rc;
+}
 /*
  * Write a file.
  */
@@ -453,7 +577,14 @@ a400fs_unlocked_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 }
 /*
  * Now we can put together our file operations structure.
+ *
+ * assume
+ * demux=0  rawdat[NSAM][NCHAN]
+ * demux=1  cooked[NCHAN][NSAM]
+ *
  */
+
+/* returns data for one channel post-demux, result cooked[ch][:] */
 static struct file_operations a400fs_chan_file_ops = {
 	.open	= a400fs_open,
 	.read 	= a400fs_read_chan_file,
@@ -463,12 +594,26 @@ static struct file_operations a400fs_chan_file_ops = {
 	.release= a400fs_release
 };
 
+/* returns raw data (all channels, no demux), result rawdat[:][:] */
 static struct file_operations a400fs_raw_file_ops = {
 	.open	= a400fs_open_raw,
 	.read 	= a400fs_read_raw_file,
 	.write  = a400fs_write_file,
 	.release= a400fs_release
 };
+
+/* returns channel data without demux, result rawdat[:][ch] */
+static struct file_operations a400fs_chan_file_muxdata_ops = {
+	.open	= a400fs_open_chan_file_muxdata,
+	.read 	= a400fs_read_chan_file_muxdata,
+	.write  = a400fs_write_file,
+	.unlocked_ioctl = a400fs_unlocked_ioctl,
+	.llseek = generic_file_llseek,
+	.release= a400fs_release
+};
+
+
+
 /*
  * Create a file mapping a name to a counter.
  */
