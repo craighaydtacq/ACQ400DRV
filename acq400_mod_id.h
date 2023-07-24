@@ -53,6 +53,7 @@
 
 #define MOD_ID_DDS_WERA		0x70
 #define MOD_ID_DIO422ELF	0x71
+#define MOD_ID_DI460ELF		0x72
 
 #define MOD_ID_DIO482TD		0x7a	// Vanilla DIO version
 #define MOD_ID_DIO482TD_PG	0x7b
@@ -97,6 +98,13 @@
 
 /* known DIO482TD Variants, switch on MOD_ID_VERSION */
 #define MOD_IDV_PPW		0x0e
+
+/* DI460  */
+#define MOD_IDV_DI460_DIO	MOD_IDV_DIO422_DIO
+#define MOD_IDV_DI460_AQB 	MOD_IDV_DIO422_AQB
+#define MOD_IDV_DI460_STIM	0x3f
+
+
 
 
 

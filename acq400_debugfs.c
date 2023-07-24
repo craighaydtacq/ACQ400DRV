@@ -282,15 +282,24 @@ void dio432_createDebugfs(struct acq400_dev* adev, char* pcursor)
 		DBG_REG_CREATE( DIO432_DIO_CPLD_CTRL);
 	}
 
+	if (IS_DI460_STIM(adev)){
+		DBG_REG_CREATE(DI460_DO_STIM);
+	}else{
+		DBG_REG_CREATE_NAME_N( DIO432_DIO_SAMPLE_COUNT );
+	}
+	DBG_REG_CREATE( DIO432_DI_SNOOP );
 
-	if (IS_DIO482_CNTR(adev)){
-
+	if (IS_DI_CNTR(adev)){
 		DBG_REG_CREATE(DIO482_DI_DWELL);
+		{
+			int ch;
+			int chmax = IS_DI460_HS_CNTR(adev)? 12: IS_DIO482_HS_CNTR(adev)? 16: 32;
+			for (ch = 1; ch <= chmax; ++ch){
+				DBG_REG_CREATE_NAME_NC_NUM("cnt", ch, "CNTR", CNTR(ch));
+			}
+		}
 		return;
 	}
-
-	DBG_REG_CREATE_NAME_N( DIO432_DIO_SAMPLE_COUNT );
-	DBG_REG_CREATE( DIO432_DI_SNOOP );
 
 	if (IS_DIO482PPW(adev)){
 		int px;
@@ -331,6 +340,14 @@ void dio432_createDebugfs(struct acq400_dev* adev, char* pcursor)
 		DBG_REG_CREATE(DIO482_PG_GPGDR);
 		DBG_REG_CREATE(DIO482_PG_IMM_MASK);
 		DBG_REG_CREATE(DIO482_PG_IMM_DO);
+	}
+
+	if (IS_DI460ELF(adev)){
+		/* hopefully temporary */
+		int ch;
+		for (ch = 1; ch <= 12; ++ch){
+			DBG_REG_CREATE_NAME_NC_NUM("cnt", ch, "CNTR", CNTR(ch));
+		}
 	}
 }
 
@@ -450,7 +467,7 @@ void acq400_createDebugfs(struct acq400_dev* adev)
 
 	if (IS_ACQ42X(adev)){
 		acq420_createDebugfs(adev, pcursor);
-	}else if (IS_DIO432X(adev) || IS_DIO482TD_PG(adev)){
+	}else if (IS_DIO432X(adev) || IS_DIO482TD_PG(adev) || IS_DI460ELF(adev)){
 		dio432_createDebugfs(adev, pcursor);
 	}else if (IS_DIO422AQB(adev)){
 		qen_createDebugfs(adev, pcursor);

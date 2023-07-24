@@ -45,10 +45,12 @@ MODULE_PARM_DESC(acq465_reset_msleep, "slows down reset to suit AD7134");
 
 
 int allow_rtm_translen_in_shot = 0;
-module_param(allow_rtm_translen_in_shot, int, 0644);
+module_param(allow_rtm_translen_in_shot, int, 0664);
 MODULE_PARM_DESC(allow_rtm_translen_in_shot, "allow change in-shot. WARNING: ONLY do this if you have control of the EVENT");
 
-
+int legacy_emulate_acq196 = 0;
+module_param(legacy_emulate_acq196, int, 0644);
+MODULE_PARM_DESC(legacy_emulate_acq196, "enable legacy acq196 emulation DEPRECATED: may be removed from FPGA");
 
 MAKE_BITS(gate_sync,    ADC_CTRL,      MAKE_BITS_FROM_MASK,	ADC_CTRL_435_GATE_SYNC);
 MAKE_BITS(sync_in_clk,  HDMI_SYNC_DAT, HDMI_SYNC_IN_CLKb, 	0x1);
@@ -853,18 +855,14 @@ static ssize_t store_reg_rtm_translen(
 	unsigned en;
 	if (sscanf(buf, "%u", &en) == 1){
 		u32 ctrl = acq400rd32(adev, ADC_CTRL);
-		int rc;
 
-		if (!allow_rtm_translen_in_shot || (ctrl&ADC_CTRL_ADC_EN) != 0){
-			dev_warn(DEVP(adev), "store_reg_rtm_translen ADC_CTRL_ADC_EN up: STUB");
+		if ((ctrl&ADC_CTRL_ADC_EN) != 0 && !allow_rtm_translen_in_shot){
+			dev_warn(DEVP(adev), "store_reg_rtm_translen ADC_CTRL_ADC_EN up: %08x %08x STUB",
+					ctrl, ADC_CTRL_ADC_EN);
 			return -1;
+		}else{
+			return store_reg(dev, attr, buf, count, ADC_TRANSLEN, 0);
 		}
-		acq400wr32(adev, ADC_CTRL, ctrl & ~ADC_CTRL_ADC_EN);
-
-		rc =  store_reg(dev, attr, buf, count, ADC_TRANSLEN, 0);
-
-		acq400wr32(adev, ADC_CTRL, ctrl);
-		return rc;
 	}else{
 		return -1;
 	}
@@ -1606,6 +1604,7 @@ static const char* _lookup_id(struct acq400_dev *adev)
 		{ MOD_ID_DIO432PMOD,	"dio432"	},
 		{ MOD_ID_DIO482FMC,  	"dio432"	},	/* logically same */
 		{ MOD_ID_DIO482TD,      "dio482td"      },
+		{ MOD_ID_DI460ELF,      "di460elf"      },
 		{ MOD_ID_TIMBUS,        "timbus"        },
 	};
 #define NID	(sizeof(idlut)/sizeof(struct IDLUT_ENTRY))
@@ -2000,10 +1999,11 @@ static const struct attribute *sysfs_adc_device_attrs[] = {
 
 MAKE_BITS(emulate_acq196, ADC_CTRL, MAKE_BITS_FROM_MASK, ADC_CTRL_424_EMUL_196);
 
+
 static const struct attribute *acq424_attrs[] = {
+	&dev_attr_emulate_acq196.attr,			/* MUST be first */
 	&dev_attr_clk_min_max.attr,
 	&dev_attr_adc_conv_time.attr,
-	&dev_attr_emulate_acq196.attr,
 	NULL
 };
 
@@ -3421,7 +3421,7 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 		specials[nspec++] = acq423_emulate_attrs;
 		specials[nspec++] = acq423_attrs;
 	}else if (IS_ACQ424(adev)){
-		specials[nspec++] = acq424_attrs;
+		specials[nspec++] = acq424_attrs + (legacy_emulate_acq196==1? 0: 1);
 	}else if (IS_ACQ42X(adev)){
 		specials[nspec++] =
 			IS_ACQ425(adev) ? acq425_attrs: ACQ420_ATTRS;
@@ -3451,6 +3451,14 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 	}else if (IS_DIO482_CNTR(adev)){
 		dev_info(dev, "IS_DIO484_CNTR");
 		specials[nspec++] = dio482_cntr_attrs;
+	}else if (IS_DI460ELF(adev)){
+		dev_info(dev, "IS_DI460");
+		if (IS_DI460_STIM(adev)){
+			specials[nspec++] = dio460_stim_attrs;
+		}else if (IS_DI460_HS_CNTR(adev)){
+			specials[nspec++] = dio482_cntr_attrs;
+		}
+		specials[nspec++] = dio4xx_snoop_attrs;
 	}else if (IS_DIO432X(adev)){
 		dev_info(dev, "IS_DIO432X");
 		specials[nspec++] = playloop_attrs;
@@ -3470,8 +3478,10 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 		specials[nspec++] = acq400t_attrs;
 	}else if (IS_ACQ480(adev)){
 		specials[nspec++] = HAS_FPGA_FIR(adev)?	acq480_ffir_attrs: acq480_attrs;
+#ifdef INCLUDE_PIG
 	}else if (IS_PIG_CELF(adev)){
 		specials[nspec++] = pig_celf_attrs;
+#endif
 	}else{
 		return -1;
 	}
