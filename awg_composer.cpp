@@ -31,6 +31,8 @@ Generic Binary file interface:
 #include <iostream>
 #include <fstream>
 
+#include "knobs.h"
+
 namespace G {
 	int nchan = 4;
 	int data32;
@@ -40,8 +42,8 @@ namespace G {
 	FILE* out = stdout;
 	const char* outfile;
 	const char* awg_mode;
+	const char* abcde;
 	bool output_is_pipe;
-
 	int macs;
 };
 
@@ -87,6 +89,17 @@ int awgmode2port(const char* mode){
 	return -1;
 }
 
+int abcde2port(int mode_port, const char* abcde) {
+	char bx = abcde[0];
+	if (bx >= 'A' && bx <= 'E'){
+		return mode_port + 10*(abcde[0] - 'A' + 1);
+	}else{
+		fprintf(stderr, "ERROR: valude --abcde A,B,C,D,E not %c\n", bx);
+		exit(1);
+	}
+}
+
+
 struct poptOption opt_table[] = {
 	{
 	  "nreps", 'N', POPT_ARG_INT, &G::nreps, 0, "repetitions of entire pattern"
@@ -105,6 +118,9 @@ struct poptOption opt_table[] = {
 	},
 	{
 	  "awg_mode", 'a', POPT_ARG_STRING, &G::awg_mode, 'a', "awg mode: continuous|oneshot|oneshot_rearm"
+	},
+	{
+	  "abcde", 'A', POPT_ARG_STRING, &G::abcde, 'a', "buffer abcde"
 	},
 	{
 	  "outfile", 'o', POPT_ARG_STRING, &G::outfile, 'o', "set output file, default stdout"
@@ -366,24 +382,12 @@ void ui(int argc, const char** argv)
 	poptContext opt_context =
 			poptGetContext(argv[0], argc, argv, opt_table, 0);
 	int rc;
+	bool G_awg_mode_set = false;
 
 	while ((rc = poptGetNextOpt( opt_context )) >= 0 ){
 		switch(rc){
 		case 'a': {
-			int port = awgmode2port(G::awg_mode);
-			if (port == -1){
-				fprintf(stderr, "ERROR, mode \"%s\" not supported\n", G::awg_mode);
-				exit(1);
-			}else{
-				char cmd[132];
-				snprintf(cmd, 132, "nc localhost %d", port);
-				G::out = popen(cmd, "w");
-				if (G::out == 0){
-					perror(cmd);
-					exit(1);
-				}
-				G::output_is_pipe = true;
-			}
+			G_awg_mode_set = true;
 			break;
 		}
 		case 'o':
@@ -397,6 +401,32 @@ void ui(int argc, const char** argv)
 		default:
 			;
 		}
+	}
+
+	if (G_awg_mode_set){
+		int port = awgmode2port(G::awg_mode);
+		if (port == -1){
+			fprintf(stderr, "ERROR, mode \"%s\" not supported\n", G::awg_mode);
+			exit(1);
+		}else if (G::abcde){
+			port = abcde2port(port, G::abcde);
+			if (port == -1){
+				fprintf(stderr, "ERROR, segment \"%s\" not supported\n", G::abcde);
+				exit(1);
+			}
+		}
+
+		char cmd[132];
+		snprintf(cmd, 132, "nc localhost %d", port);
+		if (G::verbose){
+			fprintf(stderr, "cmd:%s\n", cmd);
+		}
+		G::out = popen(cmd, "w");
+		if (G::out == 0){
+			perror(cmd);
+			exit(1);
+		}
+		G::output_is_pipe = true;
 	}
 
 	do_scan();

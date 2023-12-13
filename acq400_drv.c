@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.805"
+#define REVID 			"3.807"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
@@ -111,6 +111,10 @@ MODULE_PARM_DESC(xo_use_contiguous_pa_if_possible, "set=1 to roll forward into n
 int distributor_first_buffer = 0;
 module_param(distributor_first_buffer, int, 0644);
 MODULE_PARM_DESC(distributor_first_buffer, "use in mixed aggregator/distributor systems to avoid buffer overlap");
+
+int distributor_segment_offset = 0;
+module_param(distributor_segment_offset, int, 0644);
+MODULE_PARM_DESC(distributor_segment_offset, "xwg clients may chose to partition the distributor buffer space");
 
 int reserve_buffers = 2;
 module_param(reserve_buffers, int, 0444);
@@ -252,13 +256,9 @@ char awg_seg[2] = { '0' };
 module_param_string(awg_seg, awg_seg, 2, 0444);
 MODULE_PARM_DESC(awg_seg, "current awg_segment: 0..5");
 
-static char species[2];
-module_param_string(specifies, species, 2, 0);
-
-
 int firstDistributorBuffer(void)
 {
-	int rc = distributor_first_buffer + reserve_buffers;
+	int rc = distributor_first_buffer + reserve_buffers + distributor_segment_offset*awg_seg_bufs;
 	dev_dbg(DEVP(acq400_devices[0]), "%s return %d", __FUNCTION__, rc);
 	return rc;
 }
@@ -1245,7 +1245,7 @@ void _update_abcde_status(struct XO_dev *xo_dev){
 	char bx = buf_get(&xo_dev->awg_abcde.new_queue, AWG_ABCDE_LEN);
 	char obx = *awg_seg;
 	if (VALID_ABCDE(bx)){
-		distributor_first_buffer = (bx-'A')*awg_seg_bufs;
+		distributor_segment_offset = (bx-'A');
 		*awg_seg = bx;
 		dev_dbg(DEVP(&xo_dev->adev), "%s seg:%c", __FUNCTION__, bx);
 	}else{
@@ -1444,7 +1444,7 @@ void xo400_distributor_feeder_control(struct acq400_dev* adev, int enable)
 			"%s.xo", adev->dev_name);
 		while(!adev->task_active){
 			msleep(10);
-			if (++pollcat > 100){
+			if (++pollcat%100 == 0){
 				dev_warn(DEVP(adev), "waiting for task start");
 			}
 		}
@@ -1454,7 +1454,7 @@ void xo400_distributor_feeder_control(struct acq400_dev* adev, int enable)
 		}
 		while(adev->task_active){
 			msleep(10);
-			if (++pollcat > 100){
+			if (++pollcat%100 == 0){
 				dev_warn(DEVP(adev), "waiting for task stop");
 			}
 		}

@@ -1,0 +1,25 @@
+
+source /usr/local/CARE/load.overlay
+
+#overlay=${1:-mgt48x_clk_overlay_156M25}
+overlay=${1:-mgt48x_clk_overlay}
+
+case $overlay in
+156M25)
+	overlay=mgt48x_clk_overlay_156M25;;
+200M)
+	overlay=mgt48x_clk_overlay;;
+esac
+
+load_overlay $overlay
+
+for CX in A B C; do
+	knob=/dev/acq400.$CX.knobs/gt_reset
+	if [ -e $knob ]; then
+		echo 1 > $knob 
+		echo 0 > $knob
+		echo reset $knob
+	fi
+done
+
+
