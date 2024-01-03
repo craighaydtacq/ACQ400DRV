@@ -1,4 +1,4 @@
 #!/bin/bash
 
 source ./setenv.zynq
-make ${*:-all}
+make -j8 ${*:-all}
