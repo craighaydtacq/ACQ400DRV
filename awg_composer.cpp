@@ -120,7 +120,7 @@ struct poptOption opt_table[] = {
 	  "awg_mode", 'a', POPT_ARG_STRING, &G::awg_mode, 'a', "awg mode: continuous|oneshot|oneshot_rearm"
 	},
 	{
-	  "abcde", 'A', POPT_ARG_STRING, &G::abcde, 'a', "buffer abcde"
+	  "abcde", 'A', POPT_ARG_STRING, &G::abcde, 'A', "buffer abcde"
 	},
 	{
 	  "outfile", 'o', POPT_ARG_STRING, &G::outfile, 'o', "set output file, default stdout"
@@ -383,6 +383,7 @@ void ui(int argc, const char** argv)
 			poptGetContext(argv[0], argc, argv, opt_table, 0);
 	int rc;
 	bool G_awg_mode_set = false;
+	bool G_outfile_set = false;
 
 	while ((rc = poptGetNextOpt( opt_context )) >= 0 ){
 		switch(rc){
@@ -391,19 +392,21 @@ void ui(int argc, const char** argv)
 			break;
 		}
 		case 'o':
-			if (G::awg_mode){
-				fprintf(stderr, "ERROR: output stdout not compatible with output awg\n");
-				exit(1);
-			}
-			G::out = fopen(G::outfile, "w");
-			assert(G::out);
+			G_outfile_set = true;
 			break;
 		default:
 			;
 		}
 	}
+	if (G_outfile_set){
+		if (G_awg_mode_set){
+			fprintf(stderr, "ERROR: output stdout not compatible with output awg\n");
+		}
 
-	if (G_awg_mode_set){
+		G::out = fopen(G::outfile, "w");
+		assert(G::out);
+		fprintf(stderr, "OUTPUT to \"%s\"\n", G::outfile);
+	}else if (G_awg_mode_set){
 		int port = awgmode2port(G::awg_mode);
 		if (port == -1){
 			fprintf(stderr, "ERROR, mode \"%s\" not supported\n", G::awg_mode);
