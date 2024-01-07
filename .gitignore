@@ -137,4 +137,4 @@ slowmon_hw
 reg_rw
 hudp_config
 tai_server
-
+awg_composer

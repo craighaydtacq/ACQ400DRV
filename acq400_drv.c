@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.807"
+#define REVID 			"3.810"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
@@ -248,13 +248,17 @@ module_param(axi_oneshot, int, 0644);
 MODULE_PARM_DESC(axi_oneshot, "one-shot: don't poison recycled buffers");
 
 
-int awg_seg_bufs = 100;
+int awg_seg_bufs = 100;                  /* default checked on load by set_awg_seg_bufs() */
 module_param(awg_seg_bufs, int, 0644);
 MODULE_PARM_DESC(awg_seg_bufs, "awg abcde segments: number of buffers in segment");
 
-char awg_seg[2] = { '0' };
+char awg_seg[2] = { 'A', '\0' };
 module_param_string(awg_seg, awg_seg, 2, 0444);
 MODULE_PARM_DESC(awg_seg, "current awg_segment: 0..5");
+
+int max_seg = 'E' - 'A' + 1;               /* default: allow 5 segments */
+module_param(max_seg, int, 0444);          /* possible to change on load only */
+MODULE_PARM_DESC(max_seg, "segment maximum, by convention E starting from A");
 
 int firstDistributorBuffer(void)
 {
@@ -2701,20 +2705,41 @@ static void __exit acq400_exit(void)
 	acq400_module_remove_proc();
 }
 
+void set_awg_seg_bufs(void) {
+/* ensure that awg segments fall within available buffer space */
+
+	distributor_segment_offset = 0;
+	{
+		int total_distributor_buffers = nbuffers - firstDistributorBuffer();
+		int _awg_seg_bufs = total_distributor_buffers/max_seg/10*10;
+
+		printk("%s total:%d = %d - %d awg_seg_bufs %d => %d \n",
+			__FUNCTION__,
+			total_distributor_buffers, nbuffers, firstDistributorBuffer(),
+			awg_seg_bufs, _awg_seg_bufs);
+
+		if (awg_seg_bufs == 0 || _awg_seg_bufs < awg_seg_bufs){
+			awg_seg_bufs = _awg_seg_bufs;
+		}
+	}
+}
+
 static int __init acq400_init(void)
 {
-        int status;
+	int status;
 
-        DMA_TIMEOUT = DEFAULT_DMA_TIMEOUT;
+	DMA_TIMEOUT = DEFAULT_DMA_TIMEOUT;
 	printk("D-TACQ ACQ400 FMC Driver %s\n", REVID);
+	set_awg_seg_bufs();
 	acq400_module_init_proc();
 	a400fs_init();
-        status = platform_driver_register(&acq400_driver);
+	status = platform_driver_register(&acq400_driver);
 
-        event_status_mask |= event0_feeds_ev_device? ADC_INT_CSR_EVENT0: 0;
-        event_status_mask |= event1_feeds_ev_device? ADC_INT_CSR_EVENT1: 0;
+	event_status_mask |= event0_feeds_ev_device? ADC_INT_CSR_EVENT0: 0;
+	event_status_mask |= event1_feeds_ev_device? ADC_INT_CSR_EVENT1: 0;
 
-        return status;
+
+	return status;
 }
 
 module_init(acq400_init);
