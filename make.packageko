@@ -14,7 +14,7 @@ handle_ext_modules() {
 	cp -v $(find $1 -name \*.ko) modules_output
 }
 
-handle_ext_modules ../DRIVERS-OOK
+handle_ext_modules ../DRIVERS-OOK/
 
 
 cp $(find ${KERN_SRC} -name \*.ko) modules_output
