@@ -473,6 +473,7 @@ unsigned getSpecificBufferlen(int ibuf)
 #define AWG_SEG_BUFS	MODPRAMS "awg_seg_bufs"
 #define DFB		MODPRAMS "distributor_first_buffer"
 #define DSO		MODPRAMS "distributor_segment_offset"
+#define MAX_SEG		MODPRAMS "max_seg"
 
 #define PAGESZ	 4096
 #define PAGEM    (PAGESZ-1)
@@ -514,13 +515,13 @@ RUN_MODE ui(int argc, const char** argv)
 	while ( (rc = poptGetNextOpt( opt_context )) >= 0 ){
 		switch(rc){
 		case 'A':
-			getKnob(-1, "/etc/acq400/0/awg_max_seg", &G::max_seg);
+			getKnob(-1, MAX_SEG, &G::max_seg);
 			if (!(G::max_seg >= 'A' && G::max_seg <= 'Z')){
 				 G::max_seg = 'A';
 			}
 
 			if (!(*G::abcde >= 'A' && *G::abcde <= G::max_seg)){
-				fprintf(stderr, "ERROR bad pram abcde must be A..H \%s\"\n", G::abcde);
+				fprintf(stderr, "ERROR bad pram abcde must be A..%c \%s\"\n",  G::max_seg, G::abcde);
 				exit(1);
 			}
 			set_segment_start(*G::abcde - 'A');

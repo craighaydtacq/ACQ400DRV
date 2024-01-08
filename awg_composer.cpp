@@ -94,7 +94,7 @@ int abcde2port(int mode_port, const char* abcde) {
 	if (bx >= 'A' && bx <= 'E'){
 		return mode_port + 10*(abcde[0] - 'A' + 1);
 	}else{
-		fprintf(stderr, "ERROR: valude --abcde A,B,C,D,E not %c\n", bx);
+		fprintf(stderr, "ERROR: value --abcde A,B,C,D,E not %c\n", bx);
 		exit(1);
 	}
 }
