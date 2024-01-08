@@ -1,4 +1,9 @@
 #!/bin/bash
 
 source ./setenv.zynq
-make -j8 ${*:-all}
+TGT=${*:-all}
+if [ "$TGT" = "package" ]; then
+	make package
+else
+	make -j8 $TGT
+fi
