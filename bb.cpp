@@ -479,7 +479,7 @@ unsigned getSpecificBufferlen(int ibuf)
 #define PAGEM    (PAGESZ-1)
 
 
-void set_segment_start(int seg)
+int set_segment_start(int seg)
 {
 	unsigned seg_bufs;
 
@@ -487,6 +487,11 @@ void set_segment_start(int seg)
 
 	G::buffer0 = G::buffer00 + seg * seg_bufs;
 	setKnob(-1, DSO, seg);
+
+
+	fprintf(stderr, "%s seg:%d G::buffer00:%d G::buffer0:%d seg_bufs:%d\n",
+			__FUNCTION__, seg, G::buffer00, G::buffer0, seg_bufs);
+	return seg_bufs;
 }
 
 void set_dist_awg(unsigned dist_s1)
@@ -511,11 +516,12 @@ RUN_MODE ui(int argc, const char** argv)
 	getKnob(-1, "/etc/acq400/0/dist_bufferlen_play", &G::play_bufferlen);
 
 	int rc;
+	int seg_bufs = 0;
 
 	while ( (rc = poptGetNextOpt( opt_context )) >= 0 ){
 		switch(rc){
 		case 'A':
-			getKnob(-1, MAX_SEG, &G::max_seg);
+			getKnob(-1, MAX_SEG, &G::max_seg, "%c");
 			if (!(G::max_seg >= 'A' && G::max_seg <= 'Z')){
 				 G::max_seg = 'A';
 			}
@@ -524,7 +530,7 @@ RUN_MODE ui(int argc, const char** argv)
 				fprintf(stderr, "ERROR bad pram abcde must be A..%c \%s\"\n",  G::max_seg, G::abcde);
 				exit(1);
 			}
-			set_segment_start(*G::abcde - 'A');
+			seg_bufs = set_segment_start(*G::abcde - 'A');
 			break;
 		default:
 			;
@@ -565,9 +571,15 @@ RUN_MODE ui(int argc, const char** argv)
 
 	setKnob(-1, "/dev/acq400.0.knobs/dist_bufferlen", Buffer::bufferlen);
 
-	fprintf(stderr, "%s: bl:%d play:%d\n", __FUNCTION__, Buffer::bufferlen, G::play_bufferlen);
 
-	Buffer::nbuffers -= G::buffer0;
+	if (seg_bufs){
+		Buffer::nbuffers = seg_bufs;
+	}else{
+		Buffer::nbuffers -= G::buffer0;
+	}
+
+	fprintf(stderr, "%s: bl:%d play:%d start:%d nbuffers:%d\n", __FUNCTION__,
+			Buffer::bufferlen, G::play_bufferlen, G::buffer0, Buffer::nbuffers);
 
 	unsigned dist_s1 = 0;
 	getKnob(0, "/etc/acq400/0/play0_ready", &dist_s1);
