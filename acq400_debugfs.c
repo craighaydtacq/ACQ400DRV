@@ -551,6 +551,7 @@ void acq2006_createDebugfs(struct acq400_dev* adev)
 		IS_ACQ1001SC(adev)? 6:	/* special case counters eg RADCELF */
 		IS_KMCx_SC(adev)  ? 2:
 		IS_Z7IO_SC(adev)  ? 2:  /* @@todo potentially 3 with front side FMC */
+		IS_ACQ1102SC(adev)? 2:
 				    0;
 
 	unsigned* dev_rc_cache_data = dev_rc_alloc_cache();

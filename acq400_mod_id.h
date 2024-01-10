@@ -66,6 +66,7 @@
 #define MOD_ID_CPSC2		0x85
 #define MOD_ID_Z7IO		0x86
 #define MOD_ID_ACQ2206SC	0x87
+#define MOD_ID_ACQ1102SC	0x88
 
 #define MOD_ID_MTCA_ADAP	0xfc
 #define MOD_ID_ACQ400T_FMC	0xfd
