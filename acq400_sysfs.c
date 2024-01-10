@@ -3430,6 +3430,7 @@ int _acq400_createSysfsSC(struct device *dev, struct acq400_dev *adev, const str
 		specials[nspec++] = kmcx_sc_attrs;
 	}else if (IS_ACQ1102SC(adev)){
 		dev_info(dev, "ACQ1102: WORKTODO extra knobs");
+		specials[nspec++] = acq2006sc_attrs;
 		if (IS_ACQ1102_WR(adev)) {
 			specials[nspec++] = acq2106_wr_attrs;
 		}

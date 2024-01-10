@@ -1108,7 +1108,11 @@ if [ -e ${DK0}/has_axi_dma ]; then
         AXIMOD=/mnt/local/xilinx_axidma.ko
         echo "using override module $AXIMOD"
     fi
-    if [ $AXI_COUNT -ge 1 ]; then    
+    if [ $AXI_COUNT -ge 1 ]; then
+		if [ $AXI_COUNT -gt 1 ]; then
+			source /usr/local/CARE/load.overlay
+			load_overlay acq400_2D_overlay
+		fi
         /sbin/insmod $AXIMOD maxdev=$AXI_COUNT
         echo $AXI_COUNT > ${DK0}/has_axi_dma
         for file in $DROOT/acq400_axi_dma/adma?
