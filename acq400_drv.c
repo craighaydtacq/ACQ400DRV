@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.814"
+#define REVID 			"3.815"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
@@ -256,7 +256,7 @@ char awg_seg[2] = { 'A', '\0' };
 module_param_string(awg_seg, awg_seg, 2, 0444);
 MODULE_PARM_DESC(awg_seg, "current awg_segment: 0..5");
 
-char max_seg[2] = { 'E', '\0' };            	/* default: allow 5 segments A..E  */
+char max_seg[2] = { '0', '\0' };            	/* default: allow 5 segments A..E  */
 module_param_string(max_seg, max_seg, 2, 0444); /* possible to change on load only */
 MODULE_PARM_DESC(max_seg, "segment maximum, by convention E starting from A");
 
@@ -2705,7 +2705,7 @@ static void __exit acq400_exit(void)
 	acq400_module_remove_proc();
 }
 
-void set_awg_seg_bufs(void) {
+void _set_awg_seg_bufs(void) {
 /* ensure that awg segments fall within available buffer space */
 
 	int total_distributor_buffers;
@@ -2729,6 +2729,12 @@ void set_awg_seg_bufs(void) {
 
 	if (awg_seg_bufs == 0 || _awg_seg_bufs < awg_seg_bufs){
 		awg_seg_bufs = _awg_seg_bufs;
+	}
+}
+
+void set_awg_seg_bufs(void) {
+	if (*max_seg >= 'A' && *max_seg <= 'Z'){
+		_set_awg_seg_bufs();
 	}
 }
 
