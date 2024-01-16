@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.815"
+#define REVID 			"3.820"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
@@ -386,9 +386,19 @@ void clr_continuous_reader(struct acq400_dev *adev)
 
 
 
-void acqXXX_onStartNOP(struct acq400_dev *adev) {}
-void acqXXX_onStopNOP(struct acq400_dev *adev)  {}
+void acqXXX_onStartNOP(struct acq400_dev *adev) {
+	dev_info(DEVP(adev), "%s", __FUNCTION__);
+}
+void acqXXX_onStopNOP(struct acq400_dev *adev)  {
+	dev_info(DEVP(adev), "%s", __FUNCTION__);
+}
 
+void acq400sc_onStart(struct acq400_dev *adev) {
+	dev_info(DEVP(adev), "%s", __FUNCTION__);
+}
+void acq400sc_onStop(struct acq400_dev *adev)  {
+	dev_info(DEVP(adev), "%s", __FUNCTION__);
+}
 
 
 unsigned long long t0;
@@ -602,6 +612,7 @@ int acq2006_continuous_start(struct inode *inode, struct file *file)
 	empty_lists(adev);
 	dev_dbg(DEVP(adev), "acq2006_continuous_start() 01");
 	fiferr = FIFERR;
+	adev->onStart(adev);
 	_onStart(adev);
 	adev->RW32_debug = agg_reset_dbg;
 
@@ -847,6 +858,7 @@ int acq2006_continuous_stop(struct inode *inode, struct file *file)
 
 	fiferr = 0;				/* don't care about any errs now */
 	dev_dbg(DEVP(adev), "acq2006_continuous_stop() fiferr clr from %08x", FIFERR);
+	adev->onStop(adev);
 	sc_data_engine_disable(DATA_ENGINE_0);
 	acq2006_aggregator_disable(adev);
 	_acq420_continuous_dma_stop(adev);
@@ -2213,6 +2225,8 @@ void acq400sc_init_defaults(struct acq400_dev *adev)
 		dev_info(DEVP(adev), "acq2106 STACK%s setting first_axi_channel=1",
 				IS_ACQ2106_STAGGER(adev)? " and STAGGER": "");
 	}
+        adev->onStart = acq400sc_onStart;
+        adev->onStop = acq400sc_onStop;
 }
 
 #ifdef CONFIG_OF
@@ -2320,6 +2334,9 @@ void acq400_subrate_init(struct Subrate* subrate)
 {
 
 }
+
+
+
 static struct acq400_dev*
 acq400_allocate_module_device(struct acq400_dev* adev)
 /* subclass adev for module specific device, where required.
@@ -2331,6 +2348,7 @@ acq400_allocate_module_device(struct acq400_dev* adev)
  * */
 {
 	acq400_getID(adev);
+
 
 	if (IS_SC(adev)){
 		struct acq400_sc_dev *sc_dev;
@@ -2349,7 +2367,6 @@ acq400_allocate_module_device(struct acq400_dev* adev)
 	        INIT_LIST_HEAD(&sc_dev->stream_dac.sd_bqw.bq_clients);
 	        BQ_init(&sc_dev->stream_dac.refills, AWG_BACKLOG);
 	        init_waitqueue_head(&sc_dev->stream_dac.sd_waitq);
-
 	}else if (IS_ADC(adev)){
 		struct ADC_dev *adc_dev;
 		SPECIALIZE(adc_dev, adev, struct ADC_dev, IS_ACQ480(adev)? "ACQ480": "ACQ400");
