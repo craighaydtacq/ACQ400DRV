@@ -925,6 +925,45 @@ static DEVICE_ATTR(rtm_translen, S_IRUGO|S_IWUSR,
 		show_reg_rtm_translen, store_reg_rtm_translen);
 
 
+static ssize_t show_rtm12(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
+
+	return sprintf(buf, "%u,%u\n", sc_dev->rtm12.translen[0], sc_dev->rtm12.translen[1]);
+}
+
+
+
+static ssize_t store_rtm12(
+	struct device * dev,
+	struct device_attribute *attr,
+	const char * buf,
+	size_t count)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
+	unsigned tl[2];
+
+	if (sscanf(buf, "%u,%u", &tl[0], &tl[1]) == 2){
+		sc_dev->rtm12.translen[0] = tl[0];
+		sc_dev->rtm12.translen[1] = tl[1];
+		if (sc_dev->rtm12.translen[0] && sc_dev->rtm12.translen[1]){
+			sc_dev->rtm12.state = RTM12_WAIT_ARM;
+		}else{
+			sc_dev->rtm12.state = RTM12_OFF;
+		}
+		return strlen(buf);
+	}else{
+		return -1;
+	}
+
+}
+static DEVICE_ATTR(rtm12, S_IRUGO|S_IWUSR,
+		show_rtm12, store_rtm12);
 
 static ssize_t show_nbuffers(
 	struct device * dev,
@@ -3176,6 +3215,7 @@ static const struct attribute *sc_common_attrs[] = {
 	&dev_attr_jettison_buffers_from.attr,
 	&dev_attr_fpga_rev.attr,
 	&dev_attr_rt_status.attr,
+	&dev_attr_rtm12.attr,
 	&dev_attr_first_distributor_buffer.attr,
 	NULL
 };

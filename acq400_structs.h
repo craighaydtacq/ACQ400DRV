@@ -394,6 +394,10 @@ struct acq400_sc_dev {
 	} pps_client, ts_client,
 	  wrtt_client0, wrtt_client1;
 
+	struct RTM12 {
+		unsigned translen[2];
+		enum RTM12_STATE { RTM12_OFF, RTM12_WAIT_ARM, RTM_12_WAIT1 } state;
+	} rtm12;
 };
 
 enum {	WR_TIGA_S1, WR_TIGA_S2, WR_TIGA_S3, WR_TIGA_S4, WR_TIGA_S5, WR_TIGA_S6 };
