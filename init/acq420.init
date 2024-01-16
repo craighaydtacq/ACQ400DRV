@@ -219,9 +219,7 @@ customize_acq420()
             case $field in
             ACQ420FMC)  echo ACQ420FMC detected;;
             ACQ425?LF)  echo $field detected;;
-            ACQ427ELF)  
-                        IS_ACQ427=1
-                        echo ACQ427ELF detected NEW;;
+            ACQ427ELF)  IS_ACQ427=1; echo ACQ427ELF detected;;
             *)
                 echo "ERROR: model $field not recognized";;
             esac;;
