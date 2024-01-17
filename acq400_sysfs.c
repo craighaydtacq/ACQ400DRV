@@ -933,7 +933,8 @@ static ssize_t show_rtm12(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
 
-	return sprintf(buf, "%u,%u\n", sc_dev->rtm12.translen[0], sc_dev->rtm12.translen[1]);
+	return sprintf(buf, "%u %u %u\n",
+			sc_dev->rtm12.translen[0], sc_dev->rtm12.translen[1], sc_dev->rtm12.state);
 }
 
 
@@ -948,7 +949,7 @@ static ssize_t store_rtm12(
 	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
 	unsigned tl[2];
 
-	if (sscanf(buf, "%u,%u", &tl[0], &tl[1]) == 2){
+	if (sscanf(buf, "%u %u", &tl[0], &tl[1]) == 2){
 		sc_dev->rtm12.translen[0] = tl[0];
 		sc_dev->rtm12.translen[1] = tl[1];
 		if (sc_dev->rtm12.translen[0] && sc_dev->rtm12.translen[1]){
