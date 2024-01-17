@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.831"
+#define REVID 			"3.832"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
@@ -487,9 +487,11 @@ void acq400sc_onStop(struct acq400_dev *adev)  {
 		}
 	}
 
-	acq400_visit_set_arg(sc_dev->aggregator_set,
+	if (sc_dev->rtm12.state == RTM12_EN){
+		acq400_visit_set_arg(sc_dev->aggregator_set,
 				set_rtm_translen_action,
 				(void*)sc_dev->rtm12.translen[0]);
+	}
 }
 
 
