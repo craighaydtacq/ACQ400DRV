@@ -396,7 +396,9 @@ struct acq400_sc_dev {
 
 	struct RTM12 {
 		unsigned translen[2];
-		enum RTM12_STATE { RTM12_OFF, RTM12_WAIT_ARM, RTM_12_WAIT1 } state;
+		enum RTM12_STATE { RTM12_OFF, RTM12_EN, RTM12_WAIT_ARM, RTM12_WAIT1 } state;
+		struct task_struct* w_task;
+		int task_active;
 	} rtm12;
 };
 
@@ -798,6 +800,7 @@ int acq400_add_set(struct acq400_dev* set[], struct acq400_dev *adev, int site);
 void acq400_clear_set(struct acq400_dev* set[]);
 int acq400_read_set(struct acq400_dev* set[],
 		struct acq400_dev *adev, char *buf, int maxbuf);
+struct acq400_dev* acq400_first_in_set(struct acq400_dev* set[]);
 int acq400_add_aggregator_set(struct acq400_dev *adev, int site);
 int acq400_read_aggregator_set(struct acq400_dev *adev, char *buf, int maxbuf);
 unsigned acq400_convert_aggregator_set_to_register_mask(struct acq400_dev *adev);

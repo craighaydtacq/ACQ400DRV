@@ -952,7 +952,7 @@ static ssize_t store_rtm12(
 		sc_dev->rtm12.translen[0] = tl[0];
 		sc_dev->rtm12.translen[1] = tl[1];
 		if (sc_dev->rtm12.translen[0] && sc_dev->rtm12.translen[1]){
-			sc_dev->rtm12.state = RTM12_WAIT_ARM;
+			sc_dev->rtm12.state = RTM12_EN;
 		}else{
 			sc_dev->rtm12.state = RTM12_OFF;
 		}

@@ -101,12 +101,12 @@ int acq400_read_set(struct acq400_dev* set[],
 	return cursor;
 }
 
-int acq400_first_in_set(struct acq400_dev* set[])
+struct acq400_dev* acq400_first_in_set(struct acq400_dev* set[])
 {
 	int ia = 0;
 	for (ia = 0; ia < MAXDEVICES; ++ia){
 		if (set[ia] != 0){
-			return set[ia]->of_prams.site;
+			return set[ia];
 		}
 	}
 	return 0;

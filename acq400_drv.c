@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.820"
+#define REVID 			"3.830"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
@@ -393,11 +393,103 @@ void acqXXX_onStopNOP(struct acq400_dev *adev)  {
 	dev_info(DEVP(adev), "%s", __FUNCTION__);
 }
 
+void set_rtm_translen_action(struct acq400_dev *adev, void* arg)
+{
+	unsigned len = (unsigned)arg;
+	if (IS_ADC(adev)){
+		dev_dbg(DEVP(adev), "%s set ADC_TRANSLEN %u", __FUNCTION__, len);
+		acq400wr32(adev, ADC_TRANSLEN, len);
+	}
+}
+int acq400sc_rtm12_work(void * clidat)
+{
+	struct acq400_dev* adev = (struct acq400_dev*)clidat;
+	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
+	struct acq400_dev* s1_dev = acq400_first_in_set(sc_dev->aggregator_set);
+	unsigned iter;
+	unsigned count0 = 0;
+	unsigned  sample_count;
+	unsigned  sample_count0;
+	int status_print_count = 0;
+
+	sc_dev->rtm12.task_active = 1;
+
+	if (!s1_dev){
+		dev_err(DEVP(adev), "%s ERROR no s1", __FUNCTION__);
+		goto quit;
+	}
+	sample_count0 = acq400rd32(s1_dev, ADC_SAMPLE_CTR);
+	dev_dbg(DEVP(adev), "%s 01 sample_count0:%u", __FUNCTION__, sample_count0);
+
+	sc_dev->rtm12.state = RTM12_WAIT_ARM;
+	acq400_visit_set_arg(sc_dev->aggregator_set,
+			set_rtm_translen_action,
+			(void*)sc_dev->rtm12.translen[0]);
+
+	for (iter = 0; !kthread_should_stop(); ++iter, count0 = sample_count){
+		sample_count = acq400rd32(s1_dev, ADC_SAMPLE_CTR);
+
+		if (sample_count != count0 && ++status_print_count < 7){
+			dev_dbg(DEVP(s1_dev), "%5u sample_count %u", iter, sample_count);
+		}
+		switch(sc_dev->rtm12.state){
+		case RTM12_WAIT_ARM:
+			if (sample_count != sample_count0){
+				sc_dev->rtm12.state = RTM12_WAIT1;
+				dev_dbg(DEVP(s1_dev), "sample_count %u => RTM12_WAIT1", sample_count);
+			}
+			break;
+		case RTM12_WAIT1:
+			if (sample_count >= sc_dev->rtm12.translen[0]){
+				acq400_visit_set_arg(sc_dev->aggregator_set,
+						set_rtm_translen_action,
+						(void*)sc_dev->rtm12.translen[1]);
+				dev_dbg(DEVP(s1_dev), "sample_count %u => RTM12_EN", sample_count);
+				if (sample_count > sc_dev->rtm12.translen[0]){
+					dev_warn(DEVP(adev), "%s warning late update at count %u",
+							__FUNCTION__, sample_count);
+				}
+				goto quit;
+			}
+			break;
+		default:
+			dev_err(DEVP(adev), "%s ERROR: don't know how to deal with this state %u",
+					__FUNCTION__, sc_dev->rtm12.state);
+			goto quit;
+		}
+
+		msleep(10);
+	}
+
+quit:
+	sc_dev->rtm12.state = RTM12_EN;
+	sc_dev->rtm12.task_active = 0;
+	dev_dbg(DEVP(adev), "%s 99 state:%u", __FUNCTION__, sc_dev->rtm12.state);
+	return 0;
+}
+
 void acq400sc_onStart(struct acq400_dev *adev) {
+	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
+	if (sc_dev->rtm12.state == RTM12_EN){
+		sc_dev->rtm12.w_task = kthread_run(acq400sc_rtm12_work, adev, "%s.rtm12", adev->dev_name);
+	}else{
+		sc_dev->rtm12.w_task = 0;
+	}
 	dev_info(DEVP(adev), "%s", __FUNCTION__);
 }
 void acq400sc_onStop(struct acq400_dev *adev)  {
+	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
 	dev_info(DEVP(adev), "%s", __FUNCTION__);
+	if (sc_dev->rtm12.w_task && sc_dev->rtm12.task_active){
+		kthread_stop(sc_dev->rtm12.w_task);
+		while (sc_dev->rtm12.task_active){
+			msleep(10);
+		}
+	}
+
+	acq400_visit_set_arg(sc_dev->aggregator_set,
+				set_rtm_translen_action,
+				(void*)sc_dev->rtm12.translen[0]);
 }
 
 
