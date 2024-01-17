@@ -456,6 +456,7 @@ build_knobs_device() {
         CLKDIV=8;;
     8)
         # space deliberate
+        ln -s ${ULC}/acq480_map[48]  ${ek}
         set_max_min_khz ${site} 80000 10000
         ACQ480_SITES="${ACQ480_SITES} $site";;
     9)
@@ -613,15 +614,16 @@ build_site0() {
     fix_state
 
     ln -s ${dk}/aggregator ${dk}/distributor ${dk}/decimate ${dk}/zclk_sel \
-        ${dk}/soft_trigger ${dk}/bufferlen ${ek}
+        ${dk}/soft_trigger ${dk}/bufferlen ${dk}/rtm12 ${ek}
         
     [ -e ${dk}/counter_latch ] && ln -s ${dk}/counter_latch ${ek}
 
     ln -s $ULB/get.site $ULB/set.site $ULB/awg_abort \
-		$ULB/fit_rtm_translen_to_buffer $ULB/rgm_flush \
+	$ULB/fit_rtm_translen_to_buffer $ULB/rgm_flush \
         $ULB/run0 $ULB/play0 $ULB/get.xdt \
         $ULB/streamtonowhered $ULB/set.sync_role \
-		$ULB/datals ${ULB}/cstate $ULB/channel_mapping ${ek}
+	$ULB/datals ${ULB}/cstate $ULB/channel_mapping ${ek}
+
 	ln -s $ULB/set.site ${ek}/SS
 
     ln -s /proc/driver/acq400/0/stats /proc/driver/acq400/0/Qstats ${ek}
@@ -1108,7 +1110,7 @@ if [ -e ${DK0}/has_axi_dma ]; then
     fi
     if [ $AXI_COUNT -ge 1 ]; then
 		if [ $AXI_COUNT -gt 1 ]; then
-			source /usr/local/CARE/load.overlay
+			source ${ULC}/load.overlay
 			load_overlay acq400_2D_overlay
 		fi
         /sbin/insmod $AXIMOD maxdev=$AXI_COUNT
