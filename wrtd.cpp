@@ -46,9 +46,9 @@
 		acq2106_319> date @1636025317
 		Thu Nov  4 11:28:37 UTC 2021
 
-		wrtd_txi --at U$(($(date +%s)+10) 1      # trigger at calendar time now + 10s
-		wrtd_txi --at U$(($(date +%s)+10) 1      # trigger at calendar time now + 10s
-		wrtd_txi --at U$((1636025317) 1      	# trigger at calendar Thu Nov  4 11:28:37 UTC 2021
+		wrtd_txa --at U$(($(date +%s)+10) 1      # trigger at calendar time now + 10s
+		wrtd_txa --at U$(($(date +%s)+10) 1      # trigger at calendar time now + 10s
+		wrtd_txa --at U$((1636025317) 1      	# trigger at calendar Thu Nov  4 11:28:37 UTC 2021
  *
  *   wrtd rx
  *   	receives network triggers and configures WRTT to fire at specified time
