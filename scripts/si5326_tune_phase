@@ -35,7 +35,7 @@ while [ "$STATE" != "ST_FINISHED" ]; do
 	case $STATE in
 	ST_ZERO_PPS)
 		if [ $(wr_is_active) -ne 0 ]; then
-		        STATE=ST_COARSE_TO_X01
+		        NSTATE=ST_COARSE_TO_X01
 		else
 			sleep 3
 		fi;;
