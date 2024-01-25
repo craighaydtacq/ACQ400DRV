@@ -91,7 +91,7 @@ APPS := mmap acq400_stream permute acq435_decode \
 	wr_reset wrtd soft_wrtd wrtt_mon multicast \
 	mr_offload trigger_at bb_stream reduce \
 	channel_mapping slowmon_hw reg_rw hudp_config tai_server \
-	awg_composer
+	awg_composer scripts/mod_id.sh
 	
 # data_sink	
 # dropped
@@ -353,6 +353,9 @@ LIBSRCS = acq-util.c knobs.cpp acq_rt.cpp Buffer.cpp ES.cpp
 	echo lib for external use
 	ls -l ../lib/$(ARCHD)
 
+scripts/mod_id.sh: acq400_mod_id.h
+	echo update scripts/mod_id.sh
+	./make_mod_id.sh
 zynq:
 	./make.zynq
 		
