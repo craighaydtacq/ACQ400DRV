@@ -13,7 +13,7 @@ esac
 
 load_overlay $overlay
 
-for CX in A B C; do
+for CX in A B C D; do
 	knob=/dev/acq400.$CX.knobs/gt_reset
 	if [ -e $knob ]; then
 		echo 1 > $knob 

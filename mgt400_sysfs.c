@@ -1009,6 +1009,8 @@ static DEVICE_ATTR(arp_mac_resp, S_IRUGO, show_arp_mac_resp, 0);
 
 static const struct attribute *sysfs_hudp_attrs[] = {
 	&dev_attr_heartbeat.attr,
+	&dev_attr_gt_reset.attr,
+
 	&dev_attr_mac.attr,
 	&dev_attr_ip.attr,
 	&dev_attr_gw.attr,
