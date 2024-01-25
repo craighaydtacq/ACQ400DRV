@@ -628,6 +628,7 @@ build_site0() {
 
     ln -s /proc/driver/acq400/0/stats /proc/driver/acq400/0/Qstats ${ek}
     ln -s ${MODP}/xo_distributor_sample_size ${ek}/dssb
+    ln -s ${MODP}/soft_trigger_count ${ek}
     ln -s ${ULC}/est_buf_size.sh ${ek}/optimise_bufferlen_burst
     ln -s ${ULC}/preset? ${ek}
     ln -s ${ULC}/get_data_size ${ek}/raw_data_size

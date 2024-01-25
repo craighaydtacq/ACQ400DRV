@@ -40,6 +40,9 @@ int soft_trigger_udelay = 0;
 module_param(soft_trigger_udelay, int, 0644);
 MODULE_PARM_DESC(soft_trigger_udelay, "stretch soft trigger flat top by N usecs 0: no delay");
 
+int soft_trigger_count = 0;
+module_param(soft_trigger_count, int, 0644);
+MODULE_PARM_DESC(soft_trigger_count, "number of soft triggers so far");
 
 int acq465_reset_msleep = 1000;
 module_param(acq465_reset_msleep, int, 0644);
@@ -2366,6 +2369,7 @@ static ssize_t store_soft_trigger(
 
 		while(ntriggers--){
 			acq400wr32(adev, MOD_CON, mod_con | MCR_SOFT_TRIG);
+			soft_trigger_count++;
 			if (soft_trigger_udelay){
 				udelay(soft_trigger_udelay);
 			}
