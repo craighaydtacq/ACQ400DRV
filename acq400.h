@@ -526,13 +526,16 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define IS_DI460_HS_CNTR(adev)  (GET_MOD_ID(adev) == MOD_ID_DI460ELF && GET_MOD_IDV(adev) == MOD_IDV_HSCNTR)
 #define IS_DI460_STIM(adev)	(GET_MOD_ID(adev) == MOD_ID_DI460ELF && GET_MOD_IDV(adev) == MOD_IDV_DI460_STIM)
 
+#define IS_DIO_5CH(adev)	(GET_MOD_ID(adev) == MOD_ID_FMC_DIO_5CHTTLA)
+#define IS_DIO_5CH_HS_CNTR(adev) (IS_DIO_5CH(adev) && 1 /* @@TODO */)
 #define IS_DIO482_PG(adev)	(IS_DIO482ELF_PG(adev)||IS_DIO482TD_PG(adev))
 #define IS_DIO482_CNTR(adev)	(IS_DIO482_SS_CNTR(adev) || IS_DIO482_HS_CNTR(adev))
 
-#define IS_DI_CNTR(adev)	(IS_DIO482_CNTR(adev) || IS_DI460_HS_CNTR(adev))
+#define IS_DI_CNTR(adev)	(IS_DIO482_CNTR(adev) || IS_DI460_HS_CNTR(adev) || IS_DIO_5CH_HS_CNTR(adev))
 
-#define IS_DIO432X(adev)	(IS_DIO432FMC(adev)||IS_DIO432PMOD(adev)||IS_DIO482FMC(adev)||IS_DIO482TD(adev)||IS_DIO422ELF(adev)||IS_DI460ELF(adev))
+#define IS_DIO432X(adev)	(IS_DIO432FMC(adev)||IS_DIO432PMOD(adev)||IS_DIO482FMC(adev)||IS_DIO482TD(adev)||IS_DIO422ELF(adev)||IS_DI460ELF(adev)||IS_DIO_5CH(adev))
 
+#define IS_DIO(adev)		(IS_DIO432X(adev))
 #define IS_XO(adev)		(IS_DIO432X(adev) || IS_AO42X(adev))
 
 #define IS_PMODADC1(adev)	(GET_MOD_ID(adev) == MOD_ID_PMODADC1)

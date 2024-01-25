@@ -293,8 +293,10 @@ void dio432_createDebugfs(struct acq400_dev* adev, char* pcursor)
 	if (IS_DI_CNTR(adev)){
 		DBG_REG_CREATE(DIO482_DI_DWELL);
 		{
+			int chmax = IS_DI460_HS_CNTR(adev)? 12:
+				    IS_DIO_5CH_HS_CNTR(adev)? 5:
+				    IS_DIO482_HS_CNTR(adev)? 16: 32;
 			int ch;
-			int chmax = IS_DI460_HS_CNTR(adev)? 12: IS_DIO482_HS_CNTR(adev)? 16: 32;
 			for (ch = 1; ch <= chmax; ++ch){
 				DBG_REG_CREATE_NAME_NC_NUM("cnt", ch, "CNTR", CNTR(ch));
 			}
@@ -472,6 +474,8 @@ void acq400_createDebugfs(struct acq400_dev* adev)
 		dio432_createDebugfs(adev, pcursor);
 	}else if (IS_DIO422AQB(adev)){
 		qen_createDebugfs(adev, pcursor);
+	}else if (IS_DIO_5CH(adev)){
+		dio432_createDebugfs(adev, pcursor);  // @@worktodo dubious, placeholder
 	}else{
 		switch(GET_MOD_ID(adev)){
 		case MOD_ID_BOLO8:

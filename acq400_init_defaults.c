@@ -463,6 +463,18 @@ static void di460elf_init_defaults(struct acq400_dev *adev)
 	acq400wr32(adev, MCR, MCR_MOD_EN);
 }
 
+static void dio_5ch_init_defaults(struct acq400_dev *adev)
+{
+	dev_info(DEVP(adev), "%s ", __FUNCTION__);
+	if (IS_DIO_5CH_HS_CNTR(adev)){
+		dev_info(DEVP(adev), "%s IS_DIO_5CH_HS_CNTR()", __FUNCTION__);
+		adev->word_size = dio482_cntr_shorts? 2: 4;
+		adev->nchan_enabled = 5;
+		adev->data32 = dio482_cntr_shorts? 0: 1;
+		acq400wr32(adev, DIO482_DI_DWELL, 500);   // 10Khz update with 50MHz CLK ??
+	}
+}
+
 static void qen_init_defaults(struct acq400_dev *adev)
 {
        struct acq400_dev *adev1 = acq400_devices[1];
@@ -1055,13 +1067,9 @@ void _acq400_mod_init_defaults(struct acq400_dev* adev)
 }
 
 
-void acq400_mod_init_defaults(struct acq400_dev* adev)
+void dio_init_defaults(struct acq400_dev* adev)
 {
-	_acq400_mod_init_defaults(adev);
-
-	if (IS_ACQ42X(adev)){
-		acq420_init_defaults(adev);
-	}else if (IS_DIO432X(adev)){
+	if (IS_DIO432X(adev)){
 		if (IS_DIO482ELF_PG(adev)){
 			dio482_pg_init_defaults(adev, 1);
 		}else if (IS_DIO482PPW(adev)){
@@ -1073,6 +1081,21 @@ void acq400_mod_init_defaults(struct acq400_dev* adev)
 		}
 	}else if (IS_DIO422AQB(adev)){
 		dio422aqb_init_defaults(adev);
+	}else if (IS_DIO_5CH(adev)){
+		dio_5ch_init_defaults(adev);
+	}else{
+		dev_warn(DEVP(adev), "WARNING: %s IS_DIO but model 0x%02x not known",
+				__FUNCTION__, GET_MOD_ID(adev));
+	}
+}
+void acq400_mod_init_defaults(struct acq400_dev* adev)
+{
+	_acq400_mod_init_defaults(adev);
+
+	if (IS_ACQ42X(adev)){
+		acq420_init_defaults(adev);
+	}else if (IS_DIO(adev)){
+		dio_init_defaults(adev);
 	}else{
 		switch(GET_MOD_ID(adev)){
 		case MOD_ID_ACQ430FMC:
