@@ -208,6 +208,7 @@ int mgt400_clear_histo(struct mgt400_dev *mdev, int minor);
 #define ARP_RESP_MAC_UPPER	0x0048
 #define ARP_RESP_MAC_LOWER	0x004c
 #define UDP_SLICE		0x0050
+#define UDP_HEARTBEAT		0x0080
 
 #define HUDP_DEST_ADDR		0x0108
 #define HUDP_DEST_PORT		0x0118

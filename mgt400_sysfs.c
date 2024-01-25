@@ -240,12 +240,13 @@ static ssize_t show_heartbeat(
 	char * buf)
 {
 	struct mgt400_dev *mdev = mgt400_devices[dev->id];
+	unsigned reg = IS_MGT_HUDP(mdev)? UDP_HEARTBEAT: HEART;
 #if 1
 	/* EPICS DS can't handle a full u32 */
-	return sprintf(buf, "%u\n", mgt400rd32(mdev, HEART) >> 1);
+	return sprintf(buf, "%u\n", mgt400rd32(mdev, reg) >> 1);
 #else
 	return sprintf(buf, "%u\n",
-                       mdev->reg_cache.data[HEART/sizeof(int)] >> 1);
+                       mdev->reg_cache.data[reg/sizeof(int)] >> 1);
 #endif
 }
 static DEVICE_ATTR(heartbeat, S_IRUGO, show_heartbeat, 0);
@@ -1007,6 +1008,7 @@ static ssize_t show_arp_mac_resp(
 static DEVICE_ATTR(arp_mac_resp, S_IRUGO, show_arp_mac_resp, 0);
 
 static const struct attribute *sysfs_hudp_attrs[] = {
+	&dev_attr_heartbeat.attr,
 	&dev_attr_mac.attr,
 	&dev_attr_ip.attr,
 	&dev_attr_gw.attr,

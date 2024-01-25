@@ -1,0 +1,21 @@
+#!/bin/sh
+
+sites=${*:-10 12 13}
+
+MGT_SLEEP=${MGT_SLEEP:-1}
+
+for s in $sites; do
+	HB=/etc/acq400/$s/heartbeat;
+	if [ -e $HB ]; then
+		(echo $s $(cat $HB;sleep $MGT_SLEEP;cat $HB) $MGT_SLEEP |
+		awk {'printf("s:%d f:%.2e Hz\n"), $1, 2*($3-$2)/$4 }') &
+	      	sleep 0.1
+	fi
+done
+
+for s in $sites; do
+	HB=/etc/acq400/$s/heartbeat;
+	if [ -e $HB ]; then
+		wait
+	fi
+done
