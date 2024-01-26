@@ -469,10 +469,11 @@ static void dio_5ch_init_defaults(struct acq400_dev *adev)
 	if (IS_DIO_5CH_HS_CNTR(adev)){
 		dev_info(DEVP(adev), "%s IS_DIO_5CH_HS_CNTR()", __FUNCTION__);
 		adev->word_size = dio482_cntr_shorts? 2: 4;
-		adev->nchan_enabled = 5;
+		adev->nchan_enabled = 8;		   // 5 are real, 8 to round up
 		adev->data32 = dio482_cntr_shorts? 0: 1;
 		acq400wr32(adev, DIO482_DI_DWELL, 500);   // 10Khz update with 50MHz CLK ??
 	}
+	acq400wr32(adev, MCR, MCR_MOD_EN);
 }
 
 static void qen_init_defaults(struct acq400_dev *adev)
@@ -1076,13 +1077,13 @@ void dio_init_defaults(struct acq400_dev* adev)
 			dio482_ppw_init_defaults(adev);
 		}else if (IS_DI460ELF(adev)){
 			di460elf_init_defaults(adev);
+		}else if (IS_DIO_5CH(adev)){
+			dio_5ch_init_defaults(adev);
 		}else{
 			dio432_init_defaults(adev);
 		}
 	}else if (IS_DIO422AQB(adev)){
 		dio422aqb_init_defaults(adev);
-	}else if (IS_DIO_5CH(adev)){
-		dio_5ch_init_defaults(adev);
 	}else{
 		dev_warn(DEVP(adev), "WARNING: %s IS_DIO but model 0x%02x not known",
 				__FUNCTION__, GET_MOD_ID(adev));

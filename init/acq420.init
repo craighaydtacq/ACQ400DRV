@@ -560,12 +560,18 @@ build_knobs_device() {
 			echo 1,1,1,1 > ${dk}/byte_is_output
         fi;;
     ${MOD_ID_DI460ELF})
-		mv=$(cat ${dk}/module_variant)
-		case $mv in
-		21)
-			init_scaler $ek $site $mv 12;;
-		esac
-		DI460_SITES="${DI460_SITES} ${site}";;
+	mv=$(cat ${dk}/module_variant)
+	case $mv in
+	21)
+		init_scaler $ek $site $mv 12;;
+	esac
+	DI460_SITES="${DI460_SITES} ${site}";;
+    ${MOD_ID_FMC_DIO_5CHTTLA})
+        mv=$(cat ${dk}/module_variant)
+        case $mv in
+        21)
+                init_scaler $ek $site $mv 5;;
+        esac;;
     *)
         CLKDIV=200;;
     esac

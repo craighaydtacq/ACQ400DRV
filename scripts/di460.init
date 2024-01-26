@@ -1,8 +1,6 @@
 #!/bin/sh
 
-mount | grep -q configfs || mount -t configfs none /sys/kernel/config/
-mkdir -p /sys/kernel/config/device-tree/overlays/di460
-cat /mnt/dtb.d/acq2x06_di460_overlay.dtb > /sys/kernel/config/device-tree/overlays/di460/dtbo
+/usr/local/CARE/load.overlay acq2x06_di460_overlay
 
 source /usr/local/bin/acq400_init_gpio_common.sh
 
