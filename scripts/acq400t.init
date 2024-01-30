@@ -24,6 +24,12 @@ proc link_gpio {lnames site gpio1} {
 	}
 }
 
+proc readfile {filename} {
+    set f [open $filename]
+    set data [read $f]
+    close $f
+    return $data
+}
 proc get_bus_offset {} {
 	set mtca_test /etc/acq400/5/module_type
 	if {[file exists $mtca_test]} {
@@ -73,6 +79,15 @@ proc isKMCU {} {
 	}
 }
 
+proc isZ7IO {} {
+	set HN [readfile /proc/device-tree/chosen/model]
+	if { [string compare -length 4 $HN "z7io"] == 0 } {
+		return 1
+	} else {
+		return 0
+	}
+}
+
 set SITES ""
 
 if { $::argc > 0 } {
@@ -91,12 +106,12 @@ if { $::argc > 0 } {
 	exec /sbin/insmod  /usr/local/lib/modules/acq400t.ko $parms
 	
 	set siteplus 1
-	if {[isKMCU]} {
+	if {[isKMCU] || [isZ7IO]} {
 		set siteplus 2
 	}
 	
 	foreach site $::argv {
-	    puts "build knobs site:$site"
+		puts "build knobs site:$site"
 		exec mkdir -p /dev/acq400t/$site
 
 		link_hwmon [expr $site + $siteplus] $site

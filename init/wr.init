@@ -222,7 +222,7 @@ start_wr() {
 	if [ $? -ne 0 ]; then
 		echo +++ ERROR cold_start_wrtd .. WR not found
 		return
-    fi
+        fi
 	init_wr_onetime
 }
 
