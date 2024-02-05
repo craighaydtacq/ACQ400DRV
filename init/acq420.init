@@ -1035,11 +1035,12 @@ load_mgt() {
         ${ULC}/load.acq2106_quadcomms;;
     95*)
     	echo MGTDRAM;;
+    93*)
+        echo MTCA; return;;
     *)
         echo Normal MGT;;
     esac
     ${ULC}/load.mgtAB_enable
-
 }
 
 if [ -e /etc/acq400/C/MTYPE ]; then
