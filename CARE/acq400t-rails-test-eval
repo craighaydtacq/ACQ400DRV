@@ -10,7 +10,8 @@ if { [string compare -length 7 $HN "acq2106"] == 0 } {
 	set VREF	0
 }
 
-if { [string compare -length 4 $HN "kmcu"] == 0 } {
+if { [string compare -length 4 $HN "kmcu"] == 0 ||
+     [string compare -length 4 $HN "z7io"] == 0    } {
 	set V1P5	0
 	set V1		0
 } else {
