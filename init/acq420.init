@@ -1025,6 +1025,8 @@ insmod $MOD bufferlen=$BLEN nbuffers=$NBUF $GS $DRVR_CUSTOM
 
 HAS_HUDP=n
 
+LOAD_MGT_REQUEST=0
+
 load_mgt() {
     COMMS4=$(grep filename /tmp/fpga_status | awk '{ print $5 } ' | awk -F _ '{ print $9 }')
     case $COMMS4 in
@@ -1036,11 +1038,21 @@ load_mgt() {
     95*)
     	echo MGTDRAM;;
     93*)
-        echo MTCA; return;;
+        echo ERROR MTCA; return;;
     *)
         echo Normal MGT;;
     esac
-    ${ULC}/load.mgtAB_enable
+    /usr/local/CARE/load.overlay acq2x06_enable_mgtAB
+}
+
+load_mgt_mtca() {
+    C93=$(grep filename /tmp/fpga_status | awk '{ print $5 }' |
+          awk -F _ '{ for (ii=1; ii<=NF; ++ii) if($ii ~ /93[0-9][0-9]/) print $ii; }')
+    if [ ! -z $C93 ]; then
+        echo "MTCA COMMS module $C93 detected"
+        /usr/local/CARE/load.overlay acq2x06_enable_mgtC
+        LOAD_MGT_REQUEST=1
+    fi
 }
 
 if [ -e /etc/acq400/C/MTYPE ]; then
@@ -1080,12 +1092,8 @@ if [ -e /etc/acq400/C/MTYPE ]; then
                 echo "WARNING: site C unsupported MTYPE $cmt"
             fi ;;
         esac
-    	MGTMOD=/usr/local/lib/modules/mgt400.ko
-    	if [ -e /mnt/local/mgt400.ko ]; then
-        	MGTMOD=/mnt/local/mgt400.ko
-        	echo "using override module $MGTMOD"
-        fi
-        /sbin/insmod $MGTMOD MODEL=$1 $MGT400_PRAMS
+        LOAD_MGT_REQUEST=1
+
     elif [ "x$WHITE_RABBIT" = "x1" ]; then
         echo +++ WHITE_RABBIT: skipping mgt device driver load..
         echo +++ init MGT482
@@ -1094,12 +1102,19 @@ if [ -e /etc/acq400/C/MTYPE ]; then
 else
     case $MODEL in
     kmcu*)
-    	load_mgt $MODEL;;
+        load_mgt_mtca;;
     z7io*)
-	grep filename /tmp/fpga_status | grep -q _9[0-9][0-9][0-9]
-	[ $? -eq 0 ] && load_mgt $MODEL
-	;;
+        load_mgt_mtca;;
     esac
+fi
+
+if [ $LOAD_MGT_REQUEST -eq 1 ]; then
+        MGTMOD=/usr/local/lib/modules/mgt400.ko
+        if [ -e /mnt/local/mgt400.ko ]; then
+                MGTMOD=/mnt/local/mgt400.ko
+                echo "using override module $MGTMOD"
+        fi
+        /sbin/insmod $MGTMOD MODEL=$MODEL $MGT400_PRAMS
 fi
 
 build_knobs
