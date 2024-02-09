@@ -2170,6 +2170,7 @@ static const struct attribute *acq465_attrs[] = {
 	&dev_attr_adc_reset.attr,
 	&dev_attr_adc_status.attr,
 	&dev_attr__adc_hax.attr,
+	&dev_attr_bank_mask.attr,
 	NULL
 };
 

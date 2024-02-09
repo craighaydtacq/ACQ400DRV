@@ -161,12 +161,18 @@ void adc_createDebugfs(struct acq400_dev* adev, char* pcursor)
 	DBG_REG_CREATE_NAME_N(ADC_CLK_CTR);
 	DBG_REG_CREATE_NAME_N(ADC_SAMPLE_CTR);
 	DBG_REG_CREATE_NAME_N(ADC_SAMPLE_CLK_CTR);
+	if (IS_ACQ465(adev)){
+		DBG_REG_CREATE(ACQ465_LCS);
+	}
 	DBG_REG_CREATE(ADC_CLKDIV);
 	if (IS_ACQ425(adev)){
 		DBG_REG_CREATE(ACQ425_BANK);
 	}
 	if (IS_ACQ423(adev)){
 		DBG_REG_CREATE(ACQ423_BANK);
+	}
+	if (IS_ACQ465(adev)){
+		DBG_REG_CREATE(ACQ465_BANK_MODE);
 	}
 	DBG_REG_CREATE(ADC_ACC_DEC);
 }
@@ -236,8 +242,6 @@ void acq43x_createDebugfs(struct acq400_dev* adev, char* pcursor)
 void acq465_createDebugfs(struct acq400_dev* adev, char* pcursor)
 {
 	adc_createDebugfs(adev, pcursor);
-	DBG_REG_CREATE(ACQ465_LCS);
-	DBG_REG_CREATE(ACQ465_BANK_MODE);
 	DBG_REG_CREATE(ADC_TRANSLEN);
 	DBG_REG_CREATE(ACQ465_DEBUG);
 }
