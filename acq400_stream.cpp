@@ -93,6 +93,9 @@
 #include "acq-util.h"
 #include "ES.h"
 
+#include <bitset>
+#include "hex_char_to_bin.h"
+
 #define _PFN	__PRETTY_FUNCTION__
 
 #define STDOUT	1
@@ -3484,6 +3487,8 @@ public:
 
 template <class T>
 class SubsetStreamHeadClientImpl: public SubsetStreamHeadClient {
+
+protected:
 	T* buf;
 	int nbuf;
 	int totchan;
@@ -3525,14 +3530,122 @@ public:
 	}
 };
 
+
+const unsigned MAXBIT = 256;
+typedef std::bitset<MAXBIT> ChannelMask;
+
+int get_channelcount(ChannelMask& cm){
+        int nset = 0;
+        for (int ii = 0; ii < 256; ++ii){
+                if (cm[ii]){
+                        ++nset;
+                }
+        }
+        return nset;
+}
+
+int get_topchan(ChannelMask& cm){
+        int topchan = 0;
+        for (int ii = 0; ii < 256; ++ii){
+                if (cm[ii]){
+                        topchan = ii;
+                }
+        }
+        return topchan;
+}
+int get_firstchan(ChannelMask& cm){
+	for (int ii = 0; ii < 256; ++ii){
+		if (cm[ii]) return ii;
+	}
+	return 0;
+}
+
+template <class T>
+class SubsetStreamHeadClientChannelMask: public SubsetStreamHeadClientImpl<T> {
+	ChannelMask& cm;
+	const int topchan;
+	const int firstchan;
+
+	static char* _cm2def(ChannelMask& _cm){
+		char* def = new char[32];
+		snprintf(def, 32, "%d", get_channelcount(_cm));
+		return def;
+	}
+	T* csample;		// contiguous sample bounce buffer
+
+	T* gather(T* sample){
+		T* pdst = csample;
+		for (int ii = firstchan; ii <= topchan; ++ii){
+			if (cm[ii]){
+				*pdst++ = sample[ii];
+			}
+		}
+		return csample;
+	}
+	static int verbose;
+public:
+	SubsetStreamHeadClientChannelMask<T>(ChannelMask& _cm):
+		SubsetStreamHeadClientImpl<T>(_cm2def(_cm)),
+		cm(_cm),
+		topchan(get_topchan(_cm)),
+		firstchan(get_firstchan(_cm)){
+		csample = new T[this->len];
+
+		if (verbose){
+			fprintf(stderr, "%s firstchan:%d topchan:%d len:%d totchan:%d\n",
+					__FUNCTION__, firstchan, topchan, this->len, this->totchan);
+		}
+	}
+	virtual void onStreamBufferStart(int ib) {
+		Buffer* buffer = Buffer::the_buffers[ib];
+
+		T* data = reinterpret_cast<T*>(buffer->getBase());
+		T* end = reinterpret_cast<T*>(buffer->getEnd());
+		T* pb = this->buf;
+		T* pb0 = this->buf;
+		const int totchan(this->totchan);
+		const int len(this->len);
+
+		for (int isam = 0; data < end; data += totchan, ++isam, pb += len){
+			memcpy(pb, gather(data), len*sizeof(T));
+		}
+		write(STDOUT, pb0, (pb-pb0)*sizeof(T));
+	}
+};
+
+template <class T>
+int SubsetStreamHeadClientChannelMask<T>::verbose = getenv_default("SubsetStreamHeadClientChannelMaskVerbose");
+
 SubsetStreamHeadClient* SubsetStreamHeadClient::instance(const char* def)
 {
-	if (G::wordsize == 4){
-		return new SubsetStreamHeadClientImpl<int>(def);
+	ChannelMask *cm;
+
+	if (strncmp(def, "0x", 2) == 0){
+		cm = new ChannelMask(hexStrToBin(def+2));  // arbitrary mask, hex definition
+	}else if (strncmp(def, "0b", 2) == 0){
+		cm = new ChannelMask(def+2);		   // arbitrary mask, binary definition
 	}else{
-		return new SubsetStreamHeadClientImpl<short>(def);
+		cm = 0;					   // else range [from] to
 	}
+
+	if (cm){
+		if (G::wordsize == 4){
+			return new SubsetStreamHeadClientChannelMask<int>(*cm);    // arbitrary mask <int>
+		}else{
+			return new SubsetStreamHeadClientChannelMask<short>(*cm);  // arbitrary mask <short>
+		}
+	}else{
+		if (G::wordsize == 4){
+			return new SubsetStreamHeadClientImpl<int>(def);	   // range <int>
+		}else{
+			return new SubsetStreamHeadClientImpl<short>(def);	   // range <short>
+		}
+	}
+	fprintf(stderr, "%s ERROR: unable to create instance\n", __FUNCTION__);
+	assert(0);
 }
+
+
 struct Segment {
 	char* base; int len;
 	Segment(char* _base, int _len):

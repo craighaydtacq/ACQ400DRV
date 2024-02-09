@@ -210,7 +210,7 @@ watchdog_PIL: watchdog_PIL.o
 udp_client: udp_client.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lpopt
 	
-acq400_stream: acq400_stream.o
+acq400_stream: acq400_stream.o  hex_char_to_bin.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 
 bb: bb.o tcp_server.o
