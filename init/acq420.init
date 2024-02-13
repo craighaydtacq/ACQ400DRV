@@ -1050,7 +1050,7 @@ load_mgt_mtca() {
           awk -F _ '{ for (ii=1; ii<=NF; ++ii) if($ii ~ /93[0-9][0-9]/) print $ii; }')
     if [ ! -z $C93 ]; then
         echo "MTCA COMMS module $C93 detected"
-        /usr/local/CARE/load.overlay acq2x06_enable_mgtC
+        /usr/local/CARE/load.overlay mgtC_overlay
         LOAD_MGT_REQUEST=1
     fi
 }
