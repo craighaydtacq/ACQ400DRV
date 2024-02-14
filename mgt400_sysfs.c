@@ -974,6 +974,7 @@ MAKE_BITS(tx_ctrl, 	HUDP_CON, MAKE_BITS_FROM_MASK, 0x0000000f);
 MAKE_BITS(rx_en,        HUDP_CON, MAKE_BITS_FROM_MASK, (1<<(4+8)));
 MAKE_BITS(rx_reset, 	HUDP_CON, MAKE_BITS_FROM_MASK, (1<<(3+8)));
 
+MAKE_BITS(arp_request,  HUDP_CON, MAKE_BITS_FROM_MASK, (1<<8));
 MAKE_BITS(udp_data_src, HUDP_CON, MAKE_BITS_FROM_MASK, (1<<5));
 MAKE_BITS(tx_en,        HUDP_CON, MAKE_BITS_FROM_MASK, (1<<4));
 MAKE_BITS(tx_reset, 	HUDP_CON, MAKE_BITS_FROM_MASK, (1<<3));
@@ -1031,6 +1032,7 @@ static const struct attribute *sysfs_hudp_attrs[] = {
 	&dev_attr_tx_en.attr,
 	&dev_attr_rx_en.attr,
 	&dev_attr_tx_ctrl.attr,
+	&dev_attr_arp_request.attr,
 	&dev_attr_udp_data_src.attr,
 
 	&dev_attr_tx_pkt_count.attr,
