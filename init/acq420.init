@@ -764,7 +764,7 @@ build_knobs() {
     if [ "x${ACQ480_SITES}" != "x" ]; then      
         case $MODEL in
         acq1102)
-            echo "ACQ1001 + ACQ480 : OK";;
+            echo "ACQ1102 + ACQ480 : OK";;
         acq1*)
             bs=$(get_bus_speed)
             if [ "$bs" = "111" ]; then
