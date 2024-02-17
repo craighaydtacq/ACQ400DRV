@@ -125,6 +125,9 @@ struct poptOption opt_table[] = {
 	{ "offset", 'o', POPT_ARG_INT, &G::offset, 0,
 			"offset in buffer (for multi-site ops)"
 	},
+	{ "pblen", 'P', POPT_ARG_INT, &G::play_bufferlen, 0,
+			"custom play bufferlen to force load by buffer"
+	},
 	{ "mode",  'm', POPT_ARG_INT, &G::mode, 0,
 			"play mode 0: continuous, 1:oneshot 2:oneshot_rearm"
 	},
@@ -244,7 +247,6 @@ int _load_pad(int nsamples)
 	}
 
 	if (padsam){
-
 		MARK;
 		nsamples = pad(nsamples, padsam);
 	}
@@ -385,12 +387,18 @@ int _load_by_buffer() {
 						G::sample_size, spb, G::fp_in);
 		if (nread > 0){
 			nsamples += nread;
+
+			if (buf == 0 && nread < G::sample_size*spb){
+				fprintf(stderr, "single buffer no pad %d\n", nsamples);
+				return nsamples; 		// NO PAD, PING only
+			}
 		}else{
 			if (ferror(G::fp_in)){
 				syslog(LOG_DEBUG, "bb fread ERROR exit");
 				exit(1);
 			}
-			fprintf(stderr, "load_pad buffers:%u nsamples:%u\n", buf+1, nsamples);
+			/* actual buffer count: buf, because this buffer has NO data, we actually loaded 0..(oldbuf-1).. buf=++buf from for() */
+			fprintf(stderr, "load_pad buffers:%u nsamples:%u\n", buf, nsamples);
 			return _load_pad(nsamples);
 		}
 	}
@@ -401,6 +409,7 @@ int _load_by_buffer() {
 
 int fill() {
 	int nsamples;
+
 	if (G::play_bufferlen != Buffer::bufferlen){
 		fprintf(stderr, "LOAD_BY_BUFFER: NEW\n");
 		syslog(LOG_DEBUG, "LOAD_BY_BUFFER: NEW\n");
