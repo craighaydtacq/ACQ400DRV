@@ -379,7 +379,7 @@ int _load() {
 }
 
 int _load_by_buffer() {
-	int spb = G::play_bufferlen/G::sample_size;
+	unsigned spb = G::play_bufferlen/G::sample_size;
 	unsigned nsamples = 0;
 	unsigned buf;
 	for (buf = 0; buf < Buffer::nbuffers; ++buf){
@@ -387,16 +387,16 @@ int _load_by_buffer() {
 						G::sample_size, spb, G::fp_in);
 		if (nread > 0){
 			nsamples += nread;
-
-			if (buf == 0 && nread < G::sample_size*spb){
-				fprintf(stderr, "single buffer no pad %d\n", nsamples);
+		}else{
+			if (buf == 1 && nread < spb){
+				fprintf(stderr, "single buffer no pad %d < %d\n", nsamples, spb);
 				return nsamples; 		// NO PAD, PING only
 			}
-		}else{
 			if (ferror(G::fp_in)){
 				syslog(LOG_DEBUG, "bb fread ERROR exit");
 				exit(1);
 			}
+
 			/* actual buffer count: buf, because this buffer has NO data, we actually loaded 0..(oldbuf-1).. buf=++buf from for() */
 			fprintf(stderr, "load_pad buffers:%u nsamples:%u\n", buf, nsamples);
 			return _load_pad(nsamples);
@@ -411,6 +411,11 @@ int fill() {
 	int nsamples;
 
 	if (G::play_bufferlen != Buffer::bufferlen){
+		if (G::play_bufferlen == 0){
+			G::play_bufferlen = Buffer::bufferlen;
+		}else{
+			Buffer::bufferlen = G::play_bufferlen;
+		}
 		fprintf(stderr, "LOAD_BY_BUFFER: NEW\n");
 		syslog(LOG_DEBUG, "LOAD_BY_BUFFER: NEW\n");
 		nsamples = _load_by_buffer();
@@ -549,13 +554,11 @@ RUN_MODE ui(int argc, const char** argv)
 	const char* mode = poptGetArg(opt_context);
 	RUN_MODE rm = M_NONE;
 
-	fprintf(stderr, "%s: bl:%d\n", __FUNCTION__, Buffer::bufferlen);
+	fprintf(stderr, "%s: bl:%d play:%d\n", __FUNCTION__, Buffer::bufferlen, G::play_bufferlen);
 
 	if (G::play_bufferlen > Buffer::bufferlen){
 		fprintf(stderr, "ERROR play %d > buffer %d\n", G::play_bufferlen, Buffer::bufferlen);
 		exit(1);
-	}else if (G::play_bufferlen == 0){
-		G::play_bufferlen = Buffer::bufferlen;
 	}
 
 	if (mode != 0){

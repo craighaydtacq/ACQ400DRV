@@ -241,8 +241,7 @@ int xo_data_loop(void *data)
 
 		DMA_ASYNC_ISSUE_PENDING(adev->dma_chan[1]);
 	}else{
-		dev_warn(DEVP(adev), "Single buffer won't work");
-		DMA_ASYNC_PUSH(adev->dma_cookies[0], adev, 0, hbm0[IB], STEV);
+		DMA_ASYNC_PUSH(adev->dma_cookies[0], adev, 0, hbm0[IB+0], STEV);
 		IBINCR;
 	}
 

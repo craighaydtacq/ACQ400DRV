@@ -19,6 +19,7 @@
 
 
 #include <linux/ctype.h>
+#include <linux/sched/signal.h>
 
 #include "acq400.h"
 #include "hbm.h"
@@ -2360,22 +2361,33 @@ static ssize_t store_soft_trigger(
 {
 	struct acq400_dev *adev = acq400_devices[dev->id];
 	unsigned mod_con = acq400rd32(adev, MOD_CON);
-	unsigned ntriggers;
+	int ntriggers;            /* -1 == infinity */
+	int rate_limit_hz = 0;
+	int msleep_ms = 0;
 
-	if (sscanf(buf, "%u", &ntriggers) == 1){
+	if (sscanf(buf, "%d %d", &ntriggers, &rate_limit_hz) >= 1){
 		if (ntriggers > MAXTRIG){
 			ntriggers = MAXTRIG;
 		}
+		if (rate_limit_hz){
+			if (rate_limit_hz > 1000) rate_limit_hz = 1000;
+			msleep_ms = 1000/rate_limit_hz;
+		}
+
 		acq400wr32(adev, MOD_CON, mod_con & ~MCR_SOFT_TRIG);
 
-		while(ntriggers--){
+		while((ntriggers==-1 || ntriggers--) && !signal_pending(current)){
 			acq400wr32(adev, MOD_CON, mod_con | MCR_SOFT_TRIG);
 			soft_trigger_count++;
 			if (soft_trigger_udelay){
 				udelay(soft_trigger_udelay);
 			}
 			acq400wr32(adev, MOD_CON, mod_con & ~MCR_SOFT_TRIG);
-			usleep_range(5, 20);
+			if (msleep_ms == 0){
+				usleep_range(5, 20);
+			}else{
+				msleep(msleep_ms);
+			}
 		}
 
 		return count;
