@@ -16,6 +16,11 @@ int dma_ns_num = DMA_NS_MAX;
 module_param_array(dma_ns, int, &dma_ns_num, 0444);
 module_param_array(dma_ns_lines, int, &dma_ns_num, 0444);
 
+/* @@todo: too global, should be per adev */
+int toggle_soft_trigger_on_dmadone;
+module_param(toggle_soft_trigger_on_dmadone, int, 0644);
+MODULE_PARM_DESC(toggle_soft_trigger_on_dmadone, "optional trigger source from DMA DONE 0:off 1:full rate 2:half rate, 4:quarter rate");
+
 #if 0
 #define DMA_NS_INIT \
 	do { 					\
@@ -52,6 +57,20 @@ void acq400_dma_callback(void *param)
 	struct acq400_dev* adev = (struct acq400_dev*)param;
 	adev->dma_callback_done++;
 	wake_up_interruptible(&adev->DMA_READY);
+	switch(toggle_soft_trigger_on_dmadone){
+	case 0:
+		break;
+	case 1:
+		acq400_soft_trigger(1);
+		acq400_soft_trigger(0);
+		break;
+	default:
+		{	/* @@todo .. this won't work because dma_callback_done gets knocked back by the client */
+			int bit = 1 << (toggle_soft_trigger_on_dmadone-2);  // 2: 1<<0, 4: 1<<1
+			acq400_soft_trigger(adev->dma_callback_done&bit);
+		}
+		break;
+	}
 }
 
 
