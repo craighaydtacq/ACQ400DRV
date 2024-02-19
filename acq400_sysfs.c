@@ -2331,13 +2331,8 @@ MODCON_KNOB(celf_power_en, ACQ1001_MCR_CELF_PSU_EN);
 MODCON_KNOB(counter_latch, MCR_COUNTER_LATCH);
 
 
-/* not really a getter .. original script would exec one soft trigger, so do the same */
-static ssize_t show_soft_trigger(
-	struct device * dev,
-	struct device_attribute *attr,
-	char * buf)
+static void pulse_soft_trigger(struct acq400_dev *adev)
 {
-	struct acq400_dev *adev = acq400_devices[dev->id];
 	u32 mod_con = acq400rd32(adev, MOD_CON);
 
 	acq400wr32(adev, MOD_CON, mod_con & ~MCR_SOFT_TRIG);
@@ -2346,7 +2341,69 @@ static ssize_t show_soft_trigger(
 		udelay(soft_trigger_udelay);
 	}
 	acq400wr32(adev, MOD_CON, mod_con & ~MCR_SOFT_TRIG);
+	++soft_trigger_count;
+}
 
+enum hrtimer_restart  pulse_soft_trigger_callback(struct hrtimer* hrt)
+{
+	struct SoftTriggerTimer* stt =
+			container_of(hrt, struct SoftTriggerTimer, timer);
+	struct acq400_sc_dev* sc_dev =
+			container_of(stt, struct acq400_sc_dev, stt);
+	struct acq400_dev *adev = &sc_dev->adev;
+
+	if (stt->repeat_count==SoftTriggerTimerRepeatInfinity ||
+			(stt->repeat_count && --stt->repeat_count != 0)){  // undercounts by 1 (X)
+		pulse_soft_trigger(adev);
+		hrtimer_forward_now(hrt, stt->period);
+	/* @@todo warning: probably not valid if pulse_soft_trigger() takes time
+	 *  .. best no pulse stretch, or we have to defer process.
+	 */
+		return HRTIMER_RESTART;
+	}else{
+		return HRTIMER_NORESTART;
+	}
+}
+
+static void init_soft_trigger_timer(struct acq400_dev* adev, int ntriggers, int rate_limit_hz)
+{
+	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
+	struct SoftTriggerTimer* stt = &sc_dev->stt;
+
+	dev_dbg(DEVP(adev), "%s ntriggers:%d rate:%d init:%d repeat:%d",
+			__FUNCTION__, ntriggers, rate_limit_hz, stt->timer_init, stt->repeat_count);
+
+	if (stt->timer_init){
+			hrtimer_cancel(&stt->timer);
+			stt->timer_init = 0;
+	}
+	if (ntriggers != 0){
+		int interval_usec = 1000000/rate_limit_hz;
+
+		if (soft_trigger_udelay > interval_usec/2){
+			dev_warn(DEVP(adev),
+				"WARNING: trigger interval usec %d too short for soft_trigger_udelay %d shorten to %d",
+				interval_usec, soft_trigger_udelay, interval_usec/2);
+			soft_trigger_udelay = interval_usec/2;
+		}
+
+		hrtimer_init(&stt->timer, CLOCK_REALTIME, HRTIMER_MODE_REL);
+		stt->timer.function = pulse_soft_trigger_callback;
+		stt->timer_init = 1;
+		stt->period = ktime_set(0, interval_usec*1000);
+		stt->repeat_count = ntriggers;
+		hrtimer_start(&stt->timer, stt->period, HRTIMER_MODE_REL);
+	}
+}
+
+/* not really a getter .. original script would exec one soft trigger, so do the same */
+static ssize_t show_soft_trigger(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	pulse_soft_trigger(adev);
 
 	return sprintf(buf, "1\n");
 }
@@ -2360,36 +2417,22 @@ static ssize_t store_soft_trigger(
 	size_t count)
 {
 	struct acq400_dev *adev = acq400_devices[dev->id];
-	unsigned mod_con = acq400rd32(adev, MOD_CON);
 	int ntriggers;            /* -1 == infinity */
 	int rate_limit_hz = 0;
-	int msleep_ms = 0;
 
 	if (sscanf(buf, "%d %d", &ntriggers, &rate_limit_hz) >= 1){
-		if (ntriggers > MAXTRIG){
-			ntriggers = MAXTRIG;
-		}
-		if (rate_limit_hz){
-			if (rate_limit_hz > 1000) rate_limit_hz = 1000;
-			msleep_ms = 1000/rate_limit_hz;
-		}
-
-		acq400wr32(adev, MOD_CON, mod_con & ~MCR_SOFT_TRIG);
-
-		while((ntriggers==-1 || ntriggers--) && !signal_pending(current)){
-			acq400wr32(adev, MOD_CON, mod_con | MCR_SOFT_TRIG);
-			soft_trigger_count++;
-			if (soft_trigger_udelay){
-				udelay(soft_trigger_udelay);
+		if (ntriggers == 1){
+			pulse_soft_trigger(adev);
+		}else{
+			if (ntriggers > 1){
+				pulse_soft_trigger(adev);  // > 1 ? see (X)
 			}
-			acq400wr32(adev, MOD_CON, mod_con & ~MCR_SOFT_TRIG);
-			if (msleep_ms == 0){
-				usleep_range(5, 20);
-			}else{
-				msleep(msleep_ms);
+			if (ntriggers){
+				rate_limit_hz = min(rate_limit_hz, 1000);
+				rate_limit_hz = max(1, rate_limit_hz);
 			}
+			init_soft_trigger_timer(adev, ntriggers, rate_limit_hz);
 		}
-
 		return count;
 	}else{
 		return -1;

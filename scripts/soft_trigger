@@ -1,5 +1,5 @@
 #!/bin/sh
 logger -t soft_trigger "trigger start"
-echo ${1:-1} > /dev/acq400.0.knobs/soft_trigger
+echo ${*:-1} > /dev/acq400.0.knobs/soft_trigger
 
 

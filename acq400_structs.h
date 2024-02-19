@@ -348,6 +348,9 @@ struct GPG_buffer {
 	unsigned gpg_used_bits;
 	unsigned gpg_final_state;
 };
+
+#define SoftTriggerTimerRepeatInfinity -1
+
 struct acq400_sc_dev {
 	char id[16];
 	char status_message[MAX_RT_STATUS_MESSAGE];
@@ -400,6 +403,13 @@ struct acq400_sc_dev {
 		struct task_struct* w_task;
 		int task_active;
 	} rtm12;
+
+	struct SoftTriggerTimer {
+		struct hrtimer timer;
+		int timer_init;
+		ktime_t period;
+		int repeat_count;
+	} stt;
 };
 
 enum {	WR_TIGA_S1, WR_TIGA_S2, WR_TIGA_S3, WR_TIGA_S4, WR_TIGA_S5, WR_TIGA_S6 };
