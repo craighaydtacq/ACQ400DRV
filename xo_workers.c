@@ -68,20 +68,22 @@ void _dma_async_issue_pending(struct acq400_dev *adev, struct dma_chan *chan, in
 	++adev->stats.xo.dma_buffers_out;
 }
 
-#define XO_MAX_POLL 1000
+#define XO_MAX_POLL 2000
 
 int waitXoFifoEmpty(struct acq400_dev *adev)
 {
 	struct XO_dev* xo_dev = container_of(adev, struct XO_dev, adev);
 	int pollcat = 0;
 	int s1, s0 = 0;
-	while ((s1 = xo_dev->xo.getFifoSamples(adev)) > 0){
-		msleep(2);
-		if (s1 == s0 || ++pollcat > XO_MAX_POLL){
+	int nochange_count = 0;
+
+	for (; (s1 = xo_dev->xo.getFifoSamples(adev)) > 0; s0 = s1){
+		nochange_count = s1 == s0? (nochange_count+1): 0;
+		if (nochange_count > XO_MAX_POLL/4 || ++pollcat > XO_MAX_POLL){
 			dev_err(DEVP(adev), "TIMEOUT waiting for XO FIFO EMPTY");
 			return -1;
 		}
-		s0 = s1;
+		msleep(1);
 	}
 	dev_dbg(DEVP(adev), "waitXoFifoEmpty() DAC_SAMPLE_CTR 0x%08x",
 					acq400rd32(adev, DAC_SAMPLE_CTR));
@@ -97,7 +99,7 @@ void _waitOtherSiteStop(struct acq400_dev *adev, int site)
 			dev_warn(DEVP(adev), "_waitOtherSiteStop() external ABORT");
 			break;
 		}else{
-			msleep(10);
+			msleep(1);
 		}
 	}
 
