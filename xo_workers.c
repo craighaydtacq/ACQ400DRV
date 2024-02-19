@@ -68,7 +68,7 @@ void _dma_async_issue_pending(struct acq400_dev *adev, struct dma_chan *chan, in
 	++adev->stats.xo.dma_buffers_out;
 }
 
-#define XO_MAX_POLL 100
+#define XO_MAX_POLL 1000
 
 int waitXoFifoEmpty(struct acq400_dev *adev)
 {
@@ -76,7 +76,7 @@ int waitXoFifoEmpty(struct acq400_dev *adev)
 	int pollcat = 0;
 	int s1, s0 = 0;
 	while ((s1 = xo_dev->xo.getFifoSamples(adev)) > 0){
-		msleep(20);
+		msleep(2);
 		if (s1 == s0 || ++pollcat > XO_MAX_POLL){
 			dev_err(DEVP(adev), "TIMEOUT waiting for XO FIFO EMPTY");
 			return -1;
