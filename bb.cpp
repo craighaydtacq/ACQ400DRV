@@ -557,8 +557,8 @@ RUN_MODE ui(int argc, const char** argv)
 	fprintf(stderr, "%s: bl:%d play:%d\n", __FUNCTION__, Buffer::bufferlen, G::play_bufferlen);
 
 	if (G::play_bufferlen > Buffer::bufferlen){
-		fprintf(stderr, "ERROR play %d > buffer %d\n", G::play_bufferlen, Buffer::bufferlen);
-		exit(1);
+		fprintf(stderr, "Warning play %d > buffer %d, set equal\n", G::play_bufferlen, Buffer::bufferlen);
+		G::play_bufferlen = Buffer::bufferlen;
 	}
 
 	if (mode != 0){
