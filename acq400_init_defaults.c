@@ -469,7 +469,7 @@ static void dio_5ch_init_defaults(struct acq400_dev *adev)
 	if (IS_DIO_5CH_HS_CNTR(adev)){
 		dev_info(DEVP(adev), "%s IS_DIO_5CH_HS_CNTR()", __FUNCTION__);
 		adev->word_size = dio482_cntr_shorts? 2: 4;
-		adev->nchan_enabled = 8;		   // 5 are real, 8 to round up
+		adev->nchan_enabled = 5;
 		adev->data32 = dio482_cntr_shorts? 0: 1;
 		acq400wr32(adev, DIO482_DI_DWELL, 500);   // 10Khz update with 50MHz CLK ??
 	}
