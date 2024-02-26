@@ -74,3 +74,6 @@ set.sys $S0KB/data_engine_0 aggregator=1
 set.sys $S0KB/aggregator 	threshold=${threshold} sites=${sitelist%*,14}
 set.sys $S0KB/decimate 		$DECIM
 set.sys $ETC0/run0_ready    1
+
+echo $0 $* ssb=$SSB > /var/log/run0.log
+
