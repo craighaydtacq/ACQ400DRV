@@ -631,7 +631,7 @@ build_site0() {
         $ULB/run0 $ULB/play0 $ULB/get.xdt \
         $ULB/streamtonowhered $ULB/set.sync_role \
 	$ULB/datals ${ULB}/cstate $ULB/channel_mapping ${ek}
-    ln -s /var/log/run.log ${ek}/run0_log
+    ln -s /var/log/run0.log ${ek}/run0_log
 
     ln -s $ULB/set.site ${ek}/SS
 
