@@ -37,14 +37,17 @@ proc link_gpio {lnames outputs root gpio1 ngpio} {
 	}
 }
 
+set I2C_CHAN_OFFSET 1
+
 proc get_gpio12 {site addr} {
-	set bus [expr $site + 1]
+        global I2C_CHAN_OFFSET
+	set bus [expr $site + $I2C_CHAN_OFFSET]
 	set baddr "$bus-00$addr"
 	set gpath "/sys/bus/i2c/devices/$baddr/gpio/gpiochip"
 	set gpiochip [glob "$gpath*"]
 	set pin1 [string range $gpiochip \
 			[string length $gpath] [string length $gpiochip]]
-	#	puts "get_gpio1 returning $pin1"
+	puts "get_gpio1 bus:$bus baddr:$baddr returning $pin1"
 	set ngpio [exec cat $gpiochip/ngpio]
 	return [list $pin1 $ngpio]
 }
@@ -172,6 +175,9 @@ if { $::argc > 0 } {
 	} else {
 		set ACQ480_MODPARAMS ""
 	}
+	set RE {i2c_chan_offset=([0-9])}
+	regexp $RE $ACQ480_MODPARAMS _all I2C_CHAN_OFFSET
+
 	exec /sbin/insmod  /usr/local/lib/modules/acq480.ko $ACQ480_MODPARAMS acq480_sites=$SITES
 	
 	if {$use_gpio} {

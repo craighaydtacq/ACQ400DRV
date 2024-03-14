@@ -782,7 +782,8 @@ build_knobs() {
         kmcuz30)
             echo "KMCUZ30 + ACQ480 : EXPERIMENTAL";;
         z7io)
-            echo "Z7IO + ACQ480 : EXPERIMENTAL";;
+                export ACQ480_MODPARAMS=i2c_chan_offset=2;
+                echo "Z7IO + ACQ480 : set i2c_chan_offset=2";;
         *)
             echo "ERROR: ACQ480 found, but not compatible with BASE $MODEL"
             exit 1;;
@@ -800,11 +801,12 @@ build_knobs() {
                 echo $acq48_model | grep -q 481
                 if [ $? -eq 0 ]; then
                     export ACQ480_FIXED_TERM=1
-                    export ACQ480_MODPARAMS="claim_0x20=0 claim_0x22=0"
+                    export ACQ480_MODPARAMS="$ACQ480_MODPARAMS claim_0x20=0 claim_0x22=0"
                     break
                 fi
             fi
         done
+
         $ULB/acq480.init ${ACQ480_SITES}
     else
         case $MODEL in

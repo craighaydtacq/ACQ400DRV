@@ -67,7 +67,10 @@ module_param(claim_0x22, int, 0444);
 static int spi_bus_num = 1;
 module_param(spi_bus_num, int, 0444);
 
-#define I2C_CHAN(site) 	((site)+1)
+static int i2c_chan_offset = 1;
+module_param(i2c_chan_offset, int, 0644);
+
+#define I2C_CHAN(site) 	((site)+i2c_chan_offset)
 #define NGPIO_CHIP	8
 
 #define SPI_BUFFER_LEN	4096	/* 1 page */
