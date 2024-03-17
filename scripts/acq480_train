@@ -27,15 +27,23 @@ report_success() {
 	rm -f $SUB_PID
 }
 
-if [ "$(cat /etc/acq400/0/MODEL)" = "kmcuz30" ]; then
+case $(cat /etc/acq400/0/MODEL) in
+z7io)
+clk_ready() {
+	get.site 0 SIG:CLK_S1:ACTIVE | awk '{ printf "%d\n", $2 }'
+}
+	;;
+kmcuz30)
 clk_ready() {
 	get.site 0 SIG:CLK_EXT:ACTIVE | awk '{ printf "%d\n", $2 }'
 }
-else
+	;;
+*)
 clk_ready() {
 	get.site 0 SIG:CLK_MB:READY | awk '{ print $2 }';
 }
-fi
+	;;
+esac
 
 train() {
 source /dev/acq400.$SITE.knobs/train_states
