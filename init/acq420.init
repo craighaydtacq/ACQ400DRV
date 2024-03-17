@@ -782,8 +782,8 @@ build_knobs() {
         kmcuz30)
             echo "KMCUZ30 + ACQ480 : EXPERIMENTAL";;
         z7io)
-                export ACQ480_MODPARAMS=i2c_chan_offset=2;
-                echo "Z7IO + ACQ480 : set i2c_chan_offset=2";;
+                export ACQ480_MODPARAMS="i2c_chan_offset=2 fix_defective_fsbl=1"
+                echo "Z7IO + ACQ480 : set $ACQ480_MODPARAMS";;
         *)
             echo "ERROR: ACQ480 found, but not compatible with BASE $MODEL"
             exit 1;;

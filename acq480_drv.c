@@ -37,6 +37,8 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 
+#include <linux/regmap.h>
+#include <linux/mfd/syscon.h>
 #include <linux/spi/spi.h>
 
 //#include <linux/i2c/pca953x.h>
@@ -48,7 +50,7 @@
 
 #include "acq480_ioctl.h"
 
-#define REVID 		"1.1.0"
+#define REVID 		"1.2.0"
 #define MODULE_NAME	"acq480"
 
 int acq480_sites[6] = { 0,  };
@@ -69,6 +71,9 @@ module_param(spi_bus_num, int, 0444);
 
 static int i2c_chan_offset = 1;
 module_param(i2c_chan_offset, int, 0644);
+
+static int fix_defective_fsbl = 0;
+module_param(fix_defective_fsbl, int, 0644);
 
 #define I2C_CHAN(site) 	((site)+i2c_chan_offset)
 #define NGPIO_CHIP	8
@@ -106,6 +111,28 @@ struct acq480_dev {
 
 static struct proc_dir_entry *acq480_proc_root;
 static struct acq480_dev* acq480_devs[7];	/* 6 sites index from 1 */
+
+
+#define DCI_CLK_CTRL	0x128
+#define SPI_CLK_CTRL	0x158
+
+static int __init _fix_defective_fsbl(void)
+{
+	struct regmap *syscon;
+	printk("D-TACQ fix_defective_fsbl z7io\n");
+
+	syscon = syscon_regmap_lookup_by_compatible("xlnx,zynq-slcr");
+
+	if (IS_ERR(syscon)) {
+		printk("ERROR: fix_defective_fsbl unable to get syscon\n");
+		return PTR_ERR(syscon);
+	}
+
+	regmap_write(syscon, DCI_CLK_CTRL, 0x00302301);
+	regmap_write(syscon, SPI_CLK_CTRL, 0x00000600);
+
+	return 0;
+}
 
 /* we're ASSUMING that ads5294 doesn't mind access to non-existant regs ..
  * otherwise we have to have a sparse reg table
@@ -479,6 +506,8 @@ static int __init acq480_init(void)
 {
         int status = 0;
 
+
+        if (fix_defective_fsbl) _fix_defective_fsbl();
 
 	printk("D-TACQ ACQ480 Driver %s\n", REVID);
 
