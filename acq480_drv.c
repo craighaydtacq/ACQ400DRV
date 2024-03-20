@@ -119,7 +119,7 @@ static struct acq480_dev* acq480_devs[7];	/* 6 sites index from 1 */
 static int __init _fix_defective_fsbl(void)
 {
 	struct regmap *syscon;
-	printk("D-TACQ fix_defective_fsbl z7io\n");
+	dev_info(0, "D-TACQ fix_defective_fsbl z7io");
 
 	syscon = syscon_regmap_lookup_by_compatible("xlnx,zynq-slcr");
 
@@ -128,8 +128,14 @@ static int __init _fix_defective_fsbl(void)
 		return PTR_ERR(syscon);
 	}
 
-	regmap_write(syscon, DCI_CLK_CTRL, 0x00302301);
-	regmap_write(syscon, SPI_CLK_CTRL, 0x00000600);
+	if (fix_defective_fsbl&2){
+		regmap_write(syscon, DCI_CLK_CTRL, 0x00302301);
+		dev_info(0, "_fix_defective_fsbl %d DCI_CLK_CTRL=0x00302301", fix_defective_fsbl);
+	}
+	if (fix_defective_fsbl&1){
+		regmap_write(syscon, SPI_CLK_CTRL, 0x00000600);
+		dev_info(0, "_fix_defective_fsbl %d SPI_CLK_CTRL=0x00000600", fix_defective_fsbl);
+	}
 
 	return 0;
 }
@@ -506,10 +512,9 @@ static int __init acq480_init(void)
 {
         int status = 0;
 
+        dev_info(0, "D-TACQ ACQ480 Driver %s\n", REVID);
 
         if (fix_defective_fsbl) _fix_defective_fsbl();
-
-	printk("D-TACQ ACQ480 Driver %s\n", REVID);
 
 	platform_driver_register(&acq480_driver);
 	acq480_proc_root = proc_mkdir("driver/acq480", 0);
