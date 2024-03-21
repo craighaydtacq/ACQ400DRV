@@ -16,15 +16,20 @@
 
 bool ISACQ480();
 
+#define IX_SC 	(ISACQ480()? 0: 4)
+#define IX_SCC 	(ISACQ480()? 2: 5)
+
 class AbstractES {
 public:
 	virtual bool isES(unsigned *cursor) = 0;
+
+	const int ix_sc;
+	const int ix_scc;
+	AbstractES() : ix_sc(IX_SC), ix_scc(IX_SCC) {}
+
 	static AbstractES* evX_instance();
 	static AbstractES* ev0_instance();
 	static AbstractES* ev1_instance();
 };
-
-#define IX_SC 	(ISACQ480()? 0: 4)
-#define IX_SCC 	(ISACQ480()? 2: 5)
 
 #endif /* ES_H_ */
