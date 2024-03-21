@@ -24,7 +24,7 @@ public:
 	static AbstractES* ev1_instance();
 };
 
-#define IX_SC 	(ISACQ480()? 1: 4)
-#define IX_SCC 	(ISACQ480()? 1: 5)
+#define IX_SC 	(ISACQ480()? 0: 4)
+#define IX_SCC 	(ISACQ480()? 2: 5)
 
 #endif /* ES_H_ */
