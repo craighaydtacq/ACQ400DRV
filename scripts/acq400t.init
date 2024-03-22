@@ -4,14 +4,11 @@
 
 set LNAMES1 [ list M2 M1 M0 LED_R LED_G CLK0 CLK01 ]
 
-# MTCA_ADAPTER was a once-off tester, fits ACQ2006
-proc isMTCA_ADAPTER {} {
-	if {[file exists /dev/acq400.5.knobs/module_type] != 0 &&
-	    [exec cat 	/dev/acq400.5.knobs/module_type] == {FC} } {
-		return 1
-	} else {
-		return 0
-	}
+proc get_value {knob} {
+	set f [open $knob]
+	set line [gets $f]
+	close $f
+	return $line
 }
 
 proc isKMCU {} {
@@ -58,14 +55,10 @@ proc readfile {filename} {
     return $data
 }
 proc get_bus_offset {} {
-	if {[isMTCA_ADAPTER]} {
-		return 3
-	} elseif {[isZ7IO]} {
-		return 2
-	} else {
-		return 1
-	}
+	return [get_value /etc/sysconfig/i2c_site2bus]
 }
+
+
 proc get_gpio1 {site addr} {
 	set bus [expr $site + [get_bus_offset]]
 	set baddr "$bus-00$addr"
@@ -97,12 +90,7 @@ if { $::argc > 0 } {
 		set SITES "$SITES$site"	
 	} 	
 	
-	set parms acq400t_sites=$SITES	
-	if {[isMTCA_ADAPTER]} {
-		set parms "$parms site2channel=3"
-	} elseif {[isZ7IO]} {
-		set parms "$parms site2channel=2"
-	}
+	set parms "acq400t_sites=$SITES	site2channel=[get_bus_offset]"
 	exec /sbin/insmod  /usr/local/lib/modules/acq400t.ko $parms
 	
 	set hwmonplus 1
