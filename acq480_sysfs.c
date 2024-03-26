@@ -496,7 +496,7 @@ static ssize_t store_ffir_coeff(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 	int coeff;
 
-	if (sscanf(buf, "%d", &coeff) == 1){
+	if ((strstr(buf, "0x") != buf && sscanf(buf, "%d", &coeff) == 1) || sscanf(buf, "%x", &coeff) == 1){
 		acq400wr32(adev, ACQ480_FIRCO_LOAD, coeff);
 		return count;
 	}else{
