@@ -24,6 +24,9 @@ int egu2int(char* results, int cursor, const char* kvp)
 	int nscan = sscanf(vp, "%f%c", &val, &modifier);
 
 	if (nscan >= 1){
+		if (cursor){
+			results[cursor++] = ' ';
+		}
 		if (nscan == 2){
 			switch(modifier){
 			case 'k':
@@ -36,9 +39,9 @@ int egu2int(char* results, int cursor, const char* kvp)
 			}
 		}
 		if (sep){
-			cursor += sprintf(results+cursor, "%s=%d ", key, (int)(val*multiplier));
+			cursor += sprintf(results+cursor, "%s=%d", key, (int)(val*multiplier));
 		}else{
-			cursor += sprintf(results+cursor, "%d ", (int)(val*multiplier));
+			cursor += sprintf(results+cursor, "%d", (int)(val*multiplier));
 		}
 		return cursor;
 	}else{
