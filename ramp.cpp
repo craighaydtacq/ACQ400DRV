@@ -4,10 +4,10 @@
 
 
 template <class T>
-int ramp(int nsam, int step, int ssize)
+int ramp(int nsam, int step, int ssize, T start=0)
 {
 	int nwords = nsam * ssize;
-	T xx = 0;
+	T xx = start;
 	int ch = 0;
 	for (; nwords; nwords--){
 		fwrite(&xx, sizeof(xx), 1, stdout);
@@ -20,11 +20,11 @@ int ramp(int nsam, int step, int ssize)
 }
 
 template <class T>
-int ramp_split(int nsam, int step, int ssize)
+int ramp_split(int nsam, int step, int ssize, T start=0)
 {
 	int nwords = nsam * ssize;
 	int nbits = sizeof(T)*8;
-	T xx = 0;
+	T xx = start;
 	int ch = 0;
 	for (; nwords; nwords--){
 		T yy = 0;
@@ -53,9 +53,17 @@ int main(int argc, char* argv[])
 	int wsize = argc>3?  atoi(argv[3]): 4;
 	int ssize = argc>4?  atoi(argv[4]): 1;
 	int splitbits = 0;
+	unsigned long id = 0;
+	unsigned long long ullid;
+	bool id_set = 0;
+	if (getenv("RAMP_ID")){
+		id = strtoul(getenv("RAMP_ID"), 0, 0);
+		id_set = 1;
+	}
 	if (getenv("SPLITBITS")){
 		splitbits = atoi(getenv("SPLITBITS"));
 	}
+
 
 	if (splitbits == 0){
 		switch(wsize){
@@ -63,6 +71,12 @@ int main(int argc, char* argv[])
 			return ramp<short>(length, step, ssize);
 		case 4:
 			return ramp<int>(length, step, ssize);
+		case 8:
+			if (!id_set){
+				id = 0x6400;
+			}
+			ullid = id; ullid <<= 48;		
+			return ramp<unsigned long long>(length, step, ssize, ullid);
 		default:
 			fprintf(stderr, "ERROR: only size 4 supported\n");
 			return -1;
@@ -73,6 +87,12 @@ int main(int argc, char* argv[])
 			return ramp_split<short>(length, step, ssize);
 		case 4:
 			return ramp_split<int>(length, step, ssize);
+		case 8:
+                       if (!id_set){
+                                id = 0x6400;
+                        }
+                        ullid = id; ullid <<= 48;			
+			return ramp_split<unsigned long long>(length, step, ssize, ullid);
 		default:
 			fprintf(stderr, "ERROR: only size 4 supported\n");
 			return -1;
