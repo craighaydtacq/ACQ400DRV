@@ -1057,6 +1057,40 @@ load_mgt_mtca() {
         LOAD_MGT_REQUEST=1
     fi
 }
+awk '{for(i=1; i<=NF; i++) {if($i=="dog") print $0,i}}' file
+
+load_mgt_acq1102() {
+        WHITE_RABBIT=${WHITE_RABBIT:-0}
+        FPGA=$(grep filename /tmp/fpga_status  | awk '{ print $5 }')
+        echo "load_mgt_acq1102 01 $FPGA"
+        MGTAB="$(acq1102_classify_mgt)"
+        port=A
+        num_hudp=0
+
+        for ptype in $MGTAB; do
+                case $ptype in
+                A|B)
+                        LOAD_MGT_REQUEST=1
+                        echo port: $port AURORA $ptype;;
+                E)
+                        echo port:$port ETHERNET @@todo;;
+                U)
+                        echo port:$port HUDP
+                        num_hudp=$((num_hudp+1))
+                        echo "WARNING: only solo HUDP supported so far"
+                        /usr/local/CARE/load.overlay acq1102_hudp${port}
+                        HAS_HUDP=y;;
+                W)
+                        echo port:$port WR
+                        WHITE_RABBIT=1;;
+                *)
+                        echo port:$port undefined $ptype;;
+                esac
+                port=B
+        done
+        web_append sfp none
+        echo "load_mgt_acq1102 99"
+}
 
 if [ -e /etc/acq400/C/MTYPE ]; then
 # WHITE_RABBIT=-1: disable, if 0 or 1, attempt to use it.
@@ -1104,6 +1138,8 @@ if [ -e /etc/acq400/C/MTYPE ]; then
     fi
 else
     case $MODEL in
+    acq110*)
+       load_mgt_acq1102;;
     kmcu*)
         load_mgt_mtca;;
     z7io*)
