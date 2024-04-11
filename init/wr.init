@@ -5,6 +5,8 @@ export WEB_APPEND_JOB=/tmp/wr-web-append.job
 WRSH=/dev/shm/wr11.sh
 PS=/usr/local/bin/procServ
 
+SITE_WR=11
+
 web_append()
 {
 	if [ ! -e $WEB_APPEND_JOB ]; then
@@ -183,7 +185,14 @@ init_wr_onetime() {
 	
 	nice daemon /usr/local/init/wr.init monitor
 	
-	(cd /etc/acq400; ln -s C 11)
+	(
+	       cd /etc/acq400;
+               if [ -d C ]; then
+	               ln -s C 11
+	       else
+	               mkdir 11
+	       fi
+	)
 	ln -s /usr/local/bin/wr_reset /etc/acq400/11
 	
 	[ -e /etc/acq400/${site}/tai_date ] || echo xxx > /etc/acq400/${site}/tai_date	

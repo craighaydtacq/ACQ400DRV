@@ -1077,7 +1077,9 @@ load_mgt_acq1102() {
                 U)
                         echo port:$port HUDP
                         num_hudp=$((num_hudp+1))
-                        echo "WARNING: only solo HUDP supported so far"
+                        if [ $num_hudp -gt 1 ]; then
+                                echo "WARNING: only solo HUDP supported so far"
+                        fi
                         /usr/local/CARE/load.overlay acq1102_hudp${port}
                         HAS_HUDP=y;;
                 W)
