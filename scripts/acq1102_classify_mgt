@@ -1,0 +1,14 @@
+FPGA=$(grep filename /tmp/fpga_status  | awk '{ print $5 
+}')
+echo $FPGA | awk -F_ '{
+	sfpa='0'
+	sfpb='0'
+	for (ii=2; ii <=NF; ++ii){
+		if (sfpa=='0' && $ii ~ /^[A-Z]$/){
+			sfpa=$ii
+		} else if (sfpb=='0' && $ii ~ /^[A-Z]$/){
+			sfpb=$ii
+		}	
+	}
+	print sfpa" "sfpb
+}'
