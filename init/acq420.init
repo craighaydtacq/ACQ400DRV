@@ -1026,7 +1026,7 @@ echo insmod $MOD bufferlen=$BLEN nbuffers=$NBUF $GS $DRVR_CUSTOM
 sleep .2    
 insmod $MOD bufferlen=$BLEN nbuffers=$NBUF $GS $DRVR_CUSTOM
 
-HAS_HUDP=n
+HUDP_SITES=
 
 LOAD_MGT_REQUEST=0
 
@@ -1057,14 +1057,13 @@ load_mgt_mtca() {
         LOAD_MGT_REQUEST=1
     fi
 }
-awk '{for(i=1; i<=NF; i++) {if($i=="dog") print $0,i}}' file
 
 load_mgt_acq1102() {
         WHITE_RABBIT=${WHITE_RABBIT:-0}
         FPGA=$(grep filename /tmp/fpga_status  | awk '{ print $5 }')
         echo "load_mgt_acq1102 01 $FPGA"
         MGTAB="$(acq1102_classify_mgt)"
-        port=A
+        port=A; site=13
         num_hudp=0
 
         for ptype in $MGTAB; do
@@ -1081,14 +1080,15 @@ load_mgt_acq1102() {
                                 echo "WARNING: only solo HUDP supported so far"
                         fi
                         /usr/local/CARE/load.overlay acq1102_hudp${port}
-                        HAS_HUDP=y;;
+                        LOAD_MGT_REQUEST=1
+                        HUDP_SITES="$HUDP_SITES $site";;
                 W)
                         echo port:$port WR
                         WHITE_RABBIT=1;;
                 *)
                         echo port:$port undefined $ptype;;
                 esac
-                port=B
+                port=B; site=12
         done
         web_append sfp none
         echo "load_mgt_acq1102 99"
@@ -1109,7 +1109,7 @@ if [ -e /etc/acq400/C/MTYPE ]; then
         grep -q UDP /tmp/fpga_status
         if [ $? -eq 0 ]; then
             ${ULC}/load.acq2106_hudp
-            HAS_HUDP=y
+            HUDP_SITES=10
         fi
         cmt=$(cat /etc/acq400/C/MTYPE)
         case $cmt in
@@ -1251,7 +1251,9 @@ if [ "x${ACQ480_SITES}" != "x" ]; then
     echo 1 > /etc/acq400/0/acq480_force_training
 fi
 
-[ "$HAS_HUDP" = "y" ] && /usr/local/init/hudp.init
+if [ ! -z $HUDP_SITES ]; for site in $HUDP_SITES; do
+        SITE=$site /usr/local/init/hudp.init
+done
 
 if [ "x${BOLO8_SITES}" != "x" ]; then
     echo +++ Enable Bolo AFTER Analog power up..

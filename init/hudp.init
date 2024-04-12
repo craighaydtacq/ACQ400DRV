@@ -1,8 +1,11 @@
 #!/bin/sh
 
-export WEB_APPEND_JOB=/tmp/hudp-web-append.job
 
-HK=/dev/acq400.10.knobs
+
+export SITE=${SITE:-10}
+export WEB_APPEND_JOB=/tmp/hudp-web-append_$SITE.job
+
+HK=/dev/acq400.$SITE.knobs
 
 cCrR() {
 cat - <<EOF
