@@ -665,7 +665,7 @@ void acq2006_createDebugfs(struct acq400_dev* adev)
 			DBG_REG_CREATE_NAME_NC(name, XO_SPADN(ii));
 		}
 	}
-	if (IS_ACQ2X06SC(adev) && IS_ACQ2106_WR(adev)){
+	if ((IS_ACQ1102SC(adev)||IS_ACQ2X06SC(adev)) && IS_ACQ2106_WR(adev)){
 		DBG_REG_CREATE(WR_CTRL);
 		DBG_REG_CREATE(WR_CLK_GEN);
 		DBG_REG_CREATE(WR_TAI_CUR_L);
