@@ -6,7 +6,11 @@ log_engine() {
 
 }
 log_engine
-TRG=$(get.site 1 trg | awk '{ print $1 }')
+
+agg_site() {
+	get.site 0 run0_log | awk '{ print $2 }' | awk -F, '{print $1 }'
+}
+TRG=$(get.site $(agg_site) trg | awk '{ print $1 }')
 if [ "$TRG" = "trg=1,1,1" ]; then
 	if [ -e /dev/shm/transient_settings ]; then
 		source /dev/shm/transient_settings
