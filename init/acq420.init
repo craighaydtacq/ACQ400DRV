@@ -424,6 +424,36 @@ build_knobs_ao420() {
         fi
         CLKDIV=250
 }
+
+build_knobs_bolo8_device() {
+        site=$1; mtype=$2 dk=$3 ek=$4
+
+        [ "x$BOLO8_SITES" != "x" ] && BOLO8_SITES="${BOLO8_SITES},"
+        BOLO8_SITES="${BOLO8_SITES}$site"
+        set_max_min_khz ${site} 2000 2000
+        echo "setting BOLO ${site} NCHAN 16 for MAIN/CUR ADC combo sample"
+        echo 16 > ${ek}/active_chan
+        echo 16 > ${ek}/NCHAN
+        CLKDIV=100
+}
+
+build_knobs_acq427_device() {
+        site=$1; mtype=$2 dk=$3 ek=$4
+
+        [ "x$ACQ427_SITES" != "x" ] && ACQ427_SITES="${ACQ427_SITES} "
+        ACQ427_SITES="${ACQ427_SITES}$site"
+        create_gx ${ek}/ 8
+        customize_acq420 $site
+}
+build_knobs_acq425_device() {
+        site=$1; mtype=$2 dk=$3 ek=$4
+
+        [ "x$ACQ425_SITES" != "x" ] && ACQ425_SITES="${ACQ425_SITES} "
+        ACQ425_SITES="${ACQ425_SITES}$site"
+        create_gx ${ek}/ 16
+        customize_acq420 $site
+}
+
 build_knobs_dio_device() {
         site=$1; mtype=$2 dk=$3 ek=$4
 
@@ -520,27 +550,18 @@ build_knobs_device() {
     
     case $mtype in
     ${MOD_ID_ACQ427ELF}|${MOD_ID_ACQ427ELF_2000})
-        [ "x$ACQ427_SITES" != "x" ] && ACQ427_SITES="${ACQ427_SITES} "
-        ACQ427_SITES="${ACQ427_SITES}$site"
-        create_gx ${ek}/ 8
-        customize_acq420 $site;;
+        build_knobs_acq427_device $site $mtype $dk $ek;;
     ${MOD_ID_ACQ425ELF}|${MOD_ID_ACQ425ELF_2000})
-        if [ "x$ACQ425_SITES" != "x" ]; then
-            ACQ425_SITES="${ACQ425_SITES} "
-        fi      
-        ACQ425_SITES="${ACQ425_SITES}$site"
-        create_gx ${ek}/ 16
-        customize_acq420 $site;;
+        build_knobs_acq425_device $site $mtype $dk $ek;;
     6C)
+        echo "MYSTERIOUS SIX-CHARLIE"
         customize_acq420 $site;;
     ${MOD_ID_ACQ420FMC}|${MOD_ID_ACQ420FMC_2000})
         customize_acq420 $site
         set.sys ${dk}/gains 0000
         echo 'gain=gain[1234]' > ${ek}/groups;;
     ${MOD_ID_ACQ400T_ELF}|${MOD_ID_ACQ400T_FMC})
-        if [ "x$ACQ400T_SITES" != "x" ]; then
-            ACQ400T_SITES="${ACQ400T_SITES} "
-        fi
+        [ "x$ACQ400T_SITES" != "x" ] && ACQ400T_SITES="${ACQ400T_SITES} "
         ACQ400T_SITES="${ACQ400T_SITES}$site";;     
     ${MOD_ID_DUMMY})
         return;;
@@ -568,15 +589,7 @@ build_knobs_device() {
         set_max_min_khz ${site} 500 10  
         CLKDIV=500;;
     ${MOD_ID_BOLO8}|${MOD_ID_BOLO8B})
-        if [ "x$BOLO8_SITES" != "x" ]; then
-            BOLO8_SITES="${BOLO8_SITES},"
-        fi
-        set_max_min_khz ${site} 2000 2000
-        echo "setting BOLO ${site} NCHAN 16 for MAIN/CUR ADC combo sample"
-        echo 16 > ${ek}/active_chan
-        echo 16 > ${ek}/NCHAN
-        BOLO8_SITES="${BOLO8_SITES}$site"
-        CLKDIV=100;; 
+        build_knobs_bolo8_device $site $mtype $dk $ek;;
     ${MOD_ID_DIO432FMC}|${MOD_ID_DIO432PMOD}|${MOD_ID_PIG_CELF}|${MOD_ID_DIO482TD}|${MOD_ID_DIO482TD_PG}|${MOD_ID_DIO482FMC})
         build_knobs_dio_device $site $mtype $dk $ek;;
     ${MOD_ID_DI460ELF})
