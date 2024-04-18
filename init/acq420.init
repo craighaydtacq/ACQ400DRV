@@ -380,9 +380,7 @@ init_scaler() {
 }
 
 build_knobs_acq43x() {
-        site=$1; mtype=$2
-        dk=/dev/acq400.${site}.knobs
-        ek=/etc/acq400/${site}
+        site=$1; mtype=$2 dk=$3 ek=$4
 
         case $mtype in
         ${MOD_ID_ACQ435ELF})
@@ -408,9 +406,7 @@ build_knobs_acq43x() {
 }
 
 build_knobs_ao420() {
-        site=$1; mtype=$2
-        dk=/dev/acq400.${site}.knobs
-        ek=/etc/acq400/${site}
+        site=$1; mtype=$2 dk=$3 ek=$4
 
         case $mtype in
         ${MOD_ID_DAC_CELF})
@@ -429,9 +425,7 @@ build_knobs_ao420() {
         CLKDIV=250
 }
 build_knobs_dio_device() {
-        site=$1; mtype=$2
-        dk=/dev/acq400.${site}.knobs
-        ek=/etc/acq400/${site}
+        site=$1; mtype=$2 dk=$3 ek=$4
 
         echo "build_knobs_dio_device $site $mtype"
 
@@ -551,7 +545,7 @@ build_knobs_device() {
     ${MOD_ID_DUMMY})
         return;;
     ${MOD_ID_ACQ435ELF}|${MOD_ID_ACQ430FMC}|${MOD_ID_ACQ437ELF})
-        build_knobs_acq43x $site $mtype;;
+        build_knobs_acq43x $site $mtype $dk $ek;;
     ${MOD_ID_ACQ480FMC})
         # space deliberate
         ln -s ${ULC}/acq480_map[48]  ${ek}
@@ -568,7 +562,7 @@ build_knobs_device() {
         make_acq494_spi_fields $ek
         ACQ494_SITES="${ACQ494_SITES} ${site}";; 
     ${MOD_ID_AO420FMC}|${MOD_ID_AO420FMC_CS2}|${MOD_ID_DAC_CELF})
-        build_knobs_ao420 $site $mtype;;
+        build_knobs_ao420 $site $mtype $dk $ek;;
     ${MOD_ID_AO424ELF})
         ao424_init ${site}
         set_max_min_khz ${site} 500 10  
@@ -584,7 +578,7 @@ build_knobs_device() {
         BOLO8_SITES="${BOLO8_SITES}$site"
         CLKDIV=100;; 
     ${MOD_ID_DIO432FMC}|${MOD_ID_DIO432PMOD}|${MOD_ID_PIG_CELF}|${MOD_ID_DIO482TD}|${MOD_ID_DIO482TD_PG}|${MOD_ID_DIO482FMC})
-        build_knobs_dio_device $site $mtype;;
+        build_knobs_dio_device $site $mtype $dk $ek;;
     ${MOD_ID_DI460ELF})
 	mv=$(cat ${dk}/module_variant)
 	[ "x$mv" = "x21" ] && init_scaler $ek $site $mv 12
