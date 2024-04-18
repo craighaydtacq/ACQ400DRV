@@ -379,11 +379,127 @@ init_scaler() {
 	done
 }
 
+build_knobs_acq43x() {
+        site=$1; mtype=$2
+        dk=/dev/acq400.${site}.knobs
+        ek=/etc/acq400/${site}
+
+        case $mtype in
+        ${MOD_ID_ACQ435ELF})
+                source  /dev/sites/${site}/details
+                eval $(echo $FRU_PART_NUM|awk '{print $2}')
+                case $N in
+                         8) echo A > ${dk}/bank_mask;;
+                        16) echo AB > ${dk}/bank_mask;;
+                        24) echo ABC > ${dk}/bank_mask;;
+                esac;;
+        ${MOD_ID_ACQ437ELF})
+            create_gx ${ek}/ 16
+            if [ "x$ACQ437_SITES" != "x" ]; then
+                ACQ437_SITES="${ACQ437_SITES} "
+            fi
+            ACQ437_SITES="${ACQ437_SITES}$site";;
+        esac
+        echo WORKAROUND: clear FIFERR
+        echo 0 >${MODP}/FIFERR
+        echo 4 >${ek}/SAMPLE_SIZE
+        set_max_min_khz ${site} 128 4
+        CLKDIV=8
+}
+
+build_knobs_ao420() {
+        site=$1; mtype=$2
+        dk=/dev/acq400.${site}.knobs
+        ek=/etc/acq400/${site}
+
+        case $mtype in
+        ${MOD_ID_DAC_CELF})
+            set_max_min_khz ${site} 250 10;;
+        ${MOD_ID_AO420FMC})
+            [ "x$AO420_SITES" != "x" ] && AO420_SITES="${AO420_SITES} "
+            AO420_SITES="${AO420_SITES}$site"
+            set_max_min_khz ${site} 1000 10;;
+        *)
+            set_max_min_khz ${site} 1000 10;;
+        esac
+        echo "ao420_init ${site}" >>/tmp/acq420.init-postpowerup-action
+        if [ -e ${ek}/dac_mux_master ]; then
+                ln -s $ULB/muxpattern ${ek}/
+        fi
+        CLKDIV=250
+}
+build_knobs_dio_device() {
+        site=$1; mtype=$2
+        dk=/dev/acq400.${site}.knobs
+        ek=/etc/acq400/${site}
+
+        echo "build_knobs_dio_device $site $mtype"
+
+        case $mtype in
+        ${MOD_ID_DIO482TD})
+                ;;
+        ${MOD_ID_DIO482TD_PG})
+                num_pg=4;
+                if [ ! -z $DIO482TD_PG5 ] && [ "$DIO482TD_PG5" != "no" ]; then
+                        num_pg=5;
+                elif [ -e /mnt/local/sysconfig/epics.sh ]; then
+                        source /mnt/local/sysconfig/epics.sh
+                        if [ ! -z $DIO482TD_PG5 ] && [ "$DIO482TD_PG5" != "no" ]; then
+                                echo "DIO482TD_PG5 in /mnt/local/sysconfig/epics.sh deprecated, please move to /mnt/local/sysconfig/acq400.sh"
+                                num_pg=5
+                        fi
+                fi
+                echo $num_pg >${ek}/num_pg;;
+        ${MOD_ID_DIO482FMC})
+                source  /dev/sites/${site}/details
+                mv=$(cat ${dk}/module_variant)
+                case $mv in
+                F)
+                        if [ "$FRU_PART_NUM" != "${FRU_PART_NUM#*FBR}" ]; then
+                                echo "FBR part detected in site ${site}: $FRU_PART_NUM"
+                                echo 1 > ${dk}/active_low
+                                num_pg=16
+                        else
+                                num_pg=32
+                        fi
+                        echo $num_pg >${ek}/num_pg;;
+                20|21)
+                        nc=32
+                        [ $mv -eq 21 ] && nc=16
+
+                        init_scaler $ek $site $mv $nc;;
+                *)
+                        ln -s $ULB/clocks_to_first_edge ${ek}/
+                        set_max_min_khz ${site} 25000 10;;
+                esac;;
+        *)
+                ln -s $ULB/clocks_to_first_edge ${ek}/
+                set_max_min_khz ${site} 1000 10;;
+        esac
+        if [ ! -z $DIO_ACTIVE_LOW_SITES ]; then
+                echo $DIO_ACTIVE_LOW_SITES | grep -q $site
+                if [ $? -eq 0 ]; then
+                        echo +++ setting active_low
+                        echo 1 > ${dk}/active_low
+                fi
+        fi
+        if [ ! -z $DIO_WDT ]; then
+                echo $DIO_WDT > ${dk}/wdt
+        fi
+        echo +++ setting dio_en
+        echo 1 > ${dk}/dio_en
+        if [ -e ${ek}/num_pg ]; then
+                echo +++ setting PG outputs num_pg $num_pg
+                echo 1,1,1,1 > ${dk}/byte_is_output
+        fi
+}
+
+
 build_knobs_device() {
     dir=$1
     site=$(cat $dir/site)
     dk=/dev/acq400.${site}.knobs
-    ek=/etc/acq400.${site}
+    ek=/etc/acq400/${site}
     ln -s $dir/ ${dk}
     build_etc_site ${site}
     
@@ -435,27 +551,7 @@ build_knobs_device() {
     ${MOD_ID_DUMMY})
         return;;
     ${MOD_ID_ACQ435ELF}|${MOD_ID_ACQ430FMC}|${MOD_ID_ACQ437ELF})
-        case $mtype in
-        ${MOD_ID_ACQ435ELF})
-		source  /dev/sites/${site}/details
-        	eval $(echo $FRU_PART_NUM|awk '{print $2}')
-        	case $N in
-			 8) echo A > ${dk}/bank_mask;;
-			16) echo AB > ${dk}/bank_mask;;
-			24) echo ABC > ${dk}/bank_mask;;
-        	esac;;
-        ${MOD_ID_ACQ437ELF})
-            create_gx ${ek}/ 16
-            if [ "x$ACQ437_SITES" != "x" ]; then
-                ACQ437_SITES="${ACQ437_SITES} "
-            fi      
-            ACQ437_SITES="${ACQ437_SITES}$site";;
-        esac
-        echo WORKAROUND: clear FIFERR
-        echo 0 >${MODP}/FIFERR
-        echo 4 >${ek}/SAMPLE_SIZE
-        set_max_min_khz ${site} 128 4
-        CLKDIV=8;;
+        build_knobs_acq43x $site $mtype;;
     ${MOD_ID_ACQ480FMC})
         # space deliberate
         ln -s ${ULC}/acq480_map[48]  ${ek}
@@ -472,21 +568,7 @@ build_knobs_device() {
         make_acq494_spi_fields $ek
         ACQ494_SITES="${ACQ494_SITES} ${site}";; 
     ${MOD_ID_AO420FMC}|${MOD_ID_AO420FMC_CS2}|${MOD_ID_DAC_CELF})
-        case $mtype in
-        ${MOD_ID_DAC_CELF})
-            set_max_min_khz ${site} 250 10;;
-        ${MOD_ID_AO420FMC})
-            [ "x$AO420_SITES" != "x" ] && AO420_SITES="${AO420_SITES} "
-            AO420_SITES="${AO420_SITES}$site"
-            set_max_min_khz ${site} 1000 10;;
-        *)
-            set_max_min_khz ${site} 1000 10;;
-        esac
-        echo "ao420_init ${site}" >>/tmp/acq420.init-postpowerup-action
-        if [ -e ${ek}/dac_mux_master ]; then
-                ln -s $ULB/muxpattern ${ek}/
-        fi
-        CLKDIV=250;;
+        build_knobs_ao420 $site $mtype;;
     ${MOD_ID_AO424ELF})
         ao424_init ${site}
         set_max_min_khz ${site} 500 10  
@@ -501,80 +583,21 @@ build_knobs_device() {
         echo 16 > ${ek}/NCHAN
         BOLO8_SITES="${BOLO8_SITES}$site"
         CLKDIV=100;; 
-        ${MOD_ID_DIO432FMC}|${MOD_ID_DIO432PMOD}|${MOD_ID_PIG_CELF}|${MOD_ID_DIO482TD}|${MOD_ID_DIO482TD_PG})
-        case $mtype in
-        ${MOD_ID_DIO482TD})
-        	;;
-        ${MOD_ID_DIO482TD_PG})
-        	num_pg=4;
-        	if [ ! -z $DIO482TD_PG5 ] && [ "$DIO482TD_PG5" != "no" ]; then
-        		num_pg=5;
-        	elif [ -e /mnt/local/sysconfig/epics.sh ]; then
-        		source /mnt/local/sysconfig/epics.sh
-        		if [ ! -z $DIO482TD_PG5 ] && [ "$DIO482TD_PG5" != "no" ]; then
-        			echo "DIO482TD_PG5 in /mnt/local/sysconfig/epics.sh deprecated, please move to /mnt/local/sysconfig/acq400.sh"
-        			num_pg=5
-        		fi
-        	fi
-        	echo $num_pg >${ek}/num_pg;;
-        ${MOD_ID_DIO482FMC})
-            source  /dev/sites/${site}/details
-            mv=$(cat ${dk}/module_variant)
-            case $mv in
-			F)
-				if [ "$FRU_PART_NUM" != "${FRU_PART_NUM#*FBR}" ]; then
-					echo "FBR part detected in site ${site}: $FRU_PART_NUM"
-					echo 1 > ${dk}/active_low
-					num_pg=16
-				else
-					num_pg=32
-				fi
-				echo $num_pg >${ek}/num_pg;;
-			20|21)
-				nc=32
-				[ $mv -eq 21 ] && nc=16
-
-				init_scaler $ek $site $mv $nc;;
-			*)
-				ln -s $ULB/clocks_to_first_edge ${ek}/
-				set_max_min_khz ${site} 25000 10;;
-            esac;;
-        *)
-            ln -s $ULB/clocks_to_first_edge ${ek}/
-            set_max_min_khz ${site} 1000 10;;
-        esac
-        if [ ! -z $DIO_ACTIVE_LOW_SITES ]; then
-            echo $DIO_ACTIVE_LOW_SITES | grep -q $site
-            if [ $? -eq 0 ]; then
-            	echo +++ setting active_low
-            	echo 1 > ${dk}/active_low
-            fi
-        fi
-        if [ ! -z $DIO_WDT ]; then
-            echo $DIO_WDT > ${dk}/wdt
-        fi
-        echo +++ setting dio_en
-        echo 1 > ${dk}/dio_en
-        if [ -e ${ek}/num_pg ]; then
-        	echo +++ setting PG outputs num_pg $num_pg
-			echo 1,1,1,1 > ${dk}/byte_is_output
-        fi;;
+    ${MOD_ID_DIO432FMC}|${MOD_ID_DIO432PMOD}|${MOD_ID_PIG_CELF}|${MOD_ID_DIO482TD}|${MOD_ID_DIO482TD_PG}|${MOD_ID_DIO482FMC})
+        build_knobs_dio_device $site $mtype;;
     ${MOD_ID_DI460ELF})
 	mv=$(cat ${dk}/module_variant)
-	case $mv in
-	21)
-		init_scaler $ek $site $mv 12;;
-	esac
+	[ "x$mv" = "x21" ] && init_scaler $ek $site $mv 12
 	DI460_SITES="${DI460_SITES} ${site}";;
     ${MOD_ID_FMC_DIO_5CHTTLA})
         mv=$(cat ${dk}/module_variant)
-        case $mv in
-        21)
-                init_scaler $ek $site $mv 5;;
-        esac;;
+        [ "x$mv" = "x21" ] && init_scaler $ek $site $mv 5
+        echo "FMC_DIO_5CHTTLA $site";;
     *)
-        CLKDIV=200;;
+        CLKDIV=200
+        echo "default module $site $mtype $CLKDIV";;
     esac
+
     if [ -e ${ek}/is_adc ] && [ "$(cat ${ek}/is_adc)" != "0" ];then
         ln -s ${ULC}/get_data_size ${ek}/ch_data_size
     fi
