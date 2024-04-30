@@ -694,6 +694,7 @@ static const struct attribute *sysfs_base_attrs[] = {
 	&dev_attr_name.attr,
 	&dev_attr_site.attr,
 	&dev_attr_dev.attr,
+	&dev_attr_RW32_debug.attr,
 	NULL
 };
 
@@ -723,7 +724,6 @@ static const struct attribute *sysfs_aurora_attrs[] = {
 	&dev_attr_auto_dma.attr,
 	&dev_attr_kill_comms.attr,
 	&dev_attr_ident.attr,
-	&dev_attr_RW32_debug.attr,
 	&dev_attr_decimate.attr,
 	NULL
 };
@@ -938,7 +938,9 @@ MAKE_DNUM(rx_pkt_len,   HUDP_RX_PKT_LEN,   0x000003ff);
 MAKE_BITS(ctrl, 	HUDP_CON, 0, 0xffffffff);
 
 MAKE_BITS(hudp_bigendian,   HUDP_CON,      MAKE_BITS_FROM_MASK, (1<<30));
-MAKE_DNUM(hudp_decim,       HUDP_CON,      (0xf<<24));
+
+static DEVICE_ATTR(hudp_decim, S_IRUGO|S_IWUSR, show_decim, store_decim);
+
 MAKE_BITS(hudp_gt_reset,    HUDP_CON,      MAKE_BITS_FROM_MASK,	(1<<15));
 
 MAKE_BITS(tx_ctrl, 	HUDP_CON, MAKE_BITS_FROM_MASK, 0x0000000f);
@@ -1005,7 +1007,7 @@ static const struct attribute *sysfs_hudp_attrs[] = {
 	&dev_attr_ctrl.attr,
 	&dev_attr_tx_reset.attr,
 	&dev_attr_rx_reset.attr,
-	&dev_attr_hudp_decim.attr,
+
 	&dev_attr_tx_en.attr,
 	&dev_attr_rx_en.attr,
 	&dev_attr_tx_ctrl.attr,
@@ -1031,23 +1033,28 @@ static const struct attribute *sysfs_hudp_attrs[] = {
 void mgt400_createSysfs(struct mgt400_dev* mdev)
 {
 	struct device *dev = &mdev->pdev->dev;
+	int err;
 
 	dev_info(dev, "mgt400_createSysfs()");
-	if (sysfs_create_files(&dev->kobj, sysfs_base_attrs)){
-		dev_err(dev, "failed to create sysfs");
+	err = sysfs_create_files(&dev->kobj, sysfs_base_attrs);
+	if (err){
+		dev_err(dev, "failed to create mgt base sysfs %d", err);
 		return;
 	}
 	if (IS_MGT_HUDP(mdev)){
 		dev_info(dev, "MGT_HUDP");
-		if (sysfs_create_files(&dev->kobj, sysfs_hudp_attrs)){
-			dev_err(dev, "failed to create sysfs_hudp_attrs");
+		err = sysfs_create_files(&dev->kobj, sysfs_hudp_attrs);
+		if (err){
+			dev_err(dev, "failed to create sysfs_hudp_attrs %d", err);
 		}
 	}else{
-		if (sysfs_create_files(&dev->kobj, sysfs_aurora_attrs)){
-			dev_err(dev, "failed to create sysfs");
+		err = sysfs_create_files(&dev->kobj, sysfs_aurora_attrs);
+		if (err){
+			dev_err(dev, "failed to create mgt sysfs %d", err);
 		}else if (IS_MGT_DRAM(mdev)){
-			if (sysfs_create_files(&dev->kobj, sysfs_mgtdram_attrs)){
-				dev_err(dev, "failed to create sysfs_mgtdram_attrs");
+			err = sysfs_create_files(&dev->kobj, sysfs_mgtdram_attrs);
+			if (err){
+				dev_err(dev, "failed to create sysfs_mgtdram_attrs %d", err);
 			}
 		}
 	}

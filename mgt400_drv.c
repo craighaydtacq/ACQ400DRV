@@ -12,7 +12,6 @@
  *  it under the terms of Version 2 of the GNU General Public License        *
  *  as published by the Free Software Foundation;                            *
  *                                                                           *
- *  This program is distributed in the hope that it will be useful,          *
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of           *
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            *
  *  GNU General Public License for more details.                             *
@@ -26,7 +25,7 @@
 #include "mgt400.h"
 #include "dmaengine.h"
 
-#define REVID "0.150"
+#define REVID "0.153"
 
 #ifdef MODULE_NAME
 #undef MODULE_NAME
@@ -668,7 +667,7 @@ static int mgt400_probe(struct platform_device *pdev)
         mgt400_createDebugfs(mdev);
 
         if (IS_MGT_HUDP(mdev)){
-        	dev_info(&pdev->dev, "HUDP detected");
+        	dev_info(&pdev->dev, "HUDP detected set MOD_EN");
         	mgt400wr32(mdev, HUDP_CON, MCR_MOD_EN);
         }else{
         	if (IS_MGT_DRAM(mdev)){
