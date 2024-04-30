@@ -26,7 +26,7 @@
 #include "mgt400.h"
 #include "dmaengine.h"
 
-#define REVID "0.149"
+#define REVID "0.150"
 
 #ifdef MODULE_NAME
 #undef MODULE_NAME
@@ -656,16 +656,6 @@ static int mgt400_probe(struct platform_device *pdev)
                 goto fail;
         }
 
-        mdev->mod_id = mgt400rd32(mdev, MOD_ID);
-        switch(mdev->mod_id){
-        case MOD_ID_MGT_DRAM:
-        	maxdevices = 1;
-        	break;
-        case MOD_ID_HUDP:
-        	dev_info(&pdev->dev, "HUDP detected");
-                break;
-        }
-
         cdev_init(&mdev->cdev, &mgt400_fops);
         mdev->cdev.owner = THIS_MODULE;
         rc = cdev_add(&mdev->cdev, devno, MGT_MINOR_COUNT);
@@ -673,17 +663,21 @@ static int mgt400_probe(struct platform_device *pdev)
         	goto fail;
         }
 
-        mgt_status_init(mdev);
-        mgt400_createSysfs(&mdev->pdev->dev);
+        mdev->mod_id = mgt400rd32(mdev, MOD_ID);
+        mgt400_createSysfs(mdev);
         mgt400_createDebugfs(mdev);
 
-        switch(mdev->mod_id){
-        default:
+        if (IS_MGT_HUDP(mdev)){
+        	dev_info(&pdev->dev, "HUDP detected");
+        	mgt400wr32(mdev, HUDP_CON, MCR_MOD_EN);
+        }else{
+        	if (IS_MGT_DRAM(mdev)){
+        		maxdevices = 1;
+        	}
+        	mgt_status_init(mdev);
         	enableZDMA(mdev);
-        	break;
-        case MOD_ID_HUDP:
-                break;
         }
+
         return rc;
 
 fail:

@@ -69,7 +69,7 @@ extern struct mgt400_dev* mgt400_devices[];
 void mgt400wr32(struct mgt400_dev *adev, int offset, u32 value);
 u32 mgt400rd32(struct mgt400_dev *adev, int offset);
 void mgt400_createDebugfs(struct mgt400_dev* adev);
-void mgt400_createSysfs(struct device *dev);
+void mgt400_createSysfs(struct mgt400_dev* mdev);
 void mgt400_createDebugfs(struct mgt400_dev* adev);
 void mgt400_removeDebugfs(struct mgt400_dev* adev);
 void mgt400_clear_counters(struct mgt400_dev* mdev);

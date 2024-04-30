@@ -30,6 +30,7 @@
 #include "acq400_sysfs.h"
 
 
+
 static ssize_t show_module_type(
 	struct device * dev,
 	struct device_attribute *attr,
@@ -930,46 +931,16 @@ static ssize_t store_tx_spp(
 static DEVICE_ATTR(tx_spp, S_IRUGO|S_IWUSR, show_tx_spp, store_tx_spp);
 
 
-static ssize_t show_hudp_decim(
-	struct device * dev,
-	struct device_attribute *attr,
-	char * buf)
-{
-	struct mgt400_dev *mdev = mgt400_devices[dev->id];
-	u32 hudp_con = mgt400rd32(mdev, HUDP_CON);
-	return sprintf(buf, "%u\n", ((hudp_con>>AGG_DECIM_SHL)&AGG_DECIM_MASK)+1);
-}
-
-static ssize_t store_hudp_decim(
-	struct device * dev,
-	struct device_attribute *attr,
-	const char * buf,
-	size_t count)
-{
-	unsigned decimate;
-
-	if (sscanf(buf, "%u", &decimate) == 1 && decimate){
-		struct mgt400_dev *mdev = mgt400_devices[dev->id];
-		u32 hudp_con = mgt400rd32(mdev, ZDMA_CR);
-		hudp_con &= ~(AGG_DECIM_MASK<<AGG_DECIM_SHL);
-
-		if (--decimate > AGG_DECIM_MASK) decimate = AGG_DECIM_MASK;
-		hudp_con |= (decimate&AGG_DECIM_MASK) << AGG_DECIM_SHL;
-		mgt400wr32(mdev, HUDP_CON, hudp_con);
-
-		return count;
-	}else{
-		return -1;
-	}
-}
-
-static DEVICE_ATTR(hudp_decim, S_IRUGO|S_IWUSR, show_hudp_decim, store_hudp_decim);
-
 MAKE_DNUM(tx_pkt_count, HUDP_TX_PKT_COUNT, 0xffffffff);
 MAKE_DNUM(rx_pkt_count, HUDP_RX_PKT_COUNT, 0xffffffff);
 MAKE_DNUM(rx_pkt_len,   HUDP_RX_PKT_LEN,   0x000003ff);
 
 MAKE_BITS(ctrl, 	HUDP_CON, 0, 0xffffffff);
+
+MAKE_BITS(hudp_bigendian,   HUDP_CON,      MAKE_BITS_FROM_MASK, (1<<30));
+MAKE_DNUM(hudp_decim,       HUDP_CON,      (0xf<<24));
+MAKE_BITS(hudp_gt_reset,    HUDP_CON,      MAKE_BITS_FROM_MASK,	(1<<15));
+
 MAKE_BITS(tx_ctrl, 	HUDP_CON, MAKE_BITS_FROM_MASK, 0x0000000f);
 MAKE_BITS(rx_en,        HUDP_CON, MAKE_BITS_FROM_MASK, (1<<(4+8)));
 MAKE_BITS(rx_reset, 	HUDP_CON, MAKE_BITS_FROM_MASK, (1<<(3+8)));
@@ -1008,9 +979,15 @@ static ssize_t show_arp_mac_resp(
 
 static DEVICE_ATTR(arp_mac_resp, S_IRUGO, show_arp_mac_resp, 0);
 
+
+
+
 static const struct attribute *sysfs_hudp_attrs[] = {
 	&dev_attr_heartbeat.attr,
-	&dev_attr_gt_reset.attr,
+
+	&dev_attr_hudp_bigendian.attr,
+	&dev_attr_hudp_decim.attr,
+	&dev_attr_hudp_gt_reset.attr,
 
 	&dev_attr_mac.attr,
 	&dev_attr_ip.attr,
@@ -1051,9 +1028,9 @@ static const struct attribute *sysfs_hudp_attrs[] = {
 	&dev_attr_slice_off.attr,
 	NULL
 };
-void mgt400_createSysfs(struct device *dev)
+void mgt400_createSysfs(struct mgt400_dev* mdev)
 {
-	struct mgt400_dev *mdev = mgt400_devices[dev->id];
+	struct device *dev = &mdev->pdev->dev;
 
 	dev_info(dev, "mgt400_createSysfs()");
 	if (sysfs_create_files(&dev->kobj, sysfs_base_attrs)){

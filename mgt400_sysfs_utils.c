@@ -13,6 +13,7 @@
 #include "mgt400_sysfs.h"
 #include "acq400_sysfs.h"
 
+
 ssize_t mgt400_show_bits(
 	struct device * dev,
 	struct device_attribute *attr,
@@ -37,9 +38,19 @@ ssize_t mgt400_store_bits(
 		unsigned MASK,
 		unsigned show_warning)
 {
+	struct mgt400_dev *mdev = mgt400_devices[dev->id];
+	u32 regval = mgt400rd32(mdev, REG);
 	u32 field;
-	if (sscanf(buf, "%x", &field) == 1){
-		u32 regval = mgt400rd32(mgt400_devices[dev->id], REG);
+
+	if (buf[0] == 'P' || buf[0] == '^'){
+		regval &= ~(MASK << SHL);
+		mgt400wr32(mdev, REG, regval);
+		msleep(1);
+		mgt400wr32(mdev, REG, regval | MASK << SHL);
+		msleep(1);
+		mgt400wr32(mdev, REG, regval);
+		return count;
+	}else if (sscanf(buf, "%x", &field) == 1){
 		regval &= ~(MASK << SHL);
 		regval |= (field&MASK) << SHL;
 		if (show_warning){

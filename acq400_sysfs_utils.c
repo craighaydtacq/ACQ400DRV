@@ -120,15 +120,25 @@ ssize_t acq400_store_bits(
 		unsigned MASK,
 		unsigned show_warning)
 {
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	u32 regval = acq400rd32(adev, REG);
 	u32 field;
-	if (sscanf(buf, "%x", &field) == 1){
-		u32 regval = acq400rd32(acq400_devices[dev->id], REG);
+
+	if (buf[0] == 'P' || buf[0] == '^'){
+		regval &= ~(MASK << SHL);
+		acq400wr32(adev, REG, regval);
+		msleep(1);
+		acq400wr32(adev, REG, regval | MASK << SHL);
+		msleep(1);
+		acq400wr32(adev, REG, regval);
+		return count;
+	}else if (sscanf(buf, "%x", &field) == 1){
 		regval &= ~(MASK << SHL);
 		regval |= (field&MASK) << SHL;
 		if (show_warning){
 			dev_warn(dev, "deprecated %04x = %08x", REG, regval);
 		}
-		acq400wr32(acq400_devices[dev->id], REG, regval);
+		acq400wr32(adev, REG, regval);
 		return count;
 	}else{
 		return -1;
