@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 	printf("%30s 0x%08x\n", "STATUS", 	status);
 	printf("%30s %s\n", "DUPLEX_MODE", 	(status&(1<<28))? "FULL": "HALF");
 	printf("%30s %s\n", "SPEED",       	getspeed(status));
-	printf("%30s %d\n", "PHY_LINK_STATUS",  (status&(1<<23)) != 0);
+
 	if (strcmp(getspeed(status), "10G") != 0){
 		printf("%30s %d\n", "RUDI INVALID",	(status&(1<<20)) != 0);
 		printf("%30s %d\n", "RUDI IDLES",	(status&(1<<19)) != 0);
