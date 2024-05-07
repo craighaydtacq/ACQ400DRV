@@ -1,9 +1,10 @@
-/* print hudp status from site 10
+/* print hudp status from $SITE default 10
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "knobs.h"
+#include "acq-util.h"
 
 const char* getspeed(unsigned status)
 {
@@ -14,7 +15,8 @@ const char* getspeed(unsigned status)
 int main(int argc, char* argv[])
 {
 	unsigned status;
-	getKnob(10, "hudp_status", &status, "%x");
+	int site = getenv_default("SITE", 10);
+	getKnob(site, "hudp_status", &status, "%x");
 
 	printf("%30s 0x%08x\n", "STATUS", 	status);
 	printf("%30s %s\n", "DUPLEX_MODE", 	(status&(1<<28))? "FULL": "HALF");

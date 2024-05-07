@@ -287,7 +287,7 @@ lilmac: lilmac.o
 	$(CXX) -O3 -o lilmac lilmac.o $(LDFLAGS) -lpopt
 
 hudp_config: hudp_config.o knobs.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq
 
 mr_offload: mr_offload.o knobs.o connect_to.o
 	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
