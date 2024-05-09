@@ -79,7 +79,7 @@
 #include <sched.h>
 
 //#define BUFFER_IDENT 6
-#define VERID	"B1043"
+#define VERID	"B1051"
 
 #define NCHAN	4
 
@@ -92,6 +92,7 @@
 #include "knobs.h"
 #include "acq-util.h"
 #include "ES.h"
+#include "Knob.h"
 
 #include <bitset>
 #include "hex_char_to_bin.h"
@@ -140,6 +141,7 @@ int timespec_subtract (timespec *result, timespec *x, timespec *y) {
 /* all globals in one namespace : G */
 namespace G {
 	unsigned nchan = NCHAN;
+	unsigned nchan_ES;
 	unsigned wordsize = 2;		/** choice sizeof(short) or sizeof(int) */
 	#define FULL_MASK 0xffffffff
 	unsigned mask = FULL_MASK;	/** mask data with this value */
@@ -195,9 +197,14 @@ namespace G {
 int verbose = getenv_default("VERBOSE");
 unsigned nb_cat =1;	/* number of buffers to concatenate */
 
+static unsigned get_nchan_ES(unsigned nchan);
 
 unsigned sample_size() {
 	return G::nchan * G::wordsize;
+}
+
+unsigned es_size() {
+	return G::nchan_ES * G::wordsize;
 }
 
 unsigned s2b(unsigned samples) {
@@ -234,12 +241,53 @@ enum DemuxBufferType {
 
 class DemuxBufferCommon: public Buffer {
 
+protected:
+	const unsigned nchan;
+	const unsigned nchan_es;
+	AbstractES& evX;
+
+
 public:
-	DemuxBufferCommon(Buffer* cpy): Buffer(cpy) {}
+	DemuxBufferCommon(Buffer* cpy): Buffer(cpy),
+		nchan(G::nchan), nchan_es(G::nchan_ES),
+		evX(*AbstractES::evX_instance())
+	{}
 	static int demux_size;
 	static int verbose;
 	static int show_es;
 };
+
+unsigned get_nchan_ES(unsigned nchan)
+/* get number of channels in ES. We assume same module in each agg site
+ * duplicates logic epics load.records load_rgm()
+ */
+{
+
+	unsigned nchan_es = nchan;
+
+	if (!ISACQ480()){
+		FILE* fp = fopen("/var/log/run0.log", "r");
+		if (fp){
+			int agg_site;
+
+			if (fscanf(fp, "%*s %d", &agg_site) == 1){
+				unsigned active_chan;
+				unsigned data32;
+				if (Knob(agg_site, "active_chan").get(&active_chan) == 1 &&
+				    Knob(agg_site, "data32").get(&data32) == 1){
+					unsigned nlongs = active_chan/(data32? 1: 2);
+					unsigned esp = nlongs >= 8? 1: nlongs >= 4? 2: 4;
+					nchan_es *= esp;
+				}
+			}
+			fclose(fp);
+		}
+	}
+	syslog(LOG_DEBUG, "%d  %s nchan:%u nchan_es:%u\n", getpid(), __FUNCTION__,
+				nchan, nchan_es);
+	return nchan_es;
+}
+
 
 int DemuxBufferCommon::demux_size = ::getenv_default("DemuxBufferSize");
 int DemuxBufferCommon::verbose = ::getenv_default("DemuxBufferVerbose");
@@ -249,7 +297,7 @@ template <class T, DemuxBufferType N>
 class DemuxBuffer: public DemuxBufferCommon {
 private:
 	unsigned* mask;
-	unsigned nchan;
+
 	unsigned nsam;
 	static T** dddata;
 	static T** ddcursors;
@@ -267,7 +315,7 @@ private:
 
 	static int startchan;
 
-	AbstractES& evX;
+
 
 	int lchan(int ichan){
 		return ichan+1;
@@ -361,6 +409,8 @@ private:
 		}
 		return false;
 	}
+
+
 public:
 
 	virtual int writeBuffer(int out_fd, int b_opts) {
@@ -404,9 +454,7 @@ public:
 	}
 
 	DemuxBuffer(Buffer* cpy, unsigned _mask) :
-		DemuxBufferCommon(cpy),
-		nchan(G::nchan),
-		evX(*AbstractES::evX_instance())
+		DemuxBufferCommon(cpy)
 	{
 		if (verbose) fprintf(stderr, "DemuxBuffer T=%d N=%u\n", sizeof(T), N);
 
@@ -439,6 +487,9 @@ public:
 	}
 	virtual unsigned getSizeofItem() { return sizeof(T); }
 };
+
+
+
 
 
 template <class T, DemuxBufferType N>
@@ -489,9 +540,9 @@ bool DemuxBuffer<T, N>::demux(bool start, int start_off, int len) {
 	if (verbose) fprintf(stderr, "%s will %s skip ES\n", _PFN, show_es? "NOT":"");
 
 	for (isam = startoff/nchan; true; ++isam, ichan = 0){
-		if (! show_es) while (evX.isES(reinterpret_cast<unsigned*>(src))){
+		if (!show_es && evX.isES(reinterpret_cast<unsigned*>(src))){
 			if (verbose) fprintf(stderr, "skip ES\n");
-			src += nchan;
+			src += nchan_es;
 		}
 		for (; ichan < nchan; ++ichan){
 			*ddcursors[ichan]++ = (*src++)&mask[ichan];
@@ -551,9 +602,9 @@ bool DemuxBuffer<short, DB_REGULAR>::demux(bool start, int start_off, int len) {
 	if (verbose) fprintf(stderr, "%s will %s skip ES\n", _PFN, show_es? "NOT":"");
 
 	for (isam = startoff/nchan; true; ++isam, ichan = 0){
-		if (! show_es) while (evX.isES(reinterpret_cast<unsigned*>(src))){
+		if (!show_es && evX.isES(reinterpret_cast<unsigned*>(src))){
 			if (verbose) fprintf(stderr, "skip ES\n");
-			src += nchan;
+			src += nchan_es;
 		}
 		for (; ichan < nchan; ++ichan){
 			*ddcursors[ichan]++ = (*src++)&mask[ichan];
@@ -607,9 +658,9 @@ bool DemuxBuffer<short, DB_DOUBLE>::demux(bool start, int start_off, int len) {
 	if (verbose) fprintf(stderr, "%s will %s skip ES\n", _PFN, show_es? "NOT":"");
 
 	for (isam = startoff/nchan; true; ++isam, ichan = 0){
-		if (! show_es) while (evX.isES(reinterpret_cast<unsigned*>(src))){
+		if (!show_es && evX.isES(reinterpret_cast<unsigned*>(src))){
 			if (verbose) fprintf(stderr, "skip ES\n");
-			src += nchan;
+			src += nchan_es;
 		}
 		for (; ichan < nchan; ++ichan){
 			*ddcursors[ichan]++ = (*src++)&mask[ichan];
@@ -680,9 +731,9 @@ bool DemuxBuffer<short, DB_2D_REGULAR>::demux(bool start, int start_off, int len
 
 
 	for (unsigned isam = 0; true; ++isam){
-		if (! show_es) while (evX.isES(reinterpret_cast<unsigned*>(src))){
+		if (!show_es && evX.isES(reinterpret_cast<unsigned*>(src))){
 			if (verbose) fprintf(stderr, "skip ES\n");
-			src += nchan;
+			src += nchan_es;
 		}
 		{
 			short* src0 = src;
@@ -743,9 +794,9 @@ bool DemuxBuffer<short, DB_2D_DOUBLE>::demux(bool start, int start_off, int len)
 	if (verbose) fprintf(stderr, "%s will %s skip ES\n", _PFN, show_es? "NOT":"");
 
 	for (isam = startoff/nchan; true; ++isam, ichan = 0){
-		if (! show_es) while (evX.isES(reinterpret_cast<unsigned*>(src))){
+		if (!show_es && evX.isES(reinterpret_cast<unsigned*>(src))){
 			if (verbose) fprintf(stderr, "skip ES\n");
-			src += nchan;
+			src += nchan_es;
 		}
 		short* src0 = src;
 		for (; ichan < NC2; ++ichan){
@@ -1727,6 +1778,7 @@ void do_fill_ramp(int inc)
 void init_globs(void)
 {
 	getKnob(0, "/etc/acq400/0/NCHAN", &G::nchan);
+	G::nchan_ES = get_nchan_ES(G::nchan);
 	unsigned int data32 = false;
 	getKnob(0, "/etc/acq400/0/data32", &data32);
 	G::wordsize = data32? sizeof(int): sizeof(short);
@@ -2518,6 +2570,7 @@ class StreamHeadLivePP : public StreamHeadHB0 {
 	unsigned pre;
 	unsigned post;
 	const int sample_size;
+	const int es_size;
 	int* sample_interval_usecs;
 
 	int prelen() { return pre*sample_size; }
@@ -2587,7 +2640,8 @@ class StreamHeadLivePP : public StreamHeadHB0 {
 public:
 	StreamHeadLivePP():
 			pre(0), post(4096),
-			sample_size(G::nchan*G::wordsize) {
+			sample_size(G::nchan*G::wordsize),
+			es_size(::es_size()){
 
 		if (verbose) fprintf(stderr, "StreamHeadLivePP() verbose=%d\n", verbose);
 
@@ -2749,7 +2803,7 @@ int StreamHeadLivePP::_stream() {
 			fprintf(stderr, "%s found %d %p pre %d post %d\n", _PFN,
 					ibuf, es, pre, post);
 		}
-		char *es1 = es + (show_es? 0: sample_size);
+		char *es1 = es + (show_es? 0: es_size);
 
 		// all info referenced to buffer 0!
 		Buffer* buf = Buffer::the_buffers[0];
@@ -2761,7 +2815,7 @@ int StreamHeadLivePP::_stream() {
 		}
 		if (pre){
 			int escount = countES(es-prelen(), prelen());
-			int eslen = escount*sample_size;
+			int eslen = escount*es_size;
 			int start_off = es - prelen() - b0 - eslen;
 			int len = prelen()+eslen;
 
@@ -2774,7 +2828,7 @@ int StreamHeadLivePP::_stream() {
 		}
 		if (post){
 			int escount = countES(es1, postlen());
-			int eslen = escount*sample_size;
+			int eslen = escount*es_size;
 			int start_off = es1 - b0;
 			int len = postlen()+eslen;
 
@@ -3888,9 +3942,9 @@ void BufferDistribution::getSegmentsLinear()
 	}
 	segments.push_back(Segment(esp-esp_decr, prebytes));
 	if (G::show_es){
-		segments.push_back(Segment(esp, sample_size()));
+		segments.push_back(Segment(esp, es_size()));
 	}
-	segments.push_back(Segment(esp+sample_size(), postbytes));
+	segments.push_back(Segment(esp+es_size(), postbytes));
 }
 
 enum BS_STATE { BS_UNKNOWN = -1, BS_EMPTY, BS_PRE = 0x1, BS_POST = 0x2, BS_ES = 0x3 };
