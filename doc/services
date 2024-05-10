@@ -31,6 +31,7 @@ acq400_seg_show	4251/tcp
 
 dsp1_event	4252/tcp
 dsp2_event 	4253/tcp
+spad_update     4255/tcp        # remote update for spad regs 0,1,2,3,4,5,6,7 blank means "no touch"
 
 acq400_sum	4270/tcp	# check it works
 
