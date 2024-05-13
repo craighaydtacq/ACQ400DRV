@@ -1102,7 +1102,7 @@ load_mgt_acq1102() {
                         LOAD_MGT_REQUEST=1
                         echo port: $port AURORA $ptype;;
                 E)
-                        echo port:$port ETHERNET @@todo;;
+			[ "x$ETH1_E1000X" = "xy" ] && /usr/local/CARE/load.acq2106_1000X;;
                 U)
                         echo port:$port HUDP
                         num_hudp=$((num_hudp+1))
