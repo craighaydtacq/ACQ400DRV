@@ -42,6 +42,10 @@ MODULE_PARM_DESC(ndevices, "number of devices found in probe");
 #undef MAXDEVICES
 #define MAXDEVICES 4
 
+int host_is_acq2206;
+module_param(host_is_acq2206, int, 0444);
+MODULE_PARM_DESC(host_is_acq2206, "set true to indicated acq2206");
+
 char* MODEL = "";
 module_param(MODEL, charp, 0444);
 

@@ -1185,7 +1185,14 @@ if [ $LOAD_MGT_REQUEST -eq 1 ]; then
                 MGTMOD=/mnt/local/mgt400.ko
                 echo "using override module $MGTMOD"
         fi
-        /sbin/insmod $MGTMOD MODEL=$MODEL $MGT400_PRAMS
+        
+        case $MODEL in
+        acq2206*)
+                modp="MODEL=$MODEL host_is_acq2206=1";;
+        *)
+                modp="MODEL=$MODEL";;
+        esac
+        /sbin/insmod $MGTMOD $modp $MGT400_PRAMS
 fi
 
 build_knobs

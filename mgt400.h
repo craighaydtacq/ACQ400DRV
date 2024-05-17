@@ -184,10 +184,14 @@ int mgt400_clear_histo(struct mgt400_dev *mdev, int minor);
 #define PD_FIFO_OFFSET(file) \
 (PD(file)->minor==MINOR_PUSH_DESC_FIFO? DMA_PUSH_DESC_FIFO: DMA_PULL_DESC_FIFO)
 
+#define MOD_ID_MGT508		0x91	/* shared with KMCU */
 #define MOD_ID_MGT_DRAM		0x95
 
 #define IS_MGT_DRAM(mdev)	(GET_MOD_ID(mdev) == MOD_ID_MGT_DRAM)
 #define IS_MGT_HUDP(mdev)	(GET_MOD_ID(mdev) == MOD_ID_HUDP)
+
+extern int host_is_acq2206;
+#define IS_MGT508(mdev)		(host_is_acq2206 && GET_MOD_ID(mdev) == MOD_ID_MGT508)
 
 #define HUDP_CON		0x0004
 #define HUDP_IP_ADDR		0x0008
