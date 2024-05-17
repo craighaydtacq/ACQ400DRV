@@ -36,7 +36,11 @@ monitor() {
                 	get_knob $k; 
                 done
                 echo
-				for k in wr_tai_cur_raw wr_cur_vernier wr_tai_stamp wr_tai_trg wr_tai_trg1; do 
+                for k in wr_link_up wr_time_valid; do
+                        get_knob $k; 
+                done
+                echo
+		for k in wr_tai_cur_raw wr_cur_vernier wr_tai_stamp wr_tai_trg wr_tai_trg1; do
                 	get_knob $k; 
                 done                
                 echo
