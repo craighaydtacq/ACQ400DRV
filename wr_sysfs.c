@@ -35,7 +35,7 @@ static ssize_t show_wr_tai_cur(
 {
 	struct acq400_dev* adev = acq400_devices[dev->id];
 	u32 tl = acq400rd32(adev, WR_TAI_CUR_L);
-	u32 th = acq400rd32(adev, WR_TAI_CUR_H);
+	u32 th = acq400rd32(adev, WR_TAI_CUR_H)&0x00ff;
 
 	unsigned long long tai = th;
 	tai = tai << 32 | tl;
