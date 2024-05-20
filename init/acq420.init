@@ -1133,7 +1133,7 @@ if [ -e /etc/acq400/C/MTYPE ]; then
     	[ $? -eq 0 ] && WHITE_RABBIT=1
     fi
     
-    grep filename /tmp/fpga_status | grep -q _9[05][0-9][0-9]
+    grep filename /tmp/fpga_status | grep -q _9[015][0-9][0-9]
     if [ $? -eq 0 ]; then
         load_mgt
         grep -q UDP /tmp/fpga_status
