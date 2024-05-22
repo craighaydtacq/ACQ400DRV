@@ -21,6 +21,9 @@ while [ ! -e /sys/class/net/eth1 ]; do
 done
 echo +++ network eth1 exists, bring it up
 ifconfig eth1 $IPA up
+# you probably want a netmask and a default route as well, eg
+# ifconfig eth1 $IPA netmask 255.255.252.0 up
+# route add -net 0.0.0.0 gw 1.2.3.4
 ) &
 
 
