@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
@@ -9,20 +10,24 @@ FILE* FOUT;
 
 void cat(const char* fn, void* buf)
 {
-	FILE *fp = fopen(fn, "r");
-	int nread;
+	FILE *fp = strcmp(fn, "-") == 0? stdin: fopen(fn, "r");
+	int nread, nwrite;
+
 	if (fp == 0){
 		fprintf(stderr, "ERROR, failed to open \"%s\"\n", fn);
 		exit(1);
 	}
 	while((nread = fread(buf, 1, BUFLEN, fp)) > 0){
-		fwrite(buf, 1, nread, FOUT);
+		nwrite = fwrite(buf, 1, nread, FOUT);
+		if (nread != nwrite){
+			exit(1);
+		}
 	}
 }
 
 void mapcat(const char* fn, void* buf_notused)
 {
-        FILE *fp = fopen(fn, "r");
+        FILE *fp = strcmp(fn, "-") == 0? stdin: fopen(fn, "r");
 	void *pv;
         if (fp == 0){
                 fprintf(stderr, "ERROR, failed to open \"%s\"\n", fn);
