@@ -7,7 +7,7 @@
 
 IPA=${1}
 
-if [ "x${IPA} = "x" ]; then
+if [ "x${IPA}" = "x" ]; then
 	hn=$(hostname)
 	sn=${hn#*_}
 	ipa=$(echo $sn | awk '{ m=$1%250; print (m==0)? 251: m  }')
