@@ -110,6 +110,11 @@ u32 acq420_set_fmt(struct acq400_dev *adev, u32 adc_ctrl)
 	}else{
 		adc_ctrl &= ~ADC_CTRL32B_data;
 	}
+	if (adev->pack24){
+		adc_ctrl |= ADC_CTRL_465_PACK24;
+	}else{
+		adc_ctrl &= ~ADC_CTRL_465_PACK24;
+	}
 	return adc_ctrl;
 }
 
@@ -183,7 +188,7 @@ static void acq420_enable_fifo(struct acq400_dev *adev)
 	acq400wr32(adev, ADC_CTRL, ctrl|ADC_CTRL_ENABLE_FIFO);
 }
 
-void acq420_set_data32(struct acq400_dev *adev)
+void acq420_commit_format(struct acq400_dev *adev)
 {
 	u32 ctrl = acq420_set_fmt(adev, acq400rd32(adev, ADC_CTRL));
 	acq400wr32(adev, ADC_CTRL, ctrl);

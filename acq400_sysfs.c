@@ -1236,14 +1236,53 @@ static ssize_t store_data32(
 	if (sscanf(buf, "%u", &data32) == 1){
 		adev->data32 = data32 != 0;
 		adev->word_size = data32? 4: 2;
-		acq420_set_data32(adev);
+		acq420_commit_format(adev);
 		return count;
 	}else{
 		return -1;
 	}
 }
 
+
+
 static DEVICE_ATTR(data32, S_IRUGO|S_IWUSR, show_data32, store_data32);
+
+static ssize_t show_pack24(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	return sprintf(buf, "%u\n", adev->pack24);
+}
+
+static ssize_t store_pack24(
+	struct device * dev,
+	struct device_attribute *attr,
+	const char * buf,
+	size_t count)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	u32 pack24;
+	if (sscanf(buf, "%u", &pack24) == 1){
+		if (pack24){
+			adev->data32 = 1;
+			adev->pack24 = 1;
+			adev->word_size = 3;
+		}else{
+			adev->pack24 = 0;
+			adev->word_size = adev->data32? 4: 2;
+		}
+		acq420_commit_format(adev);        // works as well for this
+		return count;
+	}else{
+		return -1;
+	}
+}
+
+
+static DEVICE_ATTR(pack24, S_IRUGO|S_IWUSR, show_pack24, store_pack24);
+
 
 static ssize_t show_bitslice_frame(
 	struct device * dev,
@@ -2172,6 +2211,7 @@ static const struct attribute *acq465_attrs[] = {
 	&dev_attr_adc_status.attr,
 	&dev_attr__adc_hax.attr,
 	&dev_attr_bank_mask.attr,
+	&dev_attr_pack24.attr,
 	NULL
 };
 

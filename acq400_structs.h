@@ -191,6 +191,7 @@ struct acq400_dev {
 	u8 word_size;
 	u8 RW32_debug;
 	u8 sod_mode;			/* Sample On Demand: no trigger */
+	u8 pack24;
 
 	unsigned clk_ctr_reg;
 	unsigned sample_ctr_reg;
@@ -1002,6 +1003,6 @@ extern int streamdac_data_loop(void *data);
 
 extern int firstDistributorBuffer(void);
 extern int lastDistributorBuffer(void);
-extern void acq420_set_data32(struct acq400_dev *adev);
+extern void acq420_commit_format(struct acq400_dev *adev);
 
 #endif /* ACQ400_STRUCTS_H_ */
