@@ -1286,14 +1286,14 @@ int acq400_nacc_service(struct acq400_dev* adev, struct Subrate* subrate)
 	int imax = adev->nchan_enabled;
 	int ii;
 
-	if (!adev->data32){
+	if (!adev->booleans.data32){
 		imax >>= 1;
 	}
-	adev->RW32_debug = 1;
+	adev->booleans.RW32_debug = 1;
 	for (ii = 0; ii < imax; ++ii){
 		subrate->raw[ii] = acq400rd32(adev, ADC_NACC_SAMPLES+ii);
 	}
-	adev->RW32_debug = 0;
+	adev->booleans.RW32_debug = 0;
 	return 0;
 }
 
@@ -1303,7 +1303,7 @@ ssize_t acq400_nacc_subrate_read(
 {
 	struct acq400_dev* adev = ACQ400_DEV(file);
 	struct ADC_dev *adc_dev = container_of(adev, struct ADC_dev, adev);
-	int ss = adev->nchan_enabled*(adev->data32? sizeof(int): sizeof(short));
+	int ss = adev->nchan_enabled*(adev->booleans.data32? sizeof(int): sizeof(short));
 	struct Subrate* subrate = &adc_dev->subrate;
 	int rc;
 
@@ -1433,7 +1433,7 @@ int acq400_sc_nacc_subrate_open(struct inode *inode, struct file *file)
 		struct acq400_dev* slave = sc_dev->aggregator_set[idev];
 		dev_dbg(DEVP(adev), "%s idev:%d slave:%s dst_idx %d", __FUNCTION__, idev, slave? slave->site_no: "x", dst_idx);
 		if (slave){
-			unsigned n32 = slave->nchan_enabled >> (slave->data32? 0: 1);
+			unsigned n32 = slave->nchan_enabled >> (slave->booleans.data32? 0: 1);
 			struct GatherDesc tmp = {
 				.adev = slave,
 				.src_off = ADC_NACC_SAMPLES,

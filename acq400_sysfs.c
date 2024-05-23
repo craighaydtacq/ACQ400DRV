@@ -605,7 +605,7 @@ static ssize_t show_simulate(
 	struct device_attribute *attr,
 	char * buf)
 {
-	u32 simulate = acq400_devices[dev->id]->ramp_en != 0;
+	u32 simulate = acq400_devices[dev->id]->booleans.ramp_en != 0;
 	return sprintf(buf, "%u\n", simulate);
 }
 
@@ -617,7 +617,7 @@ static ssize_t store_simulate(
 {
 	u32 simulate;
 	if (sscanf(buf, "%u", &simulate) == 1){
-		acq400_devices[dev->id]->ramp_en = simulate != 0;
+		acq400_devices[dev->id]->booleans.ramp_en = simulate != 0;
 		return count;
 	}else{
 		return -1;
@@ -1194,7 +1194,7 @@ static ssize_t show_adc_18b(
 	char * buf)
 {
 	struct acq400_dev *adev = acq400_devices[dev->id];
-	return sprintf(buf, "%u\n", adev->adc_18b);
+	return sprintf(buf, "%u\n", adev->booleans.adc_18b);
 }
 
 static ssize_t store_adc_18b(
@@ -1206,7 +1206,7 @@ static ssize_t store_adc_18b(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 	u32 adc_18b;
 	if (!IS_ACQ43X(adev) && sscanf(buf, "%u", &adc_18b) == 1){
-		adev->adc_18b = adc_18b != 0;
+		adev->booleans.adc_18b = adc_18b != 0;
 		adev->word_size = adc_18b? 4: 2;
 		return count;
 	}else{
@@ -1222,7 +1222,7 @@ static ssize_t show_data32(
 	char * buf)
 {
 	struct acq400_dev *adev = acq400_devices[dev->id];
-	return sprintf(buf, "%u\n", adev->data32);
+	return sprintf(buf, "%u\n", adev->booleans.data32);
 }
 
 static ssize_t store_data32(
@@ -1234,7 +1234,7 @@ static ssize_t store_data32(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 	u32 data32;
 	if (sscanf(buf, "%u", &data32) == 1){
-		adev->data32 = data32 != 0;
+		adev->booleans.data32 = data32 != 0;
 		adev->word_size = data32? 4: 2;
 		acq420_commit_format(adev);
 		return count;
@@ -1253,7 +1253,7 @@ static ssize_t show_pack24(
 	char * buf)
 {
 	struct acq400_dev *adev = acq400_devices[dev->id];
-	return sprintf(buf, "%u\n", adev->pack24);
+	return sprintf(buf, "%u\n", adev->booleans.pack24);
 }
 
 static ssize_t store_pack24(
@@ -1266,12 +1266,12 @@ static ssize_t store_pack24(
 	u32 pack24;
 	if (sscanf(buf, "%u", &pack24) == 1){
 		if (pack24){
-			adev->data32 = 1;
-			adev->pack24 = 1;
+			adev->booleans.data32 = 1;
+			adev->booleans.pack24 = 1;
 			adev->word_size = 3;
 		}else{
-			adev->pack24 = 0;
-			adev->word_size = adev->data32? 4: 2;
+			adev->booleans.pack24 = 0;
+			adev->word_size = adev->booleans.data32? 4: 2;
 		}
 		acq420_commit_format(adev);        // works as well for this
 		return count;
@@ -1979,7 +1979,7 @@ static ssize_t store_RW32_debug(
 	int RW32_debug;
 
 	if (sscanf(buf, "%d", &RW32_debug) == 1){
-		adev->RW32_debug = RW32_debug;
+		adev->booleans.RW32_debug = RW32_debug;
 		return count;
 	}else{
 		return -1;
@@ -1992,7 +1992,7 @@ static ssize_t show_RW32_debug(
 	char * buf)
 {
 	struct acq400_dev *adev = acq400_devices[dev->id];
-	return sprintf(buf, "%d\n", adev->RW32_debug);
+	return sprintf(buf, "%d\n", adev->booleans.RW32_debug);
 }
 
 static DEVICE_ATTR(RW32_debug,
@@ -2009,7 +2009,7 @@ static ssize_t store_sod(
 	int sod_mode;
 
 	if (sscanf(buf, "%d", &sod_mode) == 1){
-		adev->sod_mode = sod_mode;
+		adev->booleans.sod_mode = sod_mode;
 		return count;
 	}else{
 		return -1;
@@ -2022,7 +2022,7 @@ static ssize_t show_sod(
 	char * buf)
 {
 	struct acq400_dev *adev = acq400_devices[dev->id];
-	return sprintf(buf, "%d\n", adev->sod_mode);
+	return sprintf(buf, "%d\n", adev->booleans.sod_mode);
 }
 
 static DEVICE_ATTR(sod, S_IRUGO|S_IWUSR, show_sod, store_sod);
@@ -2538,7 +2538,7 @@ static ssize_t show_agg_reg(
 static inline void reset_fifo(struct acq400_dev *adev, int enable)
 {
 	u32 ctrl;
-	adev->RW32_debug = reset_fifo_verbose;
+	adev->booleans.RW32_debug = reset_fifo_verbose;
 	ctrl = acq400rd32(adev, ADC_CTRL);
 
 	ctrl &= ~(ADC_CTRL_ADC_EN|ADC_CTRL_FIFO_EN);
@@ -2549,7 +2549,7 @@ static inline void reset_fifo(struct acq400_dev *adev, int enable)
 		ctrl |= ADC_CTRL_ADC_EN;
 	}
 	acq400wr32(adev, ADC_CTRL, ctrl|ADC_CTRL_FIFO_EN);
-	adev->RW32_debug = 0;
+	adev->booleans.RW32_debug = 0;
 }
 
 #define ENABLE	1

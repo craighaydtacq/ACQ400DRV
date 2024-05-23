@@ -100,17 +100,17 @@ int ao424_physChan(int lchan /* 1..32 */ )
 u32 acq420_set_fmt(struct acq400_dev *adev, u32 adc_ctrl)
 /* DOES NOT ACTUALLY WRITE HARDWARE! */
 {
-	if (adev->adc_18b){
+	if (adev->booleans.adc_18b){
 		adc_ctrl |= ADC_CTRL_420_18B;
 	}else{
 		adc_ctrl &= ~ADC_CTRL_420_18B;
 	}
-	if (adev->data32){
+	if (adev->booleans.data32){
 		adc_ctrl |= ADC_CTRL32B_data;
 	}else{
 		adc_ctrl &= ~ADC_CTRL32B_data;
 	}
-	if (adev->pack24){
+	if (adev->booleans.pack24){
 		adc_ctrl |= ADC_CTRL_465_PACK24;
 	}else{
 		adc_ctrl &= ~ADC_CTRL_465_PACK24;
@@ -177,7 +177,7 @@ static void acq420_reset_fifo(struct acq400_dev *adev)
 static void acq420_enable_fifo(struct acq400_dev *adev)
 {
 	u32 ctrl = acq400rd32(adev, ADC_CTRL);
-	if (adev->ramp_en){
+	if (adev->booleans.ramp_en){
 		ctrl |= ADC_CTRL_RAMP_EN;
 	}else{
 		ctrl &= ~ADC_CTRL_RAMP_EN;
@@ -213,7 +213,7 @@ void _ao420_stop(struct acq400_dev* adev)
 				dev_dbg(DEVP(adev), "_ao420_stop() STUB setting LL\n");
 			}
 		}
-		if (adev->data32){
+		if (adev->booleans.data32){
 			cr |= ADC_CTRL32B_data;
 		}else{
 			cr &= ~ADC_CTRL32B_data;
@@ -340,15 +340,15 @@ static void acq420_init_defaults(struct acq400_dev *adev)
 
 	dev_info(DEVP(adev), "ACQ420 device init");
 	acq400wr32(adev, ADC_CONV_TIME, IS_ACQ424(adev)? acq424_adc_conv_time: adc_conv_time);
-	adev->data32 = data_32b;
-	adev->adc_18b = adc_18b;
+	adev->booleans.data32 = data_32b;
+	adev->booleans.adc_18b = adc_18b;
 	adc_ctrl |= acq420_set_fmt(adev, adc_ctrl);
 	acq400wr32(adev, ADC_CTRL, adc_ctrl|ADC_CTRL_ES_EN|ADC_CTRL_MODULE_EN);
 	adev->nchan_enabled = IS_ACQ424(adev)? 32:
 			      IS_ACQ423(adev)? 32:
 			      IS_ACQ425(adev)? 16:
 			      IS_ACQ427(adev)? 8: 4;
-	adev->word_size = adev->data32? 4: 2;
+	adev->word_size = adev->booleans.data32? 4: 2;
 	adev->hitide = hitide;
 	adev->lotide = lotide;
 	adev->onStart = acq420_onStart;
@@ -366,11 +366,11 @@ static void acq480_init_defaults(struct acq400_dev *adev)
 {
 	dev_info(DEVP(adev), "ACQ480 device init: skeleton");
 
-	adev->data32 = 0;
-	adev->adc_18b = 0;
+	adev->booleans.data32 = 0;
+	adev->booleans.adc_18b = 0;
 
 	acq400wr32(adev, ADC_CTRL, ADC_CTRL_ES_EN|ADC_CTRL_MODULE_EN);
-	adev->nchan_enabled = 8;
+	adev->nchan_enabled = '\x8';
 	adev->word_size = 2;
 	adev->hitide = hitide;
 	adev->lotide = lotide;
@@ -384,7 +384,7 @@ static u32 _v2f_init(struct acq400_dev *adev)
 {
 	u32 ctrl = acq400rd32(adev, V2F_CTRL);
 
-	if (adev->data32){
+	if (adev->booleans.data32){
 		ctrl &= ~V2F_CTRL_DATA_PACKED;
 	}else{
 		ctrl |= V2F_CTRL_DATA_PACKED;
@@ -407,7 +407,7 @@ static void _v2f_onStart(struct acq400_dev *adev)
 
 static void v2f_init_defaults(struct acq400_dev *adev)
 {
-	adev->data32 = 0;
+	adev->booleans.data32 = 0;
 	adev->word_size = 4;
 	adev->nchan_enabled = 0;
 	acq400wr32(adev, V2F_CHAN_SEL, 0x04030201);
@@ -436,7 +436,7 @@ static void dio422aqb_init_defaults(struct acq400_dev *adev)
 	int snap32 = qen_dio&QEN_DIO_CTRL_SNAP32? 1: 0;
 	int zcount = qen_dio&QEN_DIO_CTRL_ZCOUNT? 1: 0;
 
-	adev->data32 = 1;
+	adev->booleans.data32 = 1;
 	adev->word_size = 2;
 	adev->nchan_enabled = 1 + snap32 + zcount;
 
@@ -457,11 +457,11 @@ static void di460elf_init_defaults(struct acq400_dev *adev)
 		dev_info(DEVP(adev), "%s IS_DI460_HS_CNTR()", __FUNCTION__);
 		adev->word_size = dio482_cntr_shorts? 2: 4;
 		adev->nchan_enabled = 12;
-		adev->data32 = dio482_cntr_shorts? 0: 1;
+		adev->booleans.data32 = dio482_cntr_shorts? 0: 1;
 		acq400wr32(adev, DIO482_DI_DWELL, 500);   // 10Khz update with 50MHz CLK ??
 	}else{
 
-		adev->data32 = 1;
+		adev->booleans.data32 = 1;
 		adev->word_size = 2;
 		adev->nchan_enabled = 6;
 	}
@@ -475,7 +475,7 @@ static void dio_5ch_init_defaults(struct acq400_dev *adev)
 		dev_info(DEVP(adev), "%s IS_DIO_5CH_HS_CNTR()", __FUNCTION__);
 		adev->word_size = dio482_cntr_shorts? 2: 4;
 		adev->nchan_enabled = 5;
-		adev->data32 = dio482_cntr_shorts? 0: 1;
+		adev->booleans.data32 = dio482_cntr_shorts? 0: 1;
 		acq400wr32(adev, DIO482_DI_DWELL, 500);   // 10Khz update with 50MHz CLK ??
 	}
 	acq400wr32(adev, MCR, MCR_MOD_EN);
@@ -484,12 +484,12 @@ static void dio_5ch_init_defaults(struct acq400_dev *adev)
 static void qen_init_defaults(struct acq400_dev *adev)
 {
        struct acq400_dev *adev1 = acq400_devices[1];
-       if (adev1 && adev1->data32 == 0){
-               adev->data32 = 0;
+       if (adev1 && adev1->booleans.data32 == 0){
+               adev->booleans.data32 = 0;
                adev->word_size = 2;
                adev->nchan_enabled = 2;
        }else{
-               adev->data32 = 1;
+               adev->booleans.data32 = 1;
                adev->word_size = 1;
                adev->nchan_enabled = 1;
        }
@@ -506,7 +506,7 @@ static void acq1014_init_defaults(struct acq400_dev *adev)
 }
 static void pig_celf_init_defaults(struct acq400_dev *adev)
 {
-	adev->data32 = 0;
+	adev->booleans.data32 = 0;
 	/* data is 4 x 32 bits, but I+Q surely 16 bit each? */
 	adev->word_size = 2;
 	adev->nchan_enabled = 8;
@@ -535,8 +535,8 @@ static void pmodadc1_init_defaults(struct acq400_dev *adev)
 		dev_warn(DEVP(adev), "OUTDATED FPGA PERSONALITY, please update");
 	}
 	acq400wr32(adev, ADC_CONV_TIME, adc_conv_time);
-	adev->data32 = 0;
-	adev->adc_18b = 0;
+	adev->booleans.data32 = 0;
+	adev->booleans.adc_18b = 0;
 	adc_ctrl |= PMODADC1_CTRL_DIV|PMODADC1_CTRL_EXT_CLK_FROM_SYNC;
 	acq400wr32(adev, ADC_CTRL, ADC_CTRL_MODULE_EN|adc_ctrl);
 	/** nchan_enabled @@todo fudge for use in D32 (acq435 systems) */
@@ -610,7 +610,7 @@ static void acq43X_init_defaults(struct acq400_dev *adev)
 	dev_info(DEVP(adev), "%s device init", devname);
 
 	acq400wr32(adev, ACQ435_MODE, banksel);
-	adev->data32 = 1;
+	adev->booleans.data32 = 1;
 	adev->word_size = 4;
 	adev->hitide = 128;
 	adev->lotide = adev->hitide - 4;
@@ -630,7 +630,7 @@ static void acq465_init_defaults(struct acq400_dev *adev)
 	adev->nchan_enabled = 32;
 	dev_info(DEVP(adev), "%s device init", "acq465elf");
 
-	adev->data32 = 1;
+	adev->booleans.data32 = 1;
 	adev->word_size = 4;
 	adev->hitide = 128;
 	adev->lotide = adev->hitide - 4;
@@ -649,12 +649,12 @@ static void acq494_init_defaults(struct acq400_dev *adev)
 #if 0
 	adev->nchan_enabled = 1;		// because the data _is_ one channel at a time
 	adev->word_size = 8;
-	adev->data32 = 2;
+	adev->booleans.data32 = 2;
 #else
 	dev_info(DEVP(adev), "%s try some previously used values: 2x4", __FUNCTION__);
 	adev->nchan_enabled = 2;
 	adev->word_size = 4;
-	adev->data32 = 1;
+	adev->booleans.data32 = 1;
 #endif
 	adev->onStart = acq420_onStart;
 	adev->onStop = acq420_disable_fifo;
@@ -676,7 +676,7 @@ static void ao428_init_defaults(struct acq400_dev *adev)
 	u32 dac_ctrl = acq400rd32(adev, DAC_CTRL);
 	dev_info(DEVP(adev), "AO420 device init");
 
-	adev->data32 = 1;
+	adev->booleans.data32 = 1;
 	adev->nchan_enabled = 8;
 	adev->word_size = 4;
 	adev->cursor.hb = &adev->hb[0];
@@ -700,7 +700,7 @@ static void ao420_init_defaults(struct acq400_dev *adev, int data32)
 	struct XO_dev* xo_dev = container_of(adev, struct XO_dev, adev);
 	u32 dac_ctrl = acq400rd32(adev, DAC_CTRL);
 
-	adev->data32 = data32;
+	adev->booleans.data32 = data32;
 	adev->nchan_enabled = IS_AO420_HALF436(adev)? 2: 4;
 	adev->word_size = data32? 4: 2;
 	adev->cursor.hb = &adev->hb[0];
@@ -747,7 +747,7 @@ static void ao424_init_defaults(struct acq400_dev *adev)
 	/* default to +/-10V bipolar. That's what 99% of the people want .. */
 	dev_info(DEVP(adev), "AO424 device init default SPAN=3");
 	ao424_setspan_defaults(adev);
-	adev->data32 = 0;
+	adev->booleans.data32 = 0;
 	adev->nchan_enabled = 32;
 	adev->word_size = 2;
 	adev->cursor.hb = &adev->hb[0];
@@ -873,7 +873,7 @@ void acq43X_onStart(struct acq400_dev *adev)
 	if (HAS_DTD(adev)){
 		acq400_clearDelTrgEvent(adev);
 	}
-	if (adev->ramp_en){
+	if (adev->booleans.ramp_en){
 		ctrl |= ADC_CTRL_RAMP_EN;
 	}else{
 		ctrl &= ~ADC_CTRL_RAMP_EN;
@@ -910,7 +910,7 @@ static void dio432_init_defaults(struct acq400_dev *adev)
 	u32 dac_ctrl = acq400rd32(adev, DAC_CTRL);
 
 	dev_info(DEVP(adev), "dio432_init_defaults() 01");
-	adev->data32 = 1;
+	adev->booleans.data32 = 1;
 	adev->nchan_enabled = 1;
 	adev->word_size = 4;
 	adev->cursor.hb = &adev->hb[0];
@@ -930,7 +930,7 @@ static void dio432_init_defaults(struct acq400_dev *adev)
 		dev_info(DEVP(adev), "dio432_init_defaults() IS_DIO482_CNTR()");
 		adev->word_size = dio482_cntr_shorts? 2: 4;
 		adev->nchan_enabled = 32;
-		adev->data32 = dio482_cntr_shorts? 0: 1;
+		adev->booleans.data32 = dio482_cntr_shorts? 0: 1;
 		acq400wr32(adev, DIO482_DI_DWELL, 500);   // 10Khz update with 5MHz CLK
 	}
 	//set_debugs("on");
@@ -974,7 +974,7 @@ void measure_ao_fifo(struct acq400_dev *adev)
 	struct XO_dev* xo_dev = container_of(adev, struct XO_dev, adev);
 	unsigned osam = 0xffffffff;
 	unsigned sam;
-	int values_per_lw = adev->data32? 1: 2;
+	int values_per_lw = adev->booleans.data32? 1: 2;
 	unsigned cr;
 	int nblocks;
 

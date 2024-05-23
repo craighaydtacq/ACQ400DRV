@@ -299,7 +299,7 @@ ssize_t store_signal(
 	unsigned imode, dx, rising;
 	struct acq400_dev* adev = acq400_devices[dev->id];
 
-	if (not_while_busy && adev->busy){
+	if (not_while_busy && adev->booleans.busy){
 		return -EBUSY;
 	}
 

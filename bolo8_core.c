@@ -122,9 +122,9 @@ void bolo8_init_defaults(struct acq400_dev* adev)
 	dev_info(DEVP(adev), "bolo8_init_defaults() B8_DAC_CON set:%x get:%x",
 			B8_DAC_CON_INIT, acq400rd32(adev, B8_DAC_CON));
 
-	adev->data32 = data_32b;
+	adev->booleans.data32 = data_32b;
 	adev->nchan_enabled = 8;
-	adev->word_size = adev->data32? 4: 2;
+	adev->word_size = adev->booleans.data32? 4: 2;
 	adev->hitide = 128;
 	adev->lotide = adev->hitide - 4;
 	acq400wr32(adev, ADC_CLKDIV, 10);

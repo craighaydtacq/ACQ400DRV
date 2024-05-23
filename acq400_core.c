@@ -128,7 +128,7 @@ void acq400wr32(struct acq400_dev *adev, int offset, u32 value)
 		trap = old && !new;
 	}
 #endif
-	if (adev->RW32_debug || trap){
+	if (adev->booleans.RW32_debug || trap){
 		dev_info(DEVP(adev), "acq400wr32 %p [0x%02x] = %08x\n",
 				adev->dev_virtaddr + offset, offset, value);
 		if (trap && trap_dump_stack){
@@ -151,7 +151,7 @@ u32 _acq400rd32(struct acq400_dev *adev, int offset, int nocache)
 	if (nocache || dev_rc_read(&adev->ctrl_reg_cache, offset, &rc)){
 		rc = ioread32(adev->dev_virtaddr + offset);
 	}
-	if (adev->RW32_debug > 1){
+	if (adev->booleans.RW32_debug > 1){
 		dev_info(DEVP(adev), "acq400rd32 %p [0x%02x] = %08x\n",
 			adev->dev_virtaddr + offset, offset, rc);
 	}else{
@@ -471,7 +471,7 @@ int acq400_enable_trg(struct acq400_dev *adev, int enable)
 	u32 timcon = acq400rd32(adev, TIM_CTRL);
 	int was_enabled = (timcon&TIM_CTRL_MODE_HW_TRG_EN) != 0;
 	dev_dbg(DEVP(adev), "acq400_enable_trg() 0x%08x (bits=%02x) %s 01", timcon, TIM_CTRL_MODE_HW_TRG_EN, enable? "ON": "off");
-	if (adev->sod_mode){
+	if (adev->booleans.sod_mode){
 		if (was_enabled){
 			dev_err(DEVP(adev), "sod_mode is enabled, but so is TRG");
 		}
@@ -553,7 +553,7 @@ int fifo_monitor(void* data)
 		m1_sr = acq400rd32(m1, ADC_FIFO_STA);
 		aggsta = acq400rd32(adev, AGGSTA);
 
-		if (!m1->sod_mode && !aggsta_skip_reported && (aggsta&AGGSTA_FIFO_ANYSKIP) != 0 && (aggsta&AGGSTA_FIFO_EMPTY) == 0){
+		if (!m1->booleans.sod_mode && !aggsta_skip_reported && (aggsta&AGGSTA_FIFO_ANYSKIP) != 0 && (aggsta&AGGSTA_FIFO_EMPTY) == 0){
 			sc_dev->adev.rt.status = -10;
 			snprintf(sc_dev->status_message, MAX_RT_STATUS_MESSAGE, "%s loss of data detected: AGGSTA:%08x AXI wakeups:%d",
 					__FUNCTION__, aggsta, sc_dev->adev.rt.axi64_wakeups);

@@ -527,7 +527,7 @@ int acq400_open_main(struct inode *inode, struct file *file)
         case O_RDONLY:
                 break;
         case O_WRONLY:
-                if (adev->writers || adev->busy) {
+                if (adev->writers || adev->booleans.busy) {
                         rc = -EBUSY;
                         goto out;
                 } else {
@@ -536,7 +536,7 @@ int acq400_open_main(struct inode *inode, struct file *file)
                 break;
         case O_RDWR:
         default:
-                if (adev->writers || adev->busy) {
+                if (adev->writers || adev->booleans.busy) {
                         rc = -EBUSY;
                         goto out;
                 } else {
@@ -560,8 +560,8 @@ int _acq420_continuous_start_dma(struct acq400_dev *adev)
 		return -EINTR;
 	}
 
-	if (adev->busy || get_dma_channels(adev)){
-		if (adev->busy){
+	if (adev->booleans.busy || get_dma_channels(adev)){
+		if (adev->booleans.busy){
 			dev_err(DEVP(adev), "BUSY");
 		}else{
 			dev_err(DEVP(adev), "no dma chan");
@@ -614,7 +614,7 @@ int _acq420_continuous_start_dma(struct acq400_dev *adev)
 			}
 		}
 	}
-	adev->busy = 1;
+	adev->booleans.busy = 1;
 	return rc;
 }
 
@@ -708,7 +708,7 @@ int acq2006_continuous_start(struct inode *inode, struct file *file)
 	fiferr = FIFERR;
 	adev->onStart(adev);
 	_onStart(adev);
-	adev->RW32_debug = agg_reset_dbg;
+	adev->booleans.RW32_debug = agg_reset_dbg;
 
 	acq2106_aggregator_reset(adev);				/* (1) */
 	sc_data_engine_reset_enable(DATA_ENGINE_0);		/* (2) */
@@ -729,7 +729,7 @@ int acq2006_continuous_start(struct inode *inode, struct file *file)
 	/* (5) */
 
 	acq400_visit_set(sc_dev->aggregator_set, acq400_enable_trg_if_master);
-	adev->RW32_debug = 0;
+	adev->booleans.RW32_debug = 0;
 	dev_dbg(DEVP(adev), "acq2006_continuous_start() 99");
 	return 0;
 }
@@ -909,7 +909,7 @@ void _acq420_continuous_dma_stop(struct acq400_dev *adev)
 	move_list_to_empty(adev, &adev->OPENS);
 	move_list_to_empty(adev, &adev->REFILLS);
 	move_list_to_empty(adev, &adev->INFLIGHT);
-	adev->busy = 0;
+	adev->booleans.busy = 0;
 
 	release_dma_channels(adev);
 	adev->stats.run = 0;
@@ -1043,8 +1043,8 @@ int acq420_sideported_start(struct inode *inode, struct file *file)
 {
 	struct acq400_dev *adev = ACQ400_DEV(file);
 	int rc;
-	int tmp = adev->RW32_debug;
-	adev->RW32_debug = agg_reset_dbg;
+	int tmp = adev->booleans.RW32_debug;
+	adev->booleans.RW32_debug = agg_reset_dbg;
 	dev_dbg(DEVP(adev), "acq420_sideported_start()");
 
 
@@ -1054,7 +1054,7 @@ int acq420_sideported_start(struct inode *inode, struct file *file)
 	}
 	rc = _acq420_continuous_start(adev, 0);
 
-	adev->RW32_debug = tmp;
+	adev->booleans.RW32_debug = tmp;
 	return rc;
 }
 

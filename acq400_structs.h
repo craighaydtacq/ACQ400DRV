@@ -183,15 +183,18 @@ struct acq400_dev {
 
 	struct STATS stats;
 
-	u8 busy;
-	u8 ramp_en;
-	u8 data32;
-	u8 adc_18b;			/* @@todo set on probe() */
 	u8 nchan_enabled;		/* @@todo crude, assumes 1..N */
 	u8 word_size;
-	u8 RW32_debug;
-	u8 sod_mode;			/* Sample On Demand: no trigger */
-	u8 pack24;
+
+	struct Bools {
+		u8 busy;
+		u8 ramp_en;
+		u8 data32;
+		u8 adc_18b;			/* @@todo set on probe() */
+		u8 sod_mode;			/* Sample On Demand: no trigger */
+		u8 pack24;
+		u8 RW32_debug;
+	} booleans;
 
 	unsigned clk_ctr_reg;
 	unsigned sample_ctr_reg;
