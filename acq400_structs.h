@@ -168,10 +168,7 @@ struct acq400_dev {
 	wait_queue_head_t w_waitq;
 	int task_active;
 
-
 	wait_queue_head_t event_waitq;
-
-
 
 	/* Hardware device constants */
 	u32 dev_physaddr;
