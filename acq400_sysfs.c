@@ -1269,9 +1269,11 @@ static ssize_t store_pack24(
 			adev->booleans.data32 = 1;
 			adev->booleans.pack24 = 1;
 			adev->word_size = 3;
+			adev->nchan_enabled = 24;
 		}else{
 			adev->booleans.pack24 = 0;
 			adev->word_size = adev->booleans.data32? 4: 2;
+			adev->nchan_enabled = 32;
 		}
 		acq420_commit_format(adev);        // works as well for this
 		return count;

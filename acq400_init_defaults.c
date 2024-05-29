@@ -111,7 +111,7 @@ u32 acq420_set_fmt(struct acq400_dev *adev, u32 adc_ctrl)
 		adc_ctrl &= ~ADC_CTRL32B_data;
 	}
 	if (adev->booleans.pack24){
-		adc_ctrl |= ADC_CTRL_465_PACK24;
+		adc_ctrl |= ADC_CTRL_465_PACK24 | ADC_CTRL_DIRECT_NOT_ACC;
 	}else{
 		adc_ctrl &= ~ADC_CTRL_465_PACK24;
 	}
