@@ -44,7 +44,7 @@ rm -f $ETC0/run0_ready
 acq400_teardown
 
 spad3="$(tr , \  <$ETC0/spad)"
-nspad=$((spad2nchan $spad3))
+let nspad=$(spad2nchan $spad3)
 ssb=$(($nspad*4))
 
 ncc=0
