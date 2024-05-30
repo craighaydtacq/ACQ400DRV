@@ -44,9 +44,41 @@ rm -f $ETC0/run0_ready
 acq400_teardown
 
 spad3="$(tr , \  <$ETC0/spad)"
-let nspad=$(spad2nchan $spad3)
+nspad=$((spad2nchan $spad3))
+ssb=$(($nspad*4))
 
-source get_site_total_size
+ncc=0
+D32=""
+sitelist=""
+sep=""
+
+for site in $sites
+do
+        s_root=/etc/acq400/$site
+        if [ -e ${s_root}/data32 ]; then
+                site_d32=$(get.site $site data32)
+                active_chan=$(cat ${s_root}/active_chan)
+                word_size=$(cat ${s_root}/word_size)
+
+                echo $ncc > ${s_root}/AGIX
+                ncc=$(($ncc+$active_chan))
+                ssb=$(($ssb+$active_chan*$word_size))
+                if [ "x$D32" = "x" ]; then
+                        D32=$site_d32
+                elif [ $D32 -ne $site_d32 ]; then
+                        echo "WARNING: mixed data size"
+                fi
+                sitelist="${sitelist}${sep}${site}"
+                sep=","
+                echo "site:$site ncc:$ncc ssb=$ssb AGIX=$(cat ${s_root}/AGIX)"
+        else
+                echo "ERROR: site $site does not exist"
+        fi
+done
+
+NCHAN=$ncc
+SSB=$ssb
+
 
 if [ ! -e $ETC0/NCHAN ] || [ $NCHAN -ne $(cat $ETC0/NCHAN) ]
 then
@@ -62,18 +94,17 @@ else
     threshold=16384
 fi
 set.sys $ETC0/sites 	${sitelist}
-set.sys $ETC0/ssb 		$SSB
+set.sys $ETC0/ssb 	$SSB
 set.sys $ETC0/spadstart	$(($SSB-$nspad*4))
 
 [ "x$NO_OPTIMISE_BUFFERLEN" = "xy" ] || set.sys $S0KB/optimise_bufferlen $SSB 
 
 DECIM=$(get.sys $S0KB/decimate)
-set.sys $S0KB/aggregator 	0
+set.sys $S0KB/aggregator    0
 set.sys $S0KB/data_engine_0 0
 set.sys $S0KB/data_engine_0 aggregator=1 
-set.sys $S0KB/aggregator 	threshold=${threshold} sites=${sitelist%*,14}
-set.sys $S0KB/decimate 		$DECIM
+set.sys $S0KB/aggregator    threshold=${threshold} sites=${sitelist%*,14}
+set.sys $S0KB/decimate      $DECIM
 set.sys $ETC0/run0_ready    1
 
 echo $0 $* ssb=$SSB > /var/log/run0.log
-

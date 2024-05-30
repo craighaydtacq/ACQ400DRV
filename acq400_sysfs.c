@@ -1269,11 +1269,9 @@ static ssize_t store_pack24(
 			adev->booleans.data32 = 1;
 			adev->booleans.pack24 = 1;
 			adev->word_size = 3;
-			adev->nchan_enabled = 24;
 		}else{
 			adev->booleans.pack24 = 0;
 			adev->word_size = adev->booleans.data32? 4: 2;
-			adev->nchan_enabled = 32;
 		}
 		acq420_commit_format(adev);        // works as well for this
 		return count;
@@ -1284,6 +1282,17 @@ static ssize_t store_pack24(
 
 
 static DEVICE_ATTR(pack24, S_IRUGO|S_IWUSR, show_pack24, store_pack24);
+
+static ssize_t show_word_size(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	return sprintf(buf, "%u\n", adev->word_size);
+}
+
+static DEVICE_ATTR(word_size, S_IRUGO, show_word_size, 0);
 
 
 static ssize_t show_bitslice_frame(
@@ -2066,6 +2075,7 @@ static const struct attribute *sysfs_base_attrs[] = {
 	&dev_attr_optimise_bufferlen.attr,
 	&dev_attr_site.attr,
 	&dev_attr_data32.attr,
+	&dev_attr_word_size.attr,
 	&dev_attr_continuous_reader.attr,
 	&dev_attr_RW32_debug.attr,
 	NULL

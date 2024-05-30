@@ -13,6 +13,7 @@ sep=""
 nspad=${nspad:-0}
 d32c=$nspad
 d16c=0
+ssb=$(($nspad*4))
 
 for site in $sites
 do
@@ -21,14 +22,9 @@ do
 		echo $ncc > ${s_root}/AGIX
 		site_d32=$(get.site $site data32)
 		active_chan=$(cat ${s_root}/active_chan)
+		word_size=$(cat ${s_root}/word_size)
 		ncc=$(($ncc+$active_chan))
-		if [ $site_d32 -eq 2 ]; then
-			d32c=$(($d32c+$active_chan*2))
-		elif [ $site_d32 -eq 1 ]; then
-			d32c=$(($d32c+$active_chan))
-		else
-			d16c=$(($d16c+$active_chan))
-		fi
+		ssb=$(($ssb+$active_chan*$word_size))		
 		if [ "x$D32" = "x" ]; then
 			D32=$site_d32
 		elif [ $D32 -ne $site_d32 ]; then
@@ -36,23 +32,14 @@ do
 		fi
 		sitelist="${sitelist}${sep}${site}"
 		sep=","
-		echo "site:$site d32:$d32 ncc:$ncc d32c:$d32c d16c:$d16c AGIX=$(cat ${s_root}/AGIX)"
+		echo "site:$site ncc:$ncc ssb=$ssb AGIX=$(cat ${s_root}/AGIX)"
 	else
 		echo "ERROR: site $site does not exist"
 	fi
 done
 
-
-if [ -z $D32 ]; then
-    SSB=0
-	NCHAN=0
-elif [ $D32 -eq 1 ]; then
-	NCHAN=$(($d32c+$d16c/2))
-	SSB=$(($NCHAN*4))
-else
-	NCHAN=$(($d16c+$d32c*2))
-	SSB=$(($NCHAN*2))
-fi
+NCHAN=$ncc
+SSB=$ssb
 
 echo "get_site_total_size D32:$D32 NCHAN:$NCHAN d32c:$d32c d16c:$d16c SSB:$SSB"
 
