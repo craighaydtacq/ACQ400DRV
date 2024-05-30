@@ -1235,7 +1235,7 @@ static ssize_t store_data32(
 	u32 data32;
 	if (sscanf(buf, "%u", &data32) == 1){
 		adev->booleans.data32 = data32 != 0;
-		adev->word_size = data32? 4: 2;
+		adev->word_size = data32? adev->booleans.pack24? 3: 4: 2;
 		acq420_commit_format(adev);
 		return count;
 	}else{
