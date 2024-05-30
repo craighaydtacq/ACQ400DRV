@@ -76,7 +76,11 @@ do
         fi
 done
 
-NCHAN=$ncc
+if [ $D32 -eq 1 ]; then
+        NCHAN=$(($ncc+$nspad))
+else
+        NCHAN=$(($ncc+2*$nspad))
+fi
 SSB=$ssb
 
 
