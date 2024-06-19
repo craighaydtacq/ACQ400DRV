@@ -698,6 +698,8 @@ static const struct attribute *sysfs_base_attrs[] = {
 	NULL
 };
 
+MAKE_BITS(mgt508_dma_len, MGT508_LEN, MAKE_BITS_FROM_MASK, 0x3fff);
+
 static const struct attribute *sysfs_aurora_attrs[] = {
 	&dev_attr_aurora_enable.attr,
 	&dev_attr_aurora_lane_up.attr,
@@ -725,6 +727,7 @@ static const struct attribute *sysfs_aurora_attrs[] = {
 	&dev_attr_kill_comms.attr,
 	&dev_attr_ident.attr,
 	&dev_attr_decimate.attr,
+	&dev_attr_mgt508_dma_len.attr,
 	NULL
 };
 
