@@ -34,6 +34,10 @@ int wr_ts_inten = 1;
 module_param(wr_ts_inten, int, 0444);
 MODULE_PARM_DESC(wr_ts_inten, "1: enable Time Stamp interrupts");
 
+int wr_ts_drives_soft_trigger;
+module_param(wr_ts_drives_soft_trigger, int, 0644);
+MODULE_PARM_DESC(wr_ts_drives_soft_trigger, "1: output ST on every TS for interrupt latency eval");
+
 int wr_pps_inten = 1;
 module_param(wr_pps_inten, int, 0444);
 MODULE_PARM_DESC(wr_pps_inten, "1: enable PPS interrupts");
@@ -41,6 +45,8 @@ MODULE_PARM_DESC(wr_pps_inten, "1: enable PPS interrupts");
 int wr_tt_inten = 1;
 module_param(wr_tt_inten, int, 0444);
 MODULE_PARM_DESC(wr_tt_inten, "1: enable WRTT interrupts");
+
+
 
 static inline u32 wr_ctrl_set(struct acq400_dev *adev, unsigned bits){
 	u32 ctrl = acq400rd32(adev, WR_CTRL);
@@ -89,6 +95,10 @@ static irqreturn_t wr_ts_isr(int irq, void *dev_id)
 		wrtt_client_isr_action(&sc_dev->wrtt_client1, acq400rd32(adev, WR_CUR_VERNR));
 	}
 	if (int_sta&WR_CTRL_TS_STA){
+		if (wr_ts_drives_soft_trigger){
+			acq400_soft_trigger(1);
+			acq400_soft_trigger(0);
+		}
 		wrtt_client_isr_action(&sc_dev->ts_client, acq400rd32(adev, WR_TAI_STAMP));
 	}
 	acq400wr32(adev, WR_CTRL, int_sta);
