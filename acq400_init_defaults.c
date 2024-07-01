@@ -1113,6 +1113,7 @@ void acq400_mod_init_defaults(struct acq400_dev* adev)
 			break;
 		case MOD_ID_AO420FMC:
 		case MOD_ID_AO420FMC_CS2:
+		case MOD_ID_AO422FMC:
 			ao420_init_defaults(adev, GET_MOD_ID(adev)==MOD_ID_AO420FMC_CS2);
 			break;
 		case MOD_ID_AO424ELF:
