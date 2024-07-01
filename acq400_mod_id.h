@@ -30,6 +30,7 @@
 #define MOD_ID_AO420FMC		0x40
 #define MOD_ID_AO424ELF		0x41
 #define MOD_ID_AO420FMC_CS2	0x42
+#define MOD_ID_AO422FMC		0x44
 
 /* Multifunction MODULES */
 #define MOD_ID_BOLO8		0x60

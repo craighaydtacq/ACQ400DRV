@@ -3650,7 +3650,7 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 		specials[nspec++] = acq465_attrs;
 	}else if (IS_ACQ494(adev)){
 		specials[nspec++] = acq494_attrs;
-	}else if (IS_AO420(adev)||IS_AO428(adev)){
+	}else if (IS_AO42S(adev)){
 		specials[nspec++] = playloop_attrs;
 		specials[nspec++] = dacspi_attrs;
 		if (IS_AO420_HALF436(adev)){
@@ -3659,7 +3659,7 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 					acq436_upper_half_attrs;
 			specials[nspec++] = ao420_half_436_attrs;
 		}else{
-			specials[nspec++] = IS_AO420(adev)? ao420_attrs: ao428_attrs;
+			specials[nspec++] = IS_AO428(adev)? ao428_attrs: ao420_attrs;
 		}
 	}else if (IS_AO424(adev)){
 		specials[nspec++] = playloop_attrs;

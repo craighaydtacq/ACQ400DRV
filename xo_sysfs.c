@@ -1030,7 +1030,7 @@ static ssize_t show_dac_encoding(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 
 	return sprintf(buf, "%s\n",
-		IS_AO420(adev)||IS_AO428(adev)? "signed": IS_AO424(adev)? "unsigned": "unknown");
+		IS_AO42S(adev)? "signed": IS_AO424(adev)? "unsigned": "unknown");
 }
 
 
