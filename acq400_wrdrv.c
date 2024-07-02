@@ -38,6 +38,19 @@ int wr_ts_drives_soft_trigger;
 module_param(wr_ts_drives_soft_trigger, int, 0644);
 MODULE_PARM_DESC(wr_ts_drives_soft_trigger, "1: output ST on every TS for interrupt latency eval");
 
+int wr_ts_wr_streamer_trigger;
+module_param(wr_ts_wr_streamer_trigger, int, 0644);
+MODULE_PARM_DESC(wr_ts_wr_streamer_trigger, "1: run a WRSTREAMER trigger");
+
+int wr_ts_streamer_coeff_pc = 80;
+module_param(wr_ts_streamer_coeff_pc, int, 0644);
+MODULE_PARM_DESC(wr_ts_streamer_coeff_pc, "smoothing coeffcient percent");
+
+int wr_ticks_per_sec = 40000000;
+module_param(wr_ticks_per_sec, int, 0644);
+MODULE_PARM_DESC(wr_ticks_per_sec, "ticks per second. Nominal 40MHz");
+
+
 int wr_pps_inten = 1;
 module_param(wr_pps_inten, int, 0444);
 MODULE_PARM_DESC(wr_pps_inten, "1: enable PPS interrupts");
@@ -81,6 +94,54 @@ static void wrtt_client_isr_action(struct WrClient* cli, u32 ts)
 	wake_up_interruptible(&cli->wc_waitq);
 }
 
+// wr_ticks_per_sec
+
+static int wr_load_tx(struct acq400_dev *adev, unsigned wr_ts1)
+{
+	return 0;
+}
+static int wr_streamer_trigger_action(struct acq400_dev *adev, unsigned wr_ts)
+{
+	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
+	struct WrTsPredictor* tsp = &sc_dev->wr_ts_p;
+	/*
+	 * compute dt1
+	 * compute dta1 = dta0*P + x*(1-P)
+	 * compute wr_ts1 = wr_ts + dta1
+	 * load WRTX pattern.
+	 */
+	unsigned sec_p 	 = WRTS_SEC(tsp->ts_p);
+	unsigned ticks_p = WRTS_TICK(tsp->ts_p);
+
+	unsigned sec_c 	 = WRTS_SEC(wr_ts);
+	unsigned ticks_c = WRTS_TICK(wr_ts);
+
+	unsigned dt;
+
+
+	if ((likely(sec_p == sec_c))){
+		dt = ticks_c - ticks_p;
+	}else if (likely(WRTS_NEXT_SEC(sec_p))){
+		dt = ticks_c + wr_ticks_per_sec - ticks_p;
+	}else{
+		dev_err(DEVP(adev), "warning missed trigger %x => %x",
+				tsp->ts_p, wr_ts);
+		tsp->ts_p = wr_ts;
+		return 0;
+	}
+
+	tsp->dta = (tsp->dta*wr_ts_streamer_coeff_pc + dt*(1-wr_ts_streamer_coeff_pc))/100;
+
+	if ((likely(ticks_c+tsp->dta < wr_ticks_per_sec))){
+		tsp->ts_n = MK_WRTS(sec_c, ticks_c + tsp->dta);
+	}else{
+		tsp->ts_n = MK_WRTS(WRTS_NEXT_SEC(sec_c), ticks_c + tsp->dta - wr_ticks_per_sec);
+	}
+	wr_load_tx(adev, tsp->ts_n);
+	tsp->ts_p = wr_ts;
+	return 0;
+}
+
 static irqreturn_t wr_ts_isr(int irq, void *dev_id)
 {
 	struct acq400_dev *adev = (struct acq400_dev *)dev_id;
@@ -95,11 +156,16 @@ static irqreturn_t wr_ts_isr(int irq, void *dev_id)
 		wrtt_client_isr_action(&sc_dev->wrtt_client1, acq400rd32(adev, WR_CUR_VERNR));
 	}
 	if (int_sta&WR_CTRL_TS_STA){
+		unsigned wr_ts = acq400rd32(adev, WR_TAI_STAMP);
+
 		if (wr_ts_drives_soft_trigger){
 			acq400_soft_trigger(1);
 			acq400_soft_trigger(0);
 		}
-		wrtt_client_isr_action(&sc_dev->ts_client, acq400rd32(adev, WR_TAI_STAMP));
+		if (wr_ts_wr_streamer_trigger){
+			wr_streamer_trigger_action(adev, wr_ts);
+		}
+		wrtt_client_isr_action(&sc_dev->ts_client, wr_ts);
 	}
 	acq400wr32(adev, WR_CTRL, int_sta);
 	return IRQ_HANDLED;	/* canned */

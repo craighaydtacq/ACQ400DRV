@@ -352,6 +352,14 @@ struct GPG_buffer {
 
 #define SoftTriggerTimerRepeatInfinity -1
 
+typedef unsigned WRTS;    /* Raw White Rabbit timestamp sec:4 ticks:28 */
+
+#define WRTS_SEC(wrts)  ((wrts)>>28)
+#define WRTS_NEXT_SEC(s) ((s+1)&0x0f)
+#define WRTS_TICK(wrts) ((wrts)&0x0fffffff)
+
+#define MK_WRTS(s, t)   ((s)<<28|(t))
+
 struct acq400_sc_dev {
 	char id[16];
 	char status_message[MAX_RT_STATUS_MESSAGE];
@@ -398,6 +406,13 @@ struct acq400_sc_dev {
 	} pps_client, ts_client,
 	  wrtt_client0, wrtt_client1;
 
+	struct WrTsPredictor {
+		unsigned ticks_per_sec;		/* maximimum tick value */
+		unsigned dta;                   /* delta tick average */
+		WRTS ts_p; 			/* previous timestamp in raw 4:28 format */
+		WRTS ts_c;                  	/* ts_c current ts */
+		WRTS ts_n;                      /* predicted next ts, to send in WRTD to form next WRTT */
+	} wr_ts_p;
 	struct RTM12 {
 		unsigned translen[2];
 		enum RTM12_STATE { RTM12_OFF, RTM12_EN, RTM12_WAIT_ARM, RTM12_WAIT1 } state;
