@@ -6,9 +6,14 @@
 template <class T>
 int ramp(int nsam, int step, int ssize, T start=0)
 {
-	int nwords = nsam * ssize;
+	unsigned long long nwords = nsam;
+	nwords *= ssize;
 	T xx = start;
 	int ch = 0;
+
+	fprintf(stderr, "ramp<%lu> nwords:%llu MB:%llu \n", 
+			sizeof(T), nwords, (nwords*sizeof(T))/0x100000);
+
 	for (; nwords; nwords--){
 		fwrite(&xx, sizeof(xx), 1, stdout);
 		if (++ch >= ssize){
