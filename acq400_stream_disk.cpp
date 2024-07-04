@@ -4,7 +4,7 @@
  *  Created on: 10 Feb 2015
  *      Author: pgm
  *
- *     usage: scq400_stream_disk NBUFFERS dest1 [dest2]
+ *     usage: acq400_stream_disk NBUFFERS dest1 [dest2]
  *     Read full rate data on stdin
  *     farm to one or more file trees  destX/%04d/%02d[extension]
  *     we try to avoid too many files in one directory (max 100)
