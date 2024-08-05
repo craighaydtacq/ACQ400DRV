@@ -11,18 +11,25 @@
 #include "knobs.h"
 #include "acq-util.h"
 
+#include <stdlib.h>
+
 namespace G {
 	unsigned int nchan;
 	unsigned int naxi_dma;
 	char use_mgtdram;
 	char stack;
 	char model[32];
+	int verbose;
 };
 
 int print_the_map(void)
 {
 	if ((G::stack || G::use_mgtdram) && strncmp(G::model, "ACQ48", 5) == 0 && G::nchan > 8){
 		int blocks[] = { 0, 8, 4, 12, 16, 24, 20, 28, 32, 40, 36, 44 };
+
+		if (G::verbose){ 
+			fprintf(stderr, "STACK Mapping\n");
+		}
 		for (unsigned int ic = 0; ic < G::nchan; ++ic){
 			printf("%d%c", blocks[ic/4]+ic%4, ic+1==G::nchan? '\n': ',');
 		}
@@ -35,6 +42,7 @@ int print_the_map(void)
 	return 0;
 }
 int main(int argc, char** argv) {
+	if (getenv("VERBOSE")) G::verbose = atoi(getenv("VERBOSE"));
 	if (argc > 1){
 		if (strncmp(argv[1], "mgtdram", 7) == 0){
 			G::use_mgtdram = true;
