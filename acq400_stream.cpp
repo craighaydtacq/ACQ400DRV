@@ -41,7 +41,7 @@
  * Then allow an overlay VFS to extract the data.
  * Demux --pre==0 : demux in situ starting at ibuf=0
  * Demux --pre!-0 : demux and write back to ibuf=0
- * Easy to read from linea mapped buffers. Copy to local, DMA back
+ * Easy to read from linear mapped buffers. Copy to local, DMA back
  * Driver provides a pair of temp buffers?. Allow ping/pong copy back.
  *
  * All the kbufs are mapped to a linear thing: this makes it easy for app-code.
