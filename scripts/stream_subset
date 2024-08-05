@@ -1,0 +1,13 @@
+#!/bin/sh
+# set STREAM_OPTS for subset
+
+CONF=/etc/sysconfig/acq400_streamd.conf
+
+if [ -z "$1" ]; then
+	grep "^STREAM_OPTS=" $CONF
+else
+	sed -ie "/^STREAM_OPTS=/d" $CONF
+	sed -ie "$ a STREAM_OPTS=$1" $CONF
+fi
+
+

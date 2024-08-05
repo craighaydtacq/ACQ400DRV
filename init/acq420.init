@@ -660,7 +660,8 @@ build_site0() {
 	$ULB/fit_rtm_translen_to_buffer $ULB/rgm_flush \
         $ULB/run0 $ULB/play0 $ULB/get.xdt \
         $ULB/streamtonowhered $ULB/set.sync_role \
-	$ULB/datals ${ULB}/cstate $ULB/channel_mapping ${ek}
+	$ULB/datals ${ULB}/cstate $ULB/channel_mapping ${ek} \
+	$ULB/stream_subset
     ln -s /var/log/run0.log ${ek}/run0_log
 
     ln -s $ULB/set.site ${ek}/SS
