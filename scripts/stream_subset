@@ -6,8 +6,15 @@ CONF=/etc/sysconfig/acq400_streamd.conf
 if [ -z "$1" ]; then
 	grep "^STREAM_OPTS=" $CONF
 else
+	arg=$1
 	sed -ie "/^STREAM_OPTS=/d" $CONF
-	sed -ie "$ a STREAM_OPTS=$1" $CONF
+	case $arg in
+	full)
+		sed -ie "$ a STREAM_OPTS=" $CONF;;
+	none)
+		sed -ie "$ a STREAM_OPTS=--null-copy" $CONF;;
+	*)
+		sed -ie "$ a STREAM_OPTS=--subset=$arg" $CONF;;
+	esac
 fi
-
 
