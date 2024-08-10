@@ -61,8 +61,8 @@ int act_on_fiferr = 1;
 module_param(act_on_fiferr, int, 0644);
 MODULE_PARM_DESC(act_on_fiferr, "0: log, don't act. 1: abort on error");
 
-int ao420_mapping[AO_CHAN] = { 1, 2, 3, 4 };
-int ao420_mapping_count = 4;
+int ao420_mapping[AO_CHAN] = { 1, 2, 3, 4, 5 };
+int ao420_mapping_count = AO_CHAN;
 module_param_array(ao420_mapping, int, &ao420_mapping_count, 0644);
 
 int no_ao42x_llc_ever = 0;
@@ -1114,7 +1114,9 @@ void acq400_mod_init_defaults(struct acq400_dev* adev)
 		case MOD_ID_AO420FMC:
 		case MOD_ID_AO420FMC_CS2:
 		case MOD_ID_AO422FMC:
-			ao420_init_defaults(adev, GET_MOD_ID(adev)==MOD_ID_AO420FMC_CS2);
+			ao420_init_defaults(adev,
+					GET_MOD_ID(adev)==MOD_ID_AO420FMC_CS2||
+					GET_MOD_ID(adev)==MOD_ID_AO422FMC);
 			break;
 		case MOD_ID_AO424ELF:
 			ao424_init_defaults(adev);

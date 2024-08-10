@@ -500,6 +500,10 @@ MAKE_DAC_RANGE(01,  ao420_physChan(1));
 MAKE_DAC_RANGE(02,  ao420_physChan(2));
 MAKE_DAC_RANGE(03,  ao420_physChan(3));
 MAKE_DAC_RANGE(04,  ao420_physChan(4));
+MAKE_DAC_RANGE(05,  ao420_physChan(5));  /* @@todo alias REF! Wrong! */
+#if 0
+MAKE_DAC_RANGE(05,  ao420_physChan(6));  /* @@todo suggestion by PGM */
+#endif
 MAKE_DAC_RANGE(REF, 4);
 
 
@@ -1209,7 +1213,19 @@ const struct attribute *ao420_attrs[] = {
 	&dev_attr_GR2.attr, &dev_attr_DR2.attr,
 	&dev_attr_GR3.attr, &dev_attr_DR3.attr,
 	&dev_attr_GR4.attr, &dev_attr_DR4.attr,
+	NULL
+};
 
+const struct attribute *ao422_attrs[] = {
+	&dev_attr_AO_01.attr, &dev_attr_dac_range_01.attr,
+	&dev_attr_AO_02.attr, &dev_attr_dac_range_02.attr,
+	&dev_attr_AO_03.attr, &dev_attr_dac_range_03.attr,
+	&dev_attr_AO_04.attr, &dev_attr_dac_range_04.attr,
+	&dev_attr_AO_05.attr, &dev_attr_dac_range_05.attr,
+	NULL
+};
+
+const struct attribute *ao420_common_attrs[] = {
 	&dev_attr_dac_range_REF.attr,
 	&dev_attr_dacreset_device.attr,
 	&dev_attr_dac_headroom.attr,

@@ -382,7 +382,7 @@
 enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 
 
-#define AO_CHAN	4
+#define AO_CHAN	5		/* AO420: 4, AO422: 5, the extra one doesn't matter */
 
 #define AO424_MAXCHAN		32
 

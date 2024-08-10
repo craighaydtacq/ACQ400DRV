@@ -4,7 +4,6 @@
 /*   Copyright (C) 2010 Peter Milne, D-TACQ Solutions Ltd
  *                      <Peter dot Milne at D hyphen TACQ dot com>
     This program is free software; you can redistribute it and/or modify
-    it under the terms of Version 2 of the GNU General Public License
     as published by the Free Software Foundation;
 
     This program is distributed in the hope that it will be useful,
@@ -1745,6 +1744,7 @@ static const char* _lookup_id(struct acq400_dev *adev)
 		{ MOD_ID_ACQ494FMC,	"acq494fmc"	},
 		{ MOD_ID_AO420FMC,	"ao420fmc"	},
 		{ MOD_ID_AO420FMC_CS2,	"ao420fmc"	},
+		{ MOD_ID_AO422FMC,      "ao422fmc"      },
 		{ MOD_ID_AO424ELF,	"ao424elf"	},
 		{ MOD_ID_DAC_CELF, 	"ao428elf"	},
 		{ MOD_ID_DIO432FMC, 	"dio432"	},
@@ -3660,8 +3660,16 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 					acq436_upper_half_attrs_master:
 					acq436_upper_half_attrs;
 			specials[nspec++] = ao420_half_436_attrs;
+		}else if (IS_AO428(adev)){
+			specials[nspec++] = ao428_attrs;
+		}else if (IS_AO422(adev)){
+			specials[nspec++] = ao422_attrs;
+			specials[nspec++] = ao420_common_attrs;
+		}else if (IS_AO420(adev)){
+			specials[nspec++] = ao420_attrs;
+			specials[nspec++] = ao420_common_attrs;
 		}else{
-			specials[nspec++] = IS_AO428(adev)? ao428_attrs: ao420_attrs;
+			dev_err(dev, "%s %d: AO42S unable to use mod_id %02x", __FILE__, __LINE__, GET_MOD_ID(adev));
 		}
 	}else if (IS_AO424(adev)){
 		specials[nspec++] = playloop_attrs;

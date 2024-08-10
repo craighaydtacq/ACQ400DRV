@@ -22,6 +22,8 @@ extern const struct attribute *playloop_attrs[];
 extern const struct attribute* dacspi_attrs[];
 extern const struct attribute *ao428_attrs[];
 extern const struct attribute *ao420_attrs[];
+extern const struct attribute *ao422_attrs[];
+extern const struct attribute *ao420_common_attrs[];
 
 #define ao420_half_436_attrs &ao420_attrs[8]
 
