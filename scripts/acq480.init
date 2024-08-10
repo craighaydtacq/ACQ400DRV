@@ -37,7 +37,9 @@ proc link_gpio {lnames outputs root gpio1 ngpio} {
 	}
 }
 
-set I2C_CHAN_OFFSET 1
+set fp [open /etc/sysconfig/i2c_site2bus r]
+set I2C_CHAN_OFFSET [string trim [read $fp] ]
+close $fp
 
 proc get_gpio12 {site addr} {
         global I2C_CHAN_OFFSET

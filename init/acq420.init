@@ -814,7 +814,7 @@ build_knobs() {
         kmcuz30)
             echo "KMCUZ30 + ACQ480 : EXPERIMENTAL";;
         z7io)
-                export ACQ480_MODPARAMS="i2c_chan_offset=2 fix_defective_fsbl=${Z7IO_FIX_DEFECTIVE_FSBL:-1}"
+                export ACQ480_MODPARAMS="fix_defective_fsbl=${Z7IO_FIX_DEFECTIVE_FSBL:-1}"
                 echo "Z7IO + ACQ480 : set $ACQ480_MODPARAMS";;
         *)
             echo "ERROR: ACQ480 found, but not compatible with BASE $MODEL"
@@ -861,10 +861,6 @@ build_knobs() {
 		$ULB/di460.init ${DI460_SITES}
     fi
     if [ "x${ACQ425_SITES}" != "x" ]; then
-        case $MODEL in
-        z7io)
-                export i2c_chan_offset=3;;
-        esac
         $ULB/acq425.init ${ACQ425_SITES}
         # use /mnt/local/acq420_custom
         #       BLEN=4194304
