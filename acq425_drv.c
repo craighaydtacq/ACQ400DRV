@@ -39,10 +39,13 @@ module_param(n_acq425, int, 0444);
 static int single_pga_script = 0;
 module_param(single_pga_script, int, 0644);
 
+static int i2c_chan_offset = 1;
+module_param(i2c_chan_offset, int, 0644);
+
 /* adapters indexed by site .. use I2C_ADAPTER() to access */
 struct i2c_adapter *__i2c_adap[6];
 
-#define I2C_CHAN(site) 	((site)+1)
+#define I2C_CHAN(site) 	((site)+i2c_chan_offset)
 #define I2C_ADAPTER(site)	(__i2c_adap[(site)-1])
 
 #define PGA_TYPE	"tca6424cr"

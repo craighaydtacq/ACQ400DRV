@@ -29,8 +29,15 @@ proc link_gpio {lnames site gpio1} {
 	}
 }
 
+set i2c_chan_offset 1
+
+if { [info exists ::env(i2c_chan_offset) ] } {
+        set i2c_chan_offset $::env(i2c_chan_offset)
+}
+
 proc get_gpio1 {site addr} {
-	set bus [expr $site + 1]
+        global i2c_chan_offset
+	set bus [expr $site + $i2c_chan_offset]
 	set baddr "$bus-00$addr"
 	set gpath "/sys/bus/i2c/devices/$baddr/gpio/gpiochip"
 	set gpiochip [glob "$gpath*"]
@@ -50,7 +57,8 @@ if { $::argc > 0 } {
 		}
 		set SITES "$SITES$site"	
 	} 	
-	exec /sbin/insmod  /usr/local/lib/modules/acq425_drv.ko acq425_sites=$SITES
+	exec /sbin/insmod  /usr/local/lib/modules/acq425_drv.ko \
+	       i2c_chan_offset=$i2c_chan_offset acq425_sites=$SITES
 	
 	foreach site $::argv {
 	    puts "build gain knobs site:$site"

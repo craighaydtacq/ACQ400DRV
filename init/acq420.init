@@ -861,6 +861,10 @@ build_knobs() {
 		$ULB/di460.init ${DI460_SITES}
     fi
     if [ "x${ACQ425_SITES}" != "x" ]; then
+        case $MODEL in
+        z7io)
+                export i2c_chan_offset=3;;
+        esac
         $ULB/acq425.init ${ACQ425_SITES}
         # use /mnt/local/acq420_custom
         #       BLEN=4194304
