@@ -356,6 +356,7 @@ static ssize_t store_ao_reset_fifo(
 
 static DEVICE_ATTR(__reset_fifo, S_IWUSR, 0, store_ao_reset_fifo);
 
+MAKE_BITS(ch5_en, DAC_CTRL, MAKE_BITS_FROM_MASK, DAC_422_CH5_EN);
 MAKE_BITS(awg_abort, DAC_CTRL, MAKE_BITS_FROM_MASK, DAC_CTRL_AWG_ABORT);
 
 static ssize_t show_awg_stream_buffers(
@@ -1222,6 +1223,7 @@ const struct attribute *ao422_attrs[] = {
 	&dev_attr_AO_03.attr, &dev_attr_dac_range_03.attr,
 	&dev_attr_AO_04.attr, &dev_attr_dac_range_04.attr,
 	&dev_attr_AO_05.attr, &dev_attr_dac_range_05.attr,
+	&dev_attr_ch5_en.attr,
 	NULL
 };
 
