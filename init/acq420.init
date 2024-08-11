@@ -662,7 +662,8 @@ build_site0() {
         $ULB/streamtonowhered $ULB/set.sync_role \
 	$ULB/datals ${ULB}/cstate $ULB/channel_mapping \
 	$ULB/stream_subset \
-	${ek} 
+	${ek}
+    echo "default 0 ssb=0" >/var/log/run0.log
     ln -s /var/log/run0.log ${ek}/run0_log
 
     ln -s $ULB/set.site ${ek}/SS
