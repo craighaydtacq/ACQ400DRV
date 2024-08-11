@@ -356,7 +356,44 @@ static ssize_t store_ao_reset_fifo(
 
 static DEVICE_ATTR(__reset_fifo, S_IWUSR, 0, store_ao_reset_fifo);
 
-MAKE_BITS(ch5_en, DAC_CTRL, MAKE_BITS_FROM_MASK, DAC_422_CH5_EN);
+
+static ssize_t show_ch5_en(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	u32 dac_ctrl = acq400rd32(adev, DAC_CTRL);
+	return sprintf(buf, "%u\n", (dac_ctrl& ~DAC_422_CH5_EN) != 0);
+}
+
+static ssize_t store_ch5_en(
+	struct device * dev,
+	struct device_attribute *attr,
+	const char * buf,
+	size_t count)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	unsigned ch5_en;
+
+	if (sscanf(buf, "%u", &ch5_en) == 1){
+		u32 dac_ctrl = acq400rd32(adev, DAC_CTRL);
+		if (ch5_en){
+			acq400wr32(adev, DAC_CTRL, dac_ctrl|DAC_422_CH5_EN);
+			adev->nchan_enabled = 5;
+		}else{
+			acq400wr32(adev, DAC_CTRL, dac_ctrl& ~DAC_422_CH5_EN);
+			adev->nchan_enabled = 4;
+		}
+		return count;
+	}else{
+		return -1;
+	}
+}
+
+static DEVICE_ATTR(ch5_en,
+		S_IRUGO|S_IWUSR, show_ch5_en, store_ch5_en);
+
 MAKE_BITS(awg_abort, DAC_CTRL, MAKE_BITS_FROM_MASK, DAC_CTRL_AWG_ABORT);
 
 static ssize_t show_awg_stream_buffers(
