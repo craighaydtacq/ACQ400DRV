@@ -956,7 +956,7 @@ static void dio432_init_defaults(struct acq400_dev *adev)
 
 
 
-/* correct for FPGA mismatch with front panel connectors */
+/* correct for FPGA mismatch with front panel connectors, physchan numbered from zero */
 int ao420_physChan(int lchan /* 1..4 */ )
 {
 	int ip;

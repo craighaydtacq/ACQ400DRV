@@ -534,15 +534,15 @@ static ssize_t store_dac_range##NAME(					\
 static DEVICE_ATTR(dac_range_##NAME, S_IRUGO|S_IWUSR, 			\
 		show_dac_range##NAME, store_dac_range##NAME)
 
-MAKE_DAC_RANGE(01,  ao420_physChan(1));
-MAKE_DAC_RANGE(02,  ao420_physChan(2));
+MAKE_DAC_RANGE(01,  ao420_physChan(1));  /* normally, 1<<0 */
+MAKE_DAC_RANGE(02,  ao420_physChan(2));  /* normally, 1<<1 */
 MAKE_DAC_RANGE(03,  ao420_physChan(3));
 MAKE_DAC_RANGE(04,  ao420_physChan(4));
+#ifdef PGMCOMOUT
 MAKE_DAC_RANGE(05,  ao420_physChan(5));  /* @@todo alias REF! Wrong! */
-#if 0
-MAKE_DAC_RANGE(05,  ao420_physChan(6));  /* @@todo suggestion by PGM */
 #endif
-MAKE_DAC_RANGE(REF, 4);
+MAKE_DAC_RANGE(05,  ao420_physChan(6));  /* suggestion adopted 240812 */
+MAKE_DAC_RANGE(REF, 4);                  /* 1<<4 */
 
 
 /*
