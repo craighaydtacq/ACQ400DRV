@@ -32,15 +32,14 @@ make_ao422_range_knobs() {
                 cat - >$knob  << EOF
 #!/bin/sh
 # arg: 1:10V, anything else: 5V
-range_code=0x2004d00
-[ "x$1" = "x1" ] && range_code=0x2004e00
-vset_sys ${KNOBS}/dac_enable 0
-vset_sys ${KNOBS}/dacreset 1
-vset_sys ${KNOBS}/dacreset 0
-vset_sys ${KNOBS}/dacspi 0x300000       # Clear Code
-vset_sys ${KNOBS}/dacspi 0x300000
-vset_sys ${KNOBS}/dacspi $range_code
-vset_sys ${KNOBS}/dac_enable 1
+range_code=0x02004d00
+[ "x$1" = "x1" ] && range_code=0x02004e00
+set.sys ${KNOBS}/dac_enable 0
+set.sys ${KNOBS}/dacreset 1
+set.sys ${KNOBS}/dacreset 0
+set.sys ${KNOBS}/dacspi 0x03000000       # Clear Code
+set.sys ${KNOBS}/dacspi \$range_code
+set.sys ${KNOBS}/dac_enable 1
 EOF
                 chmod a+rx $knob
         done
@@ -59,22 +58,22 @@ EN=$(get.sys ${KNOBS}/dac_enable)
 vset_sys ${KNOBS}/dac_enable 0
 vset_sys ${KNOBS}/dacreset 1
 vset_sys ${KNOBS}/dacreset 0
-vset_sys ${KNOBS}/dacspi 0x300000       # Clear Code
+vset_sys ${KNOBS}/dacspi 0x03000000       # Clear Code
 if [ "$MTYPE" = "$MOD_ID_AO422FMC" ]; then
-        vset_sys ${KNOBS}/dacspi 0x6000040      # UP_RATE default
-        vset_sys ${KNOBS}/dacspi 0x2004d00      # 5V default
+        vset_sys ${KNOBS}/dacspi 0x06000040      # UP_RATE default
+        vset_sys ${KNOBS}/dacspi 0x02004d00      # 5V default
         make_ao422_range_knobs
 else
         vset_sys ${KNOBS}/dacspi 0x400002	# Soft Reset
-fi
 
-case $MODEL in
-ao428elf|cpsc2dac)	
-	vset_sys ${KNOBS}/dacspi 0x200002;; # +/- Ref Mult.
-*)
-	vset_sys ${KNOBS}/dacspi 0x400002
-	vset_sys ${KNOBS}/dacspi 0x200000;;
-esac
+	case $MODEL in
+	ao428elf|cpsc2dac)
+		vset_sys ${KNOBS}/dacspi 0x200002;; # +/- Ref Mult.
+	*)
+		vset_sys ${KNOBS}/dacspi 0x400002   # @@todo .. probably redundant
+		vset_sys ${KNOBS}/dacspi 0x200000;;
+	esac
+fi
 vset_sys ${KNOBS}/dac_enable ${EN}
 
 [ ! -e /etc/acq400/$SITE/wavegen ] && ln -s /usr/local/bin/wavegen /etc/acq400/$SITE
