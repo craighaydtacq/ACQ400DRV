@@ -39,6 +39,7 @@ set.sys ${KNOBS}/dacreset 1
 set.sys ${KNOBS}/dacreset 0
 set.sys ${KNOBS}/dacspi 0x03000000       # Clear Code
 set.sys ${KNOBS}/dacspi \$range_code
+set.sys ${KNOBS}/dac_range_0$ch
 set.sys ${KNOBS}/dac_enable 1
 EOF
                 chmod a+rx $knob
