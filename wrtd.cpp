@@ -567,13 +567,14 @@ int txq() {
 
 
 class Acq400Txa : public Txa {
+	static int WRTD_TXA_AGGRESSIVE;
 protected:
 	TS txa_validate_rel(unsigned sec, unsigned ns)
 	{
 		unsigned tai_sec = getvalue<unsigned>(DEV_TAI, "r") + 1; // round up to next second
 
-		// @todo .. added 1 twice ..
-		return TS(tai_sec+1+sec, ns/G::ns_per_tick);
+		// .. default is add one to ensure up rounding, then add another 1 to ensure we have enough slack
+		return TS(tai_sec+(WRTD_TXA_AGGRESSIVE==0)+sec, ns/G::ns_per_tick);
 	}
 
 	TS txa_validate_abs(unsigned sec, unsigned ns)
@@ -587,6 +588,7 @@ protected:
 		return TS(sec, ns/G::ns_per_tick);
 	}
 };
+int Acq400Txa::WRTD_TXA_AGGRESSIVE = Env::getenv("WRTD_TXA_AGGRESSIVE", 0);
 
 Txa& Txa::factory()
 {
