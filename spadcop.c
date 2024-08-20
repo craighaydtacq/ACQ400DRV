@@ -1,6 +1,31 @@
 /*
  * spadcop.c : copy src to spadN on timeout
+ *
+ * site0 presents knobs "spadcop0, spadcop1 .. spadcop7".
+ *     each knob specifies a software update source for a SPAD element.
+ *
  * sscanf(buf, "%d,%d,%x,%d", &enable, &site, &reg, &usecs);
+ * where:
+ * 	enable: 1 to enable, 0 to disable
+ * 	site: module sites 0..15
+ * 	reg: offset of register in site
+ * 	       copy contents from site:reg to SPAD[n]
+ * 	usecs: update rate usecs.
+ * 		It works at 1kHz, it's probably not advisable to go faster.
+ *
+ * 	A number of canned special functions are available:
+ * 		reg==0x5555? spadCopTimeRealSecondsAction
+ * 			Time of day : (u32)((sec<<12)|msec)
+		reg==0xcafe? spadCopMsecAction
+			Time of day: msec residue in second
+		reg==0xfeed? spadCopTimeRealAction
+			Time of day: Unix time_t in seconds.
+			Decode on the box with  $(date -D @3770188763)  # decimal value)
+		reg==0xd0d0? spadCopTimeTAIAction
+			TAI Time in D-TACQ compressed sec:4 ticks:28 format
+		reg==0xcccc? spadCopRampAction
+			u32 ramp function. a good view of how well the Linux timer interrupt is working..
+ *
  *
  *
  *  Created on: 23 Jul 2019
