@@ -37,8 +37,13 @@ proc link_gpio {site lnames outputs gpio1} {
 	}
 }
 
+set fp [open /etc/sysconfig/i2c_site2bus r]
+set I2C_CHAN_OFFSET [string trim [read $fp] ]
+close $fp
+
 proc get_gpio1 {site addr} {
-	set bus [expr $site + 1]
+        global I2C_CHAN_OFFSET
+	set bus [expr $site + $I2C_CHAN_OFFSET]
 	set baddr "$bus-00$addr"
 	set gpath "/sys/bus/i2c/devices/$baddr/gpio/gpiochip"
 	set gpiochip [glob "$gpath*"]
@@ -47,6 +52,7 @@ proc get_gpio1 {site addr} {
 	#	puts "get_gpio1 returning $pin1"
 	return $pin1
 }
+
 
 
 proc hook_aosite {ai_site ao_site} {
@@ -77,13 +83,15 @@ if { $::argc > 0 } {
 		}
 		set SITES "$SITES$site"	
 	} 	
-	exec /sbin/insmod  /usr/local/lib/modules/acq425_drv.ko acq425_sites=$SITES single_pga_script=1
+	exec /sbin/insmod  /usr/local/lib/modules/acq425_drv.ko \
+	       i2c_chan_offset=$I2C_CHAN_OFFSET \
+	       acq425_sites=$SITES single_pga_script=1
 	
 	foreach site $::argv {
 	    puts "build gain knobs site:$site"
 		exec mkdir -p /dev/acq425/$site
 		set gpio1 [get_gpio1 $site 22]
-		link_gpio $site $LNAMES1 $OUTPUTS1 $gpio1 
+		link_gpio $site $LNAMES1 $OUTPUTS1 $gpio1
 
 		for {set ic 1} {$ic <= 8} {incr ic} {
 			file delete -force /etc/acq400/$site/gain$ic			
@@ -97,8 +105,7 @@ if { $::argc > 0 } {
 		puts $fp {gain=gain[0-9]*}
 		close $fp
 
-		set gpio2 [expr $gpio1 + 16]
-		link_gpio $site $LNAMES2 $OUTPUTS2 $gpio2
+		link_gpio $site $LNAMES2 $OUTPUTS2 [expr $gpio1 + 16]
 
 		foreach ao_site $AO420_SITES {
 		    if { $ao_site > $site } {
