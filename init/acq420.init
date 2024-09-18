@@ -1064,7 +1064,13 @@ HUDP_SITES=
 LOAD_MGT_REQUEST=0
 
 load_mgt() {
-    COMMS4=$(grep filename /tmp/fpga_status | awk '{ print $5 } ' | awk -F _ '{ print $9 }')
+    fpga_id=$(grep filename /tmp/fpga_status | awk '{ print $5 } ')
+    COMMS4=$(echo $fpga_id | awk -F _ '{ print $9 }')
+    case $COMMS4 in
+    98*)
+        # this is actually a DSP.. try the next one
+        COMMS4=$(echo $fpga_id | awk -F _ '{ print $10 }');;
+    esac
     case $COMMS4 in
     908*)
     	echo No MGT/Aurora Function
