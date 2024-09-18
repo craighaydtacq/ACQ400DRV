@@ -75,7 +75,7 @@ MODULE_PARM_DESC(dio432_rowback, "stop short filling FIFO by this much [REMOVEME
 
 int dio482_cntr_shorts = 0;
 module_param(dio482_cntr_shorts, int , 0644);
-MODULE_PARM_DESC(dio482_cntr_shorts, "set TRYUE for 16 bit count, else 32 bit");
+MODULE_PARM_DESC(dio482_cntr_shorts, "set TRUE for 16 bit count, else 32 bit");
 
 
 void acq420_onStart(struct acq400_dev *adev);
