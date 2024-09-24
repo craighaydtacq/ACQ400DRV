@@ -1310,13 +1310,16 @@ fi
 [ -e /mnt/local/sysconfig/acq400_streamd.conf ] && \
     cp /mnt/local/sysconfig/acq400_streamd* /etc/sysconfig/
 
-case $(${ULC}/get-fpga-extra) in
+FPGA_DSP=$(${ULC}/get-fpga-dsp)
+case $FPGA_DSP in
+9801)
+    /usr/local/init/ddc.init 14;;
 9802)
     /usr/local/init/anatrg.init 14;;
 9804)
     /usr/local/init/fir-subrate-append.init 14;;
-9801)
-    /usr/local/init/ddc.init 14;;
+98*)
+    echo "non-universal DSP $FPGA_DSP detected, assume local package setup available";;
 esac
 
 start_knob_services

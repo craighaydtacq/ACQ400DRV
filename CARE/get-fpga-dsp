@@ -1,0 +1,17 @@
+#!/bin/sh
+
+extra=$(/usr/local/CARE/get-fpga-name | awk -F_ '{
+	for (ii = 1; ii <= NF; ++ii){
+		if ($ii ~ /98[0-9A-F][0-9A-F]/){
+			print $ii
+		}
+        }
+}')
+case $extra in
+98*)
+	echo $extra
+	exit 0;;
+esac
+
+exit 1
+
