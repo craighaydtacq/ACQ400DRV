@@ -1,1 +1,10 @@
-kermit -l /dev/ttyPS1 -b 115200 -c
+#! /bin/sh
+
+mkdir /tmp/jail
+
+cat - >/tmp/rkermit.cmd <<EOF
+SET COMMAND DISABLE !
+SET ROOT /tmp/jail
+SET COMMAND DISABLE RUN
+EOF
+kermit -y /tmp/rkermit.cmd -l /dev/ttyPS1 -b 115200 -c
