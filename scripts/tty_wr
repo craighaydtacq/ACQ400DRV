@@ -1,10 +1,21 @@
 #! /bin/sh
 
-mkdir /tmp/jail
+jail() {
+if [ ! -e /tmp/jail/ttyPS1 ]; then
+	mkdir -p /tmp/jail
+	mknod /tmp/jail/ttyPS1 c 241 1
 
-cat - >/tmp/rkermit.cmd <<EOF
-SET COMMAND DISABLE !
+	cat - >/tmp/rkermit.cmd <<EOF
+define push echo PUSH command is disabled
+define run echo RUN command is disabled
+define ! echo pling is disabled
+define @ echo at is disabled
 SET ROOT /tmp/jail
-SET COMMAND DISABLE RUN
 EOF
-kermit -y /tmp/rkermit.cmd -l /dev/ttyPS1 -b 115200 -c
+
+	exec kermit -y /tmp/rkermit.cmd -l /dev/ttyPS1 -b 115200 -c
+fi
+}
+
+#jail
+kermit -l /dev/ttyPS1 -b 115200 -c
