@@ -3456,7 +3456,35 @@ static const struct attribute *kmcx_sc_attrs[] = {
 	NULL
 };
 
+static const struct attribute *z7io_sc_attrs[] = {
+	&dev_attr_data_engine_0.attr,
+	&dev_attr_data_engine_1.attr,
 
+	&dev_attr_scount_CLK_EXT.attr,
+	&dev_attr_scount_CLK_MB.attr,
+	&dev_attr_scount_CLK_S1.attr,
+	&dev_attr_scount_CLK_S2.attr,
+	&dev_attr_scount_CLK_S3.attr,
+
+	&dev_attr_scount_TRG_EXT.attr,
+	&dev_attr_scount_TRG_MB.attr,
+	&dev_attr_scount_TRG_S1.attr,
+	&dev_attr_scount_TRG_S2.attr,
+	&dev_attr_scount_TRG_S3.attr,
+
+	&dev_attr_scount_EVT_EXT.attr,
+	&dev_attr_scount_EVT_MB.attr,
+	&dev_attr_scount_EVT_S1.attr,
+	&dev_attr_scount_EVT_S2.attr,
+	&dev_attr_scount_EVT_S3.attr,
+
+	&dev_attr_scount_SYN_EXT.attr,
+	&dev_attr_scount_SYN_MB.attr,
+	&dev_attr_scount_SYN_S1.attr,
+	&dev_attr_scount_SYN_S2.attr,
+	&dev_attr_scount_SYN_S3.attr,
+	NULL
+};
 
 
 
@@ -3579,8 +3607,7 @@ int _acq400_createSysfsSC(struct device *dev, struct acq400_dev *adev, const str
 			specials[nspec++] = acq1001sc_attrs;
 		}
 	}else if (IS_Z7IO_SC(adev)){
-		dev_warn(dev, "IS_Z7IO_SC using kmcx attrs");
-		specials[nspec++] = kmcx_sc_attrs;
+		specials[nspec++] = z7io_sc_attrs;
 	}else if (IS_KMCx_SC(adev)){
 		specials[nspec++] = kmcx_sc_attrs;
 	}else if (IS_ACQ1102SC(adev)){
