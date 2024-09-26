@@ -61,12 +61,16 @@ do
                 word_size=$(cat ${s_root}/word_size)
 
                 echo $ncc > ${s_root}/AGIX
-                ncc=$(($ncc+$active_chan))
-                ssb=$(($ssb+$active_chan*$word_size))
+                ncc=$((ncc+active_chan))
+                ssb=$((ssb+active_chan*word_size))
                 if [ "x$D32" = "x" ]; then
                         D32=$site_d32
                 elif [ $D32 -ne $site_d32 ]; then
-                        echo "WARNING: mixed data size"
+			if [ $site_d32 -eq 1 ]; then
+				ncc=$((ncc+active_chan))
+			else
+	                        echo "WARNING: mixed data size not D32"
+			fi
                 fi
                 sitelist="${sitelist}${sep}${site}"
                 sep=","
