@@ -1108,7 +1108,7 @@ load_mgt_acq1102() {
         for ptype in $MGTAB; do
                 case $ptype in
                 A|B)
-                        /usr/local/CARE/load.overlay acq1102_hudp${ptype}_overlay
+                        /usr/local/CARE/load.overlay acq1102_comms${port}
                         LOAD_MGT_REQUEST=1
                         echo port: $port AURORA $ptype;;
                 E)
@@ -1119,7 +1119,7 @@ load_mgt_acq1102() {
                         if [ $num_hudp -gt 1 ]; then
                                 echo "WARNING: only solo HUDP supported so far"
                         fi
-                        /usr/local/CARE/load.overlay acq1102_hudp${port}
+                        /usr/local/CARE/load.overlay acq1102_comms${port}
                         LOAD_MGT_REQUEST=1
                         HUDP_SITES="$HUDP_SITES $site";;
                 W)
