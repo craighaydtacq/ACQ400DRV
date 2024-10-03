@@ -766,6 +766,8 @@ build_mgt400() {
                 set.sys $knobs/ident 0x21${name##*.}6${snx};;
             426)
                 set.sys $knobs/ident 0x22${name##*.}6${snx};;
+	    412)
+                set.sys $knobs/ident 0x11${name##*.}2${snx};;
             *)
                 set.sys $knobs/ident 0x${mtyp}${name##*.}${snx};;
             esac
