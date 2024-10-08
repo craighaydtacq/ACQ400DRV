@@ -51,7 +51,7 @@ if [ $SITE -eq 14 ]; then
 		set.sys /dev/dsp1/ATD_CSR.SITE$site 1
 		for ch in $(seq 1 $nc)
 		do
-			ch00=$(printf $fmt $(($ch+$ch1)))
+			ch00=$(printf $fmt $ch)
 			ln -s /usr/local/bin/anatrg anatrg_$ch00
 		done
 		ch1=$((ch+$ch1))

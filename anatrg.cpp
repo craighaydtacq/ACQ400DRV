@@ -133,11 +133,7 @@ bool fileExists(const char* fname)
 void adjust_channel_in_agg_set(void)
 {
 	char path[80];
-	snprintf(path, 80, "/dev/acq400.%d.knobs/atd_triggered", G::channel);
-	if (fileExists(path)){
-		return;
-	}
-	snprintf(path, 80, "/dev/acq400.%d.knobs/AGIX", G::channel);
+	snprintf(path, 80, "/etc/acq400/%d/AGIX", G::site);
 	if (fileExists(path)){
 		Knob ix(path);
 		unsigned offset;
