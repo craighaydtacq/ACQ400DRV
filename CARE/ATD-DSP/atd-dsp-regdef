@@ -4,7 +4,7 @@
 @MODULE_ID.MT  		0x000 0xff000000 r %02x
 @MODULE_ID.RV  		0x000 0x0000ffff r %d
 
-ATD_CSR				0x004 0xffffffff r %08x
+ATD_CSR			0x004 0xffffffff r %08x
 ATD_CSR.MOD_EN		0x004 0x00000001 rw %d
 ATD_CSR.ATD_RESET	0x004 0x00000008 rw %d
 ATD_CSR.ATD_EN		0x004 0x00000010 rw %d
@@ -12,6 +12,7 @@ ATD_CSR.ATD_MEE		0x004 0x00000020 rw %d
 ATD_CSR.DATA32		0x004 0x00000080 rw %d
 ATD_CSR.SHL		0x004 0x00000300 rw %d
 ATD_CSR.SPAD_ON		0x004 0x00020000 rw %d
+ATD_CSR.SITES           0x004 0x00fc0000 r  %02x
 ATD_CSR.SITE1		0x004 0x00040000 rw %d
 ATD_CSR.SITE2		0x004 0x00080000 rw %d
 ATD_CSR.SITE3		0x004 0x00100000 rw %d
@@ -19,5 +20,23 @@ ATD_CSR.SITE4		0x004 0x00200000 rw %d
 ATD_CSR.SITE5		0x004 0x00400000 rw %d
 ATD_CSR.SITE6		0x004 0x00800000 rw %d
 
-ATD_INTCSR          0x018 0xffffffff rw %08x
-ATD_TRIGGERED		0x060 0xffffffff rw %08x
+ATD_INTCSR              0x018 0xffffffff rw %08x
+#ATD_TRIGGERED		0x060 0xffffffff rw %08x
+
+ATD_SITE_TRG_ID         0x070 0x0000003f rw %02x
+ATD_1_TRG_STAT          0x100 0xffffffff rw %08x
+ATD_1_TRG_LIVE          0x104 0xffffffff rw %08x
+ATD_2_TRG_STAT          0x110 0xffffffff rw %08x
+ATD_2_TRG_LIVE          0x114 0xffffffff rw %08x
+ATD_3_TRG_STAT          0x120 0xffffffff rw %08x
+ATD_3_TRG_LIVE          0x124 0xffffffff rw %08x
+ATD_4_TRG_STAT          0x130 0xffffffff rw %08x
+ATD_4_TRG_LIVE          0x134 0xffffffff rw %08x
+ATD_5_TRG_STAT          0x140 0xffffffff rw %08x
+ATD_5_TRG_LIVE          0x144 0xffffffff rw %08x
+ATD_6_TRG_STAT          0x150 0xffffffff rw %08x
+ATD_6_TRG_LIVE          0x154 0xffffffff rw %08x
+
+
+
+
