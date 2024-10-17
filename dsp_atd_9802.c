@@ -568,7 +568,7 @@ static int is_group_trigger(struct REGFS_DEV* rdev)
 }
 
 
-static irqreturn_t acq400_regfs_atd9802_isr(int irq, void *dev_id)
+static irqreturn_t dsp_atd_9802_isr(int irq, void *dev_id)
 {
 	struct REGFS_DEV* rdev = (struct REGFS_DEV*)dev_id;
 	const int ready = rdev->client_ready;
@@ -639,65 +639,6 @@ static irqreturn_t acq400_regfs_atd9802_isr(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static irqreturn_t acq400_regfs_hack_isr(int irq, void *dev_id)
-{
-	struct REGFS_DEV* rdev = (struct REGFS_DEV*)dev_id;
-	const int ready = rdev->client_ready;
-	u32 irq_stat;
-	u32 fun_stat;
-
-	if (ready){
-		rdev->sample_count = acq400_agg_sample_count();
-	}
-
-	irq_stat = ioread32(rdev->va + DSP_IRQ_STAT);
-	fun_stat = ioread32(rdev->va + DSP_FUN_STAT);
-
-	rdev->status_latch[0] |= fun_stat;
-	if (rdev->gsmode == GS_NOW){
-		rdev->group_status_latch[0] = fun_stat;
-	}else{
-		rdev->group_status_latch[0] |= fun_stat;
-	}
-	rdev->ints++;
-	if (ready){
-		rdev->client_ready = 0;
-		rdev->status[0] = irq_stat;
-		rdev->latch_count = acq400_adc_latch_count();
-		wake_up_interruptible(&rdev->w_waitq);
-
-	}
-	if (atd_suppress_mod_event_nsec){
-		atd_enable_mod_event(rdev, 0);
-	}
-
-	iowrite32(irq_stat, rdev->va + DSP_IRQ_STAT);
-
-	if (atd_suppress_mod_event_nsec){
-		hrtimer_start(&rdev->atd.timer, ktime_set(0, atd_suppress_mod_event_nsec), HRTIMER_MODE_REL);
-	}
-
-	if (is_group_trigger(rdev)){
-		acq400_soft_trigger(1);
-		rdev->group_status_latch[0] = 0;
-		hrtimer_start(&rdev->soft_trigger.timer, ktime_set(0, soft_trigger_nsec), HRTIMER_MODE_REL);
-		dev_dbg(&rdev->pdev->dev, "GROUP_STATUS CONDITION MET: soft trigger");
-	}
-
-	if (ready){
-		dev_dbg(&rdev->pdev->dev, "acq400_regfs_hack_isr acq400_agg_sample_count %5d sc %08x %s lc %08x diff %d  irq:%08x fun:%08x\n",
-			rdev->ints, rdev->sample_count, rdev->sample_count>rdev->latch_count? ">": "<", rdev->latch_count,
-			rdev->sample_count>rdev->latch_count? rdev->sample_count-rdev->latch_count: rdev->latch_count-rdev->sample_count,
-					irq_stat, fun_stat);
-	}
-
-	return IRQ_HANDLED;
-}
-
-#ifdef PGMCOMOUT
-irqreturn_t (*regfs_isr)(int irq, void *dev_id) = acq400_regfs_hack_isr;
-#endif
-irqreturn_t (*regfs_isr)(int irq, void *dev_id) = acq400_regfs_atd9802_isr;
 
 static int init_event(struct REGFS_DEV* rdev)
 {
@@ -705,7 +646,7 @@ static int init_event(struct REGFS_DEV* rdev)
 	int rc = 0;
 	if (ri){
 		rc = devm_request_irq(
-			&rdev->pdev->dev, ri->start, regfs_isr, IRQF_NO_THREAD, ri->name, rdev);
+			&rdev->pdev->dev, ri->start, dsp_atd_9802_isr, IRQF_NO_THREAD, ri->name, rdev);
 		if (rc){
 			dev_err(&rdev->pdev->dev,"unable to get IRQ%d\n",ri->start);
 		}
@@ -977,7 +918,7 @@ static const struct attribute *sysfs_base_attrs[] = {
 	NULL
 };
 
-int regfs_probe(struct platform_device *pdev)
+int dsp_atd_9802_probe(struct platform_device *pdev)
 {
 	struct REGFS_DEV* rdev = kzalloc(sizeof(struct REGFS_DEV), GFP_KERNEL);
 	dev_t devno;
@@ -1022,7 +963,7 @@ fail:
 	return rc;
 }
 
-int regfs_remove(struct platform_device *pdev)
+int dsp_atd_9802_remove(struct platform_device *pdev)
 {
 	struct REGFS_DEV* rdev = 0;		// TODO LOOKUP
 	regfs_remove_fs(rdev);
@@ -1031,11 +972,11 @@ int regfs_remove(struct platform_device *pdev)
 	return 0;
 }
 
-EXPORT_SYMBOL_GPL(regfs_probe);
-EXPORT_SYMBOL_GPL(regfs_remove);
-EXPORT_SYMBOL_GPL(regfs_isr);
+EXPORT_SYMBOL_GPL(dsp_atd_9802_probe);
+EXPORT_SYMBOL_GPL(dsp_atd_9802_remove);
+EXPORT_SYMBOL_GPL(dsp_atd_9802_isr);
 
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION("D-TACQ regfs driver");
+MODULE_DESCRIPTION("D-TACQ dsp_atd_9802 driver");
 MODULE_AUTHOR("D-TACQ Solutions.");
 MODULE_VERSION(REVID);
