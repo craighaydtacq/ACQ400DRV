@@ -16,6 +16,7 @@ obj-m += acq400t.o
 #obj-m += acq4xx_fs.o
 obj-m += mgt400.o
 obj-m += regfs.o
+obj-m += dsp_atd_9802.o
 obj-m += acq400_dspfs.o
 
 obj-m += pigcelf.o
