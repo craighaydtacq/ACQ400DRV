@@ -2028,8 +2028,8 @@ protected:
         unsigned* sob_buffer;
         unsigned buffer_count;
 
-	const int MAX_BACKTRACK;
-	const int MAX_FORTRACK;
+	int MAX_BACKTRACK;
+	int MAX_FORTRACK;
 
         void insertStartOfBufferSignature(int ib){
         	if (verbose) fprintf(stderr, "StreamHeadImpl::insertStartOfBufferSignature() %d ib:%d bc:%d\n",
@@ -2616,12 +2616,14 @@ class StreamHeadLivePP : public StreamHeadHB0 {
 
 	void waitPost() {
 		int siu = 100;	/* assume min SR=10kHz, ensure data has arrived before read .. */
+		int wait_us;
 		if (sample_interval_usecs){
 			siu = *sample_interval_usecs;
 		}
-		if (siu < 1000000){	/* Live PP should never sleep > 1s */
-			usleep(post*siu);
-		}
+		wait_us = siu*post;
+		wait_us = min(wait_us, 500000); /* Live PP should never sleep > 1s */
+		if (verbose) fprintf(stderr, "%s usleep %d\n", _PFN, wait_us);
+		usleep(wait_us);
 	}
 	static bool event0_enabled(int site){
 		char event_line[80];
@@ -2643,19 +2645,19 @@ public:
 			sample_size(G::nchan*G::wordsize),
 			es_size(::es_size()){
 
-		if (verbose) fprintf(stderr, "StreamHeadLivePP() verbose=%d\n", verbose);
+		if (verbose) fprintf(stderr, "%s pid:%d %s verbose=%d\n",
+				_PFN, getpid(), actual.name, verbose);
 
-		if (verbose) fprintf(stderr, "StreamHeadLivePP() pid:%d\n", getpid());
 		startEventWatcher();
 		startSampleIntervalWatcher();
 
-
-		if (verbose) fprintf(stderr, "StreamHeadLivePP() pid %d progress: %s\n", getpid(), actual.name);
-
-		if (verbose) fprintf(stderr, "StreamHeadLivePP: buffer[0] : %p\n",
-				Buffer::the_buffers[0]->getBase());
-		if (verbose) fprintf(stderr, "StreamHeadLivePP: buffer[1] : %p\n",
+		if (verbose) fprintf(stderr, "%s: buffer[0] : %p, [1]: %p\n",
+				_PFN,
+				Buffer::the_buffers[0]->getBase(),
 				Buffer::the_buffers[1]->getBase());
+
+		MAX_BACKTRACK = 0;
+		MAX_FORTRACK = 0;
 	}
 
 	static bool hasPP() {
@@ -2720,7 +2722,7 @@ int StreamHeadLivePP::_stream() {
 	char* b0 = MapBuffer::get_ba_lo();
 	char* b1 = MapBuffer::get_ba_hi();
 
-	if (verbose > 1) fprintf(stderr, "StreamHeadLivePP::stream(): f_ev %d\n", f_ev);
+	if (verbose > 1) fprintf(stderr, "%s: f_ev %d\n", _PFN, f_ev);
 // @@TODO: why does it DIE HERE?
 
 	sigset_t  emptyset;
@@ -2750,7 +2752,7 @@ int StreamHeadLivePP::_stream() {
 		rc = pselect(f_ev+1, &readfds, NULL, &exceptfds, &pto, &emptyset);
 		if (rc < 0){
 			if (verbose > 1) fprintf(stderr, "StreamHeadLivePP::stream(): pselect error %d\n", errno);
-			fprintf(stderr, "StreamHeadLivePP::stream(): pselect error nfds:%d pto.%lu\n", f_ev+1, pto.tv_sec);
+			fprintf(stderr, "%s: pselect error nfds:%d pto.%lu\n", _PFN, f_ev+1, pto.tv_sec);
 			perror("pselect()");
 			exit(1);
 		}
@@ -2783,9 +2785,14 @@ int StreamHeadLivePP::_stream() {
 		char* es;
 
 		if (!findEvent(&ibuf, &es)){
-			if (verbose) fprintf(stderr, "StreamHeadLivePP::stream() 390\n");
+			if (verbose) fprintf(stderr, "%s 390\n", _PFN);
 			continue;	// silently drop it. there will be more
 		}
+		if ((unsigned)ibuf+MAX_FORTRACK >= Buffer::nbuffers-1){
+			if (verbose) fprintf(stderr, "%s 391\n", _PFN);
+			continue;
+		}
+
 		ev_num += 1;
 
 		if (multi_event){
@@ -2796,7 +2803,7 @@ int StreamHeadLivePP::_stream() {
 
 		if (es+postlen() > Buffer::the_buffers[ibuf]->getEnd()){
 			// only data in this buffer is guaranteed to be there .. drop it
-			if (verbose) fprintf(stderr, "StreamHeadLivePP::stream() 395\n");
+			if (verbose) fprintf(stderr, "%s 395\n", _PFN);
 			continue;
 		}
 		if (verbose){
@@ -2841,7 +2848,7 @@ int StreamHeadLivePP::_stream() {
 			if (verbose) fprintf(stderr, "%s 59 wb %d, %d => %d\n", _PFN, start_off, len, nb);
 		}
 	}
-
+	if (verbose) fprintf(stderr, "%s 99 rc %d\n", _PFN, rc);
 	return rc;
 }
 
@@ -2854,9 +2861,11 @@ void StreamHeadLivePP::stream() {
 		if (rc == -1){
 			switch(errno){
 			case EINTR:
+				fprintf(stderr, "%s quit:EINTR\n", _PFN); break;
 			case EAGAIN:
+				fprintf(stderr, "%s quit:EAGAIN\n", _PFN); break;
 			default:
-				break;
+				fprintf(stderr, "%s quit error:%d\n", _PFN, errno); break;
 			}
 		}
 	}
