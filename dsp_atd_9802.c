@@ -918,6 +918,33 @@ static const struct attribute *sysfs_base_attrs[] = {
 	NULL
 };
 
+
+int acq400dsp_devicetree_init(struct platform_device *pdev, struct device_node *of_node)
+{
+	if (of_node == 0){
+		return -1;
+	}else{
+		int ii;
+		unsigned site = -1;
+		const char* name = 0;
+		if (of_property_read_string(of_node, "name", &name) < 0){
+			dev_warn(&pdev->dev, "warning: name NOT specified in DT");
+		}
+		if (of_property_read_u32(of_node, "site", &site) < 0){
+			dev_warn(&pdev->dev, "warning: site NOT specified in DT");
+		}
+		for (ii = 0; ii < pdev->num_resources; ++ii){
+			if (name){
+				pdev->resource[ii].name = name;
+			}
+		}
+		if (site != -1){
+			pdev->id = site;
+		}
+		return 0;
+	}
+}
+
 int dsp_atd_9802_probe(struct platform_device *pdev)
 {
 	struct REGFS_DEV* rdev = kzalloc(sizeof(struct REGFS_DEV), GFP_KERNEL);
@@ -926,6 +953,10 @@ int dsp_atd_9802_probe(struct platform_device *pdev)
 	int rc;
 	int minor_max = MINOR_EV;
 
+	rc = acq400dsp_devicetree_init(pdev, pdev->dev.of_node);
+
+	dev_info(&pdev->dev, "%s id:%d num_resources:%d %s", __FUNCTION__,
+				pdev->id, pdev->num_resources, rc==0?"OK":"dts error");
 	rdev->pdev = pdev;
 
 	rc = regfs_init_fs(rdev);
@@ -972,9 +1003,45 @@ int dsp_atd_9802_remove(struct platform_device *pdev)
 	return 0;
 }
 
-EXPORT_SYMBOL_GPL(dsp_atd_9802_probe);
-EXPORT_SYMBOL_GPL(dsp_atd_9802_remove);
-EXPORT_SYMBOL_GPL(dsp_atd_9802_isr);
+#ifdef CONFIG_OF
+static struct of_device_id acq400dsp_of_match[] /* __devinitdata */ = {
+        { .compatible = "D-TACQ,acq400dsp"  },
+        { /* end of table */}
+};
+MODULE_DEVICE_TABLE(of, acq400dsp_of_match);
+#else
+#define acq400dsp_of_match NULL
+#endif /* CONFIG_OF */
+
+#define MODULE_NAME "acq400_dspfs"
+
+static struct platform_driver acq400dsp_driver = {
+        .driver = {
+                .name = MODULE_NAME,
+                .owner = THIS_MODULE,
+                .of_match_table = acq400dsp_of_match,
+        },
+        .probe = dsp_atd_9802_probe,
+        .remove = dsp_atd_9802_remove,
+};
+
+static int __init acq400_dsp_init(void)
+{
+        int status;
+
+	printk("D-TACQ ACQ400 ATD_9802 DSP Driver %s\n", REVID);
+
+	status = platform_driver_register(&acq400dsp_driver);
+        return status;
+}
+
+static void __exit acq400_dsp_exit(void)
+{
+
+}
+
+module_init(acq400_dsp_init);
+module_exit(acq400_dsp_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("D-TACQ dsp_atd_9802 driver");

@@ -7,8 +7,11 @@ if [ ! -e /etc/sites ]; then
 	exit 1
 fi
 
-REGFS_KO=${1:-regfs.ko}
+
 MDIR=/usr/local/lib/modules
+REGFS_KO=regfs.ko
+DSPFS_KO=${1:-acq400_dspfs.ko}
+
 /sbin/insmod $MDIR/debugfs2.ko
 if [ -e /mnt/local/${REGFS_KO} ]; then
 	echo load /mnt/local/${REGFS_KO}
@@ -16,11 +19,15 @@ if [ -e /mnt/local/${REGFS_KO} ]; then
 else
 	/sbin/insmod $MDIR/${REGFS_KO}
 fi
-if [ -e /mnt/local/acq400_dspfs.ko ]; then
-	echo load /mnt/local/acq400_dspfs.ko
-	/sbin/insmod /mnt/local/acq400_dspfs.ko
+
+PS1=HITME /bin/sh
+
+if [ -e /mnt/local/${DSPFS_KO} ]; then
+	echo load /mnt/local/${DSPFS_KO}
+	/sbin/insmod /mnt/local/${DSPFS_KO} dyndbg
 else
-	/sbin/insmod $MDIR/acq400_dspfs.ko
+        echo load $MDIR/${DSPFS_KO}
+	/sbin/insmod $MDIR/${DSPFS_KO} dyndbg
 fi
 
 
