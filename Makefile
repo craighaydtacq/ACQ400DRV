@@ -79,6 +79,10 @@ ao428-objs := ao428_drv.o
 
 acq400t-objs := acq400t_drv.o
 
+acq400_dspfs-objs := acq400_dspfs_core.o acq400_dsp_common.o
+
+dsp_atd_9802-objs := dsp_atd_9802_core.o acq400_dsp_common.o
+
 dmatest_pgm-objs := dmatest.o zynq-timer.o
 
 APPS := mmap acq400_stream permute acq435_decode \

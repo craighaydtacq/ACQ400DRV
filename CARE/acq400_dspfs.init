@@ -24,10 +24,10 @@ PS1=HITME /bin/sh
 
 if [ -e /mnt/local/${DSPFS_KO} ]; then
 	echo load /mnt/local/${DSPFS_KO}
-	/sbin/insmod /mnt/local/${DSPFS_KO} dyndbg
+	/sbin/insmod /mnt/local/${DSPFS_KO}
 else
         echo load $MDIR/${DSPFS_KO}
-	/sbin/insmod $MDIR/${DSPFS_KO} dyndbg
+	/sbin/insmod $MDIR/${DSPFS_KO}
 fi
 
 
