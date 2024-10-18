@@ -73,6 +73,7 @@ struct REGFS_DEV {
 
 extern irqreturn_t (*regfs_isr)(int irq, void *dev_id);
 extern int regfs_probe(struct platform_device *pdev);
+extern int regfs_probe_rdev(struct platform_device *pdev, struct REGFS_DEV* rdev);
 extern int regfs_remove(struct platform_device *pdev);
 extern struct file_operations regfs_event_fops;
 

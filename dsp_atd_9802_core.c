@@ -18,24 +18,11 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                */
 /* ------------------------------------------------------------------------- */
 
-/** @file regfs_fs.c DESCR
+/** @file dsp_atd9802_core.c Analog Threshold Detect DSP module .. multi-site
  * 
  *  Created on: August 18, 2015
  *      Author: pgm
  *
-
-# cpsc register definition file
-# formatting: NO TABS, ONLY SPACES
-# "TABSTOPS" at 0, 32, 48, 64, 72
-# By all means use a tabbing editor, but tabs will be replaced by spaces:
-# ./fixup-tabs cpsc_regdef
-
-cd PEX
-PEX_CSR                         0x000           0xffffffff      r       %08x
-PEX_MWE                         0x004           0x00000001      r
-PEX_DEBUG                       0x008           0xffffffff      rw      %08x
-PEX_INT                         0x00c           0xffffffff      r       %08x
-
  */
 
 #include <asm/io.h>
@@ -141,15 +128,8 @@ ssize_t regfs_event_read(struct file *file, char __user *buf, size_t count,
 
 #define ATD_CR			0x4
 #define ATD_MOD_EVENT_EN	(1<<5)
-#define INT_CSR_OFFSET		0x18
-#define INT_CSR_ATD		(1<<8)
-
-#define DSP_IRQ_STAT	0x60
-#define DSP_FUN_STAT	0x64
-
 /* new 9802 DSP ATD */
 #define DSP_ATD_TRG_STATUS	0x70
-
 #define DSP_ATD_TRG_LATCH(n)	(0x100+(n-1)*0x10)
 
 

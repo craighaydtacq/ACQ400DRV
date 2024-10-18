@@ -80,23 +80,9 @@ PEX_INT                         0x00c           0xffffffff      r       %08x
 
 
 
-
-#define MBPS	96	/* data rate ACQ424+DIO+3SPAD * 2M */
-#define BS	4	/* block size, MB */
-int atd_suppress_mod_event_nsec = 0;
-module_param(atd_suppress_mod_event_nsec, int, 0644);
-MODULE_PARM_DESC(atd_suppress_mod_event_nsec, "hold off mod_event at least one buffer");
-
-int soft_trigger_nsec = NSEC_PER_MSEC * 10;
-module_param(soft_trigger_nsec, int, 0644);
-MODULE_PARM_DESC(soft_trigger_nsec, "high hold time for soft trigger pulse");
-
-
 #define DEVP(rd)	(&(rd)->pdev->dev)
 
 #define REVID "regfs_fs B1016"
-
-#define LO32(addr) (((unsigned)(addr) & 4) == 0)
 
 
 static int mem_pages(struct REGFS_DEV* rdev)
@@ -429,34 +415,11 @@ int regfs_page_mmap(struct file* file, struct vm_area_struct* vma)
 	}
 }
 
-#define ATD_CR		0x4
-#define ATD_MOD_EVENT_EN	(1<<5)
-#define INT_CSR_OFFSET	0x18
-#define INT_CSR_ATD	(1<<8)
-
-#define DSP_IRQ_STAT	0x60
-#define DSP_FUN_STAT	0x64
-
-void atd_enable_mod_event(struct REGFS_DEV *rdev, int enable)
-{
-	unsigned cr = ioread32(rdev->va + ATD_CR);
-	if (enable){
-		cr |= ATD_MOD_EVENT_EN;
-	}else{
-		cr &= ~ATD_MOD_EVENT_EN;
-	}
-	iowrite32(cr, rdev->va + ATD_CR);
-}
-
-
-
 struct file_operations regfs_event_fops = {
 	.owner = THIS_MODULE,
 	.open  = regfs_event_open,
 	.release = regfs_event_release,
-/*
-	.read = regfs_event_read,
-*/
+/* 	.read = regfs_event_read, */
 	.poll = regfs_event_poll
 };
 
