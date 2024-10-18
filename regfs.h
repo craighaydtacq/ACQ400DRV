@@ -33,6 +33,21 @@
 #undef PD
 #undef PDSZ
 
+#define MINOR_P0	0
+#define MINOR_PMAX	63	/* 64 pages max */
+#define MINOR_EV	64	/* hook event reader here */
+
+
+struct REGFS_PATH_DESCR {
+	struct REGFS_DEV* rdev;
+	int minor;
+	int int_count;
+};
+
+#define PD(filp)		((struct REGFS_PATH_DESCR*)filp->private_data)
+#define SETPD(filp, value)	(filp->private_data = (value))
+#define PDSZ			(sizeof (struct REGFS_PATH_DESCR))
+
 #define GROUP_FIRST_N_TRIGGERS_ALL	0
 
 struct REGFS_DEV {
@@ -51,24 +66,14 @@ struct REGFS_DEV {
 	wait_queue_head_t w_waitq;
 
 	unsigned ints;
-	unsigned status;
-	unsigned status_latch;
-	unsigned group_status_latch;
-	unsigned group_trigger_mask;
-	unsigned group_first_n_triggers;      /* trigger if N in the group are set. N=0 -> ALL */
-	enum GSMODE { GS_NOW, GS_HISTORIC } gsmode;
-	unsigned sample_count;
-	unsigned latch_count;
 	unsigned event_client_pid;
 	unsigned client_ready;	/* client requests interrupt status. isr: DO NOT update unless set. */
 
-	void* client;				/* stash subclass data here */
-	struct ATD atd;				/* pulse timers */
-	struct ATD soft_trigger;
 };
 
 extern irqreturn_t (*regfs_isr)(int irq, void *dev_id);
 extern int regfs_probe(struct platform_device *pdev);
 extern int regfs_remove(struct platform_device *pdev);
+extern struct file_operations regfs_event_fops;
 
 #endif /* REGFS_DEV_H_ */

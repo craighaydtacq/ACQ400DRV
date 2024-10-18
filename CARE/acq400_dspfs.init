@@ -20,8 +20,6 @@ else
 	/sbin/insmod $MDIR/${REGFS_KO}
 fi
 
-PS1=HITME /bin/sh
-
 if [ -e /mnt/local/${DSPFS_KO} ]; then
 	echo load /mnt/local/${DSPFS_KO}
 	/sbin/insmod /mnt/local/${DSPFS_KO}
