@@ -1733,6 +1733,7 @@ static const char* _lookup_id(struct acq400_dev *adev)
 		{ MOD_ID_ACQ424ELF,	"acq424elf"	},
 		{ MOD_ID_ACQ425ELF,     "acq425elf"	},
 		{ MOD_ID_ACQ425ELF_2000,"acq425elf"	},
+		{ MOD_ID_ACQ426ELF,     "acq426elf"	},
 		{ MOD_ID_ACQ427ELF,	"acq427elf"	},
 		{ MOD_ID_ACQ427ELF_2000,"acq427elf"     },
 		{ MOD_ID_ACQ430FMC,     "acq430fmc"	},
@@ -2219,6 +2220,16 @@ MAKE_BITS(adc_status, ACQ465_DEBUG, MAKE_BITS_FROM_MASK, 0xffff0000);
 MAKE_BITS(_adc_hax,   ACQ465_DEBUG, MAKE_BITS_FROM_MASK, 0x000000ff);
 
 static const struct attribute *acq465_attrs[] = {
+	&dev_attr_filter_sel.attr,
+	&dev_attr_adc_reset.attr,
+	&dev_attr_adc_status.attr,
+	&dev_attr__adc_hax.attr,
+	&dev_attr_bank_mask.attr,
+	&dev_attr_pack24.attr,
+	NULL
+};
+
+static const struct attribute *acq426_attrs[] = {
 	&dev_attr_filter_sel.attr,
 	&dev_attr_adc_reset.attr,
 	&dev_attr_adc_status.attr,
@@ -3673,6 +3684,7 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 	}else if (IS_ACQ42X(adev)){
 		specials[nspec++] =
 			IS_ACQ425(adev) ? acq425_attrs: ACQ420_ATTRS;
+		specials[nspec++] = acq426_attrs;                         /* @@TODO .. do we need double attrs? */
 	}else if (IS_ACQ43X(adev)){
 		specials[nspec++] = acq435_attrs;
 	}else if (IS_ACQ465(adev)){
