@@ -20,6 +20,7 @@
 #define MOD_ID_ACQ423ELF	0x09
 #define MOD_ID_ACQ465ELF	0x0a
 #define MOD_ID_ACQ494FMC	0x0b		/* TDC : it's more like an ADC than anything else */
+#define MOD_ID_ACQ426ELF	0x0c
 
 #define MOD_ID_ACQ420FMC_2000	0xa1
 #define MOD_ID_ACQ425ELF_2000	0xa5

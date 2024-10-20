@@ -323,6 +323,24 @@ void acq465_onStart(struct acq400_dev *adev)
 	//acq420_enable_interrupt(adev);
 }
 
+void acq426_onStart(struct acq400_dev *adev)
+{
+	u32 status = acq400rd32(adev, ADC_FIFO_STA);
+
+	dev_dbg(DEVP(adev), "acq426_onStart()");
+
+	if ((status&ADC_FIFO_STA_ACTIVE) != 0){
+		dev_err(DEVP(adev), "ERROR: ADC_FIFO_STA_ACTIVE set %08x", status);
+		acq420_disable_fifo(adev);
+	}
+
+	acq400wr32(adev, ADC_HITIDE, 	adev->hitide);
+	acq420_enable_fifo(adev);
+	acq420_reset_fifo(adev);
+	adev->fifo_isr_done = 0;
+	//acq420_enable_interrupt(adev);
+}
+
 
 void acq420_disable_fifo(struct acq400_dev *adev)
 {
@@ -637,6 +655,22 @@ static void acq465_init_defaults(struct acq400_dev *adev)
 	acq400wr32(adev, ADC_CLKDIV, 16);
 	acq400wr32(adev, ADC_CTRL, adc_ctrl|ADC_CTRL_ES_EN|ADC_CTRL_MODULE_EN);
 	adev->onStart = acq465_onStart;
+	adev->onStop = acq420_disable_fifo;
+}
+
+static void acq426_init_defaults(struct acq400_dev *adev)
+{
+	u32 adc_ctrl = acq400rd32(adev, ADC_CTRL);
+	adev->nchan_enabled = 32;
+	dev_info(DEVP(adev), "%s device init", "acq426elf");
+
+	adev->booleans.data32 = 1;
+	adev->word_size = 4;
+	adev->hitide = 128;
+	adev->lotide = adev->hitide - 4;
+	acq400wr32(adev, ADC_CLKDIV, 16);
+	acq400wr32(adev, ADC_CTRL, adc_ctrl|ADC_CTRL_ES_EN|ADC_CTRL_MODULE_EN);
+	adev->onStart = acq426_onStart;
 	adev->onStop = acq420_disable_fifo;
 }
 
@@ -1130,6 +1164,9 @@ void acq400_mod_init_defaults(struct acq400_dev* adev)
 			break;
 		case MOD_ID_ACQ465ELF:
 			acq465_init_defaults(adev);
+			break;
+		case MOD_ID_ACQ426ELF:
+			acq426_init_defaults(adev);
 			break;
 		case MOD_ID_ACQ494FMC:
 			acq494_init_defaults(adev);
