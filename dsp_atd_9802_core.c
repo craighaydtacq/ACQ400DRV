@@ -179,19 +179,24 @@ static int is_group_trigger(struct ATD_9802_DEV* adev)
 	int rc;
 
 	for (ii = 0; ii < active_sites; ++ii){
-		unsigned active = adev->group_status_latch[ii]&adev->group_trigger_mask[ii];
+		unsigned group_trigger_mask = adev->group_trigger_mask[ii];
 
-		if (adev->group_first_n_triggers == GROUP_FIRST_N_TRIGGERS_ALL){
-			if (active == adev->group_trigger_mask[ii]){
-				is_active = 1;
+		if (group_trigger_mask != 0){
+			unsigned active = adev->group_status_latch[ii]&group_trigger_mask;
+
+			if (adev->group_first_n_triggers == GROUP_FIRST_N_TRIGGERS_ALL){
+				if (active == group_trigger_mask){
+					is_active = 1;
+				}else{
+					is_active = 0;
+					break;
+				}
 			}else{
-				is_active = 0;
-				break;
+				set_bits += count_set_bits(active);
 			}
-		}else{
-			set_bits += count_set_bits(active);
 		}
 	}
+
 	rc = is_active || (set_bits && set_bits >= adev->group_first_n_triggers);
 
 	dev_dbg(ATD_DEVP(adev), "%s sites:%d/%d  rc: %d || (%d && %d >= %d) %s",
