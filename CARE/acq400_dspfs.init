@@ -11,6 +11,7 @@ fi
 MDIR=/usr/local/lib/modules
 REGFS_KO=regfs.ko
 DSPFS_KO=${1:-acq400_dspfs.ko}
+OVERLAYS=${2:-acq400dsp1 acq400dsp2}
 
 /sbin/insmod $MDIR/debugfs2.ko
 if [ -e /mnt/local/${REGFS_KO} ]; then
@@ -31,7 +32,8 @@ fi
 
 source /usr/local/CARE/load.overlay
 
-load_overlay acq400dsp1
-load_overlay acq400dsp2
+for ovl in $OVERLAYS; do
+        load_overlay $ovl
+done
 
 ln -s /sys/kernel/debug/dsp1/ /dev/dsp1
