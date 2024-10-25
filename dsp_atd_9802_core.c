@@ -198,11 +198,13 @@ static int is_group_trigger(struct ATD_9802_DEV* adev)
 	}
 
 	rc = is_active || (set_bits && set_bits >= adev->group_first_n_triggers);
-
-	dev_dbg(ATD_DEVP(adev), "%s sites:%d/%d  rc: %d || (%d && %d >= %d) %s",
+	//[ 4572.610780] acq400_dspfs 80000000.dsp1: is_group_trigger sites:2/2  rc: 0 || (0 && 0 >= 1) FALSE
+	dev_dbg(ATD_DEVP(adev), "%s sites:%d/%d"
+			        " rc = %d || (%d && %d >= %d)"
+				" %s",
 			__FUNCTION__, ii, active_sites,
-			is_active, set_bits, set_bits,
-			adev->group_first_n_triggers, rc? "TRUE": "FALSE");
+			is_active, set_bits, set_bits, adev->group_first_n_triggers,
+			rc? "TRUE": "FALSE");
 
 	return rc;
 }
