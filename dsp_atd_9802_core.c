@@ -78,7 +78,7 @@ int active_sites = 6;
 module_param(active_sites, int, 0644);
 MODULE_PARM_DESC(active_sites, "number of sites in set");
 
-#define REVID "B1000"
+#define REVID "B1001"
 
 ssize_t regfs_event_read(struct file *file, char __user *buf, size_t count,
 	        loff_t *f_pos)
