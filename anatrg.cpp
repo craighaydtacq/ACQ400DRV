@@ -130,17 +130,9 @@ bool fileExists(const char* fname)
 	struct stat statbuf;
 	return stat(fname, &statbuf) == 0;
 }
-void adjust_channel_in_agg_set(void)
-{
-	char path[80];
-	snprintf(path, 80, "/etc/acq400/%d/AGIX", G::site);
-	if (fileExists(path)){
-		Knob ix(path);
-		unsigned offset;
-		ix.get(&offset);
-		G::channel += offset;	/* convert from site channel to agg channel */
-	}
-}
+
+void get_offset(void);
+
 const char* cli(int argc, const char** argv, int& p1, int& p2)
 {
 	poptContext opt_context =
@@ -164,7 +156,7 @@ const char* cli(int argc, const char** argv, int& p1, int& p2)
 	p2 = getValue(poptGetArg(opt_context));
 
 	if (!G::dummy){
-		adjust_channel_in_agg_set();
+		get_offset();
 		make_mapping();
 	}
 	return verb;
@@ -189,10 +181,10 @@ class AnaTrg {
 
 		if (G::channel == ALL_CHANNELS){
 			for (int ic = 1; ic <= G::nchan; ++ic){
-				setThreshold(ic, abcd);
+				setThreshold(ic+offset, abcd);
 			}
 		}else{
-			setThreshold(G::channel, abcd);
+			setThreshold(G::channel+offset, abcd);
 		}
 	}
 public:
@@ -211,7 +203,21 @@ public:
 
 		return -1;
 	}
+
+	static unsigned offset;
 };
+
+unsigned AnaTrg::offset;
+
+void get_offset(void)
+{
+	char path[80];
+	snprintf(path, 80, "/etc/acq400/%d/AGIX", G::site);
+	if (fileExists(path)){
+		Knob ix(path);
+		ix.get(&AnaTrg::offset);
+	}
+}
 
 struct NoneCommand : public Command {
 	NoneCommand() : Command("none") {}
