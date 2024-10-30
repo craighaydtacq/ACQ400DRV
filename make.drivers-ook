@@ -1,5 +1,7 @@
 #!/bin/bash
 # $1 is the datecode
+#
+SRC=${1:-../DRIVERS-OOK/}
 source ./setenv.zynq
 REL=$(cat ${KERN_SRC}/include/config/kernel.release)
 
@@ -10,4 +12,4 @@ handle_ext_modules() {
 	(cd $1; echo KERN_SRC:$KERN_SRC; make all)
 }
 
-handle_ext_modules ../DRIVERS-OOK/
+handle_ext_modules $SRC
