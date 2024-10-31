@@ -78,7 +78,10 @@ int active_sites = 6;
 module_param(active_sites, int, 0644);
 MODULE_PARM_DESC(active_sites, "number of sites in set");
 
-#define REVID "B1001"
+int verbose = 0;
+module_param(verbose, int, 0644);
+
+#define REVID "B1002"
 
 ssize_t regfs_event_read(struct file *file, char __user *buf, size_t count,
 	        loff_t *f_pos)
@@ -187,6 +190,13 @@ static int is_group_trigger(struct ATD_9802_DEV* adev)
 			if (adev->group_first_n_triggers == GROUP_FIRST_N_TRIGGERS_ALL){
 				if (active == group_trigger_mask){
 					is_active = 1;
+
+					if (verbose) dev_dbg(ATD_DEVP(adev),
+							"%s sites:%d/%d"
+							" active %08x gtm %08x is_active",
+							__FUNCTION__, ii, active_sites,
+							active, group_trigger_mask);
+
 				}else{
 					is_active = 0;
 					break;
