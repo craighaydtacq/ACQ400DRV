@@ -54,7 +54,7 @@
 #include <linux/uaccess.h>
 
 
-#define REVID 		"0.0.1"
+#define REVID 		"0.0.2"
 #define MODULE_NAME	"acq426"
 
 #ifdef PGMCOMOUT
@@ -97,11 +97,16 @@ mm $s1+2c 0
 extern void acq465_lcs(int site, unsigned value);
 
 
+#endif /* PGMCOMOUT */
 
-int acq465_sites[6] = { 0,  };
-int acq465_sites_count = 0;
-module_param_array(acq465_sites, int, &acq465_sites_count, 0644);
+int acq426_sites[6] = { 0,  };
+int acq426_sites_count = 0;
+module_param_array(acq426_sites, int, &acq426_sites_count, 0644);
 
+static int HW = 1;
+module_param(HW, int, 0644);
+
+#ifdef PGMCOMOUT
 static int n_acq465;
 module_param(n_acq465, int, 0444);
 
@@ -114,8 +119,7 @@ module_param(set_ident, int, 0444);
 static int clear_lcs = 1;
 module_param(clear_lcs, int, 0644);
 
-static int HW = 1;
-module_param(HW, int, 0644);
+
 
 static int USE_CRC = 0;
 module_param(USE_CRC, int, 0444);
