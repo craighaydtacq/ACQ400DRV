@@ -177,10 +177,8 @@ if { $::argc > 0 } {
 	} else {
 		set ACQ480_MODPARAMS ""
 	}
-	set RE {i2c_chan_offset=([0-9])}
-	regexp $RE $ACQ480_MODPARAMS _all I2C_CHAN_OFFSET
 
-	exec /sbin/insmod  /usr/local/lib/modules/acq480.ko $ACQ480_MODPARAMS acq480_sites=$SITES
+	exec /sbin/insmod  /usr/local/lib/modules/acq480.ko $ACQ480_MODPARAMS i2c_chan_offset=$I2C_CHAN_OFFSET acq480_sites=$SITES
 	
 	if {$use_gpio} {
 	    	foreach site $::argv {	        	

@@ -660,6 +660,7 @@ build_site0() {
         
     [ -e ${dk}/counter_latch ] && ln -s ${dk}/counter_latch ${ek}
 
+
     ln -s $ULB/get.site $ULB/set.site $ULB/awg_abort \
 	$ULB/fit_rtm_translen_to_buffer $ULB/rgm_flush \
         $ULB/run0 $ULB/play0 $ULB/get.xdt \
@@ -667,6 +668,9 @@ build_site0() {
 	$ULB/datals ${ULB}/cstate $ULB/channel_mapping \
 	$ULB/stream_subset \
 	${ek}
+
+    echo "dummy role" > /dev/shm/role
+    ln -s /dev/shm/role ${ek}/sync_role_status
     echo "default 0 ssb=0" >/var/log/run0.log
     ln -s /var/log/run0.log ${ek}/run0_log
 
