@@ -659,7 +659,18 @@ void acq400_set_peripheral_SPI_CS(unsigned csword)
 	acq400wr32(adev, SPI_PERIPHERAL_CS, csword);
 }
 
+void acq400_set_peripheral_SPI_chipboard(unsigned csword)
+{
+	struct acq400_dev* adev = acq400_devices[0];
+	struct acq400_dev* bdev = acq400_devices[csword&0xf];
+
+	dev_dbg(DEVP(adev), "acq400_set_peripheral_SPI_chipboard() %08x\n", csword);
+	acq400wr32(bdev, ACQ465_LCS, csword&0x0f);
+	acq400wr32(adev, SPI_PERIPHERAL_CS, csword>>4);
+}
+
 EXPORT_SYMBOL_GPL(acq400_set_peripheral_SPI_CS);
+EXPORT_SYMBOL_GPL(acq400_set_peripheral_SPI_chipboard);
 EXPORT_SYMBOL_GPL(acq400rd32);
 EXPORT_SYMBOL_GPL(acq400wr32);
 EXPORT_SYMBOL_GPL(acq400_soft_trigger);

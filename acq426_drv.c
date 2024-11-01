@@ -53,6 +53,12 @@
 #include <linux/spi/spi.h>
 #include <linux/uaccess.h>
 
+
+#define REVID 		"0.0.1"
+#define MODULE_NAME	"acq426"
+
+#ifdef PGMCOMOUT
+
 #ifdef READY_FOR_CRC8
 /* kernel CONFIG_CRC8 set */
 #include <linux/crc8.h>
@@ -90,8 +96,7 @@ mm $s1+2c 0
 
 extern void acq465_lcs(int site, unsigned value);
 
-#define REVID 		"0.2.5"
-#define MODULE_NAME	"acq465"
+
 
 int acq465_sites[6] = { 0,  };
 int acq465_sites_count = 0;
@@ -824,15 +829,20 @@ static void __exit acq465_exit(void)
 	spi_unregister_driver(&ad7134spi_driver);
 }
 
-extern void acq480_hook_spi(void);
+#endif /* pgmcomout */
 
-static int __init acq465_init(void)
+extern void acq480_hook_spi_cb(void);
+
+
+static int __init acq426_init(void)
 {
-        int status = 0;
+	int status = 0;
 
 
-	printk("D-TACQ ACQ465 Driver %s\n", REVID);
+	printk("D-TACQ ACQ426 Driver %s\n", REVID);
 
+	acq480_hook_spi_cb();
+#if 0
 	init_crc();
 	platform_driver_register(&acq465_driver);
 	acq465_proc_root = proc_mkdir("driver/acq465", 0);
@@ -844,11 +854,16 @@ static int __init acq465_init(void)
 	for (n_acq465 = 0; n_acq465 < acq465_sites_count; ++n_acq465){
 		acq465_init_site(acq465_sites[n_acq465]);
 	}
-        return status;
+#endif
+	return status;
 }
 
-module_init(acq465_init);
-module_exit(acq465_exit);
+static void __exit acq426_exit(void){
+
+}
+
+module_init(acq426_init);
+module_exit(acq426_exit);
 
 
 
