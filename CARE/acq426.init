@@ -51,8 +51,8 @@ for site in $*; do
                         chip=${cb:1:1}
                         case $chip in
                         f)
-                                direct=reg.BC
-                                id=BC;;
+                                direct=reg.X
+                                id=X;;
                         *)
                                 alpha=$(echo $chip | tr 01234567 ABCDEFGH)
                                 id=$chip
@@ -77,11 +77,11 @@ echo acq426_init.job \$(cat /var/www/d-tacq/rc-user-complete)
 EOF
 
 for site in $*; do	
-	ek=/etc/acq400/${site}	
+	ek=/etc/acq400/${site}
 	dk=/dev/acq400.${site}.knobs
 
-        echo $ACQ426_DATA32 > $dk/data32
-	rm $ek/data32
+        echo ${ACQ426_DATA32:0} > $dk/data32
+	rm -f $ek/data32
 	cat - >$ek/data32 <<EOF
 #!/bin/sh
 if [ "x\$1" = "x" ]; then
