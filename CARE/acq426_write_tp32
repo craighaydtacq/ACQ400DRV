@@ -1,0 +1,20 @@
+#!/bin/sh
+
+SITE=${1:-1}
+
+for chip in 0 1 2 3; do
+        for chan in 0 1 2 3 4 5 6 7; do
+                v32=$(printf "%02x%02x%02x%02x" $SITE $chip $chan $chan)
+                knob=/dev/acq426/$SITE/$chip/in_voltage${chan}_test_pattern32
+                echo write $v32 to $knob
+                echo $v32 > $knob
+        done
+done
+
+
+for chip in 0 1 2 3; do
+        for chan in 0 1 2 3 4 5 6 7; do
+                knob=/dev/acq426/$SITE/$chip/in_voltage${chan}_test_pattern32
+                echo "$knob $(cat $knob)"
+        done
+done
