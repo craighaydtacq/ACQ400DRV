@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-echo acq426.init $*  begin
+echo acq426.init $*  begin 01
 
 for s in $*; do
     if [ -z $SITES ]; then
@@ -20,20 +20,22 @@ EOF
 [ -e /mnt/local/sysconfig/acq400.sh ] && source /mnt/local/sysconfig/acq400.sh
 
 
-if [ -e /mnt/local/acq426.ko ]; then
-	MODFILE=/mnt/local/acq426.ko
+MODFILE=/mnt/local/acq426.ko
+if [ -e $MODFILE ]; then
+        echo loading override /mnt/local/acq426.ko
 else
 	MODFILE=/usr/local/lib/modules/acq426.ko
 fi
 
 /sbin/insmod $MODFILE acq426_sites=${SITES} HW=1
 
+MODFILE=/mnt/local/ad485x.ko
 if [ -e /mnt/local/ad485x.ko ]; then
-        MODFILE=/mnt/local/ad485x.ko
+        echo loading override $MODFILE
 else
         MODFILE=/usr/local/lib/modules/ad485x.ko
 fi
-/sbin/insmod $MODFILE
+/sbin/insmod $MODFILE ${AD485x_PARAMS}
 
 mkdir -p /dev/acq426
 
@@ -80,7 +82,7 @@ for site in $*; do
 	ek=/etc/acq400/${site}
 	dk=/dev/acq400.${site}.knobs
 
-        echo ${ACQ426_DATA32:0} > $dk/data32
+        echo ${ACQ426_DATA32:-0} > $dk/data32
 	rm -f $ek/data32
 	cat - >$ek/data32 <<EOF
 #!/bin/sh
