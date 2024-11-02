@@ -1,6 +1,8 @@
 #!/bin/sh
 
 
+echo acq426.init $*  begin
+
 for s in $*; do
     if [ -z $SITES ]; then
     	SITES=$s
@@ -120,6 +122,8 @@ done
 
 chmod a+rx /tmp/acq426_init.job
 nice /tmp/acq426_init.job &
+
+echo acq426.init 99
 
 
 
