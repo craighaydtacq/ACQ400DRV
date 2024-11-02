@@ -44,7 +44,7 @@ do
 			echo "# ACQ424 DETECTED set VRANGE HI"
 			VRANGE=13;;
 		ACQ426*)
-			echo "# ACQ424 DETECTED set VRANGE HI"
+			echo "# ACQ426 DETECTED set VRANGE HI"
 			VRANGE=13;;
 		ACQ465*)
 			echo "# ACQ465 DETECTED set VRANGE 10"
