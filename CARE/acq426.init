@@ -36,15 +36,32 @@ else
 fi
 /sbin/insmod $MODFILE
 
-mkdir /dev/acq426
-iiodev=1
+mkdir -p /dev/acq426
+
+SPI=/sys/bus/spi/devices/
+IIO=/sys/bus/iio/devices/iio\:device
+IIOD=/sys/kernel/debug/iio/iio\:device
 
 for site in $*; do
-        /usr/local/CARE/load.overlay acq426_c32_s${SITE}_overlay
-        mkdir /dev/acq426/${SITE}
-        ln -s /sys/bus/iio/devices/iio\:device${iiodev}  /dev/acq426/${SITE}
-        ln -s /sys/kernel/debug/iio/iio\:device${iiodev} /dev/acq426/reg.${SITE}.${iiodev}
-        iiodev=$((iiodev+1))
+        /usr/local/CARE/load.overlay acq426_c32_s${site}_overlay
+        mkdir -p /dev/acq426/${site}
+        for spidev in $SPI/spi1.*; do
+                cb=$(printf %x ${spidev#*.})
+                if [ ${cb:0:1} -eq $site ]; then
+                        chip=${cb:1:1}
+                        case $chip in
+                        f)
+                                direct=reg.BC
+                                id=BC;;
+                        *)
+                                direct=reg.$site.$chip
+                                id=$chip;;
+                        esac
+                        iiodev=$(cat $spidev/iio_id)
+                        ln -s ${IIO}${iiodev}  /dev/acq426/$site/${id}
+                        ln -s ${IIOD}${iiodev}/direct_reg_access /dev/acq426/$direct
+                fi
+        done
 done
 
 build_nodes() {
@@ -97,7 +114,7 @@ fi
 EOF
 	chmod a+rx $ek/data32
 	ln -s /usr/local/CARE/acq426_adc.init ${ek} 
-	(cd ${ek};source /tmp/makeLinks)
+#	(cd ${ek};source /tmp/makeLinks)
 	echo "SITE=$site /usr/local/CARE/acq426_adc.init" >>/tmp/acq426_init.job
 done
 
