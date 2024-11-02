@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VRANGE=7
+VRANGE=5
 
 get_vr() {
 	# if a {vmax}V exists in PN, return {vmax}+2 as a reasonable value for the rail
@@ -15,14 +15,17 @@ get_vr() {
 			return
 		fi
 	done
+	echo 0
 }
+
+echo VRANGE $VRANGE
 
 for file in /dev/sites/[1-6]/details
 do
 	if [ -e $file ]; then
 		source $file
 		PN=${FRU_PART_NUM%% *}
-		[ "x$PN" != "x" ] && VRANGE=13
+
 		case $PN in
 		ACQ480*)
 			echo "# $file: FPN $FRU_PART_NUM PN $PN"		
@@ -51,6 +54,7 @@ do
 		*)
 			VSPEC=${PN##*-}
 			VSPEC=$(get_vr $PN)
+			echo VSPEC $VSPEC
 			if [ $VSPEC -gt 0 ]; then
 				VRANGE=$VSPEC
 				echo "# Setting VRANGE:$VRANGE detected from $PN"
