@@ -887,7 +887,7 @@ build_knobs() {
         done
         acq426_init=$ULC/acq426.init
         if [ -e /mnt/local/acq426.init ]; then
-                acq465_init=/mnt/local/acq426.init
+                acq426_init=/mnt/local/acq426.init
                 echo "++ Warning using patch $acq426_init"
         fi
         $acq426_init ${ACQ426_SITES}

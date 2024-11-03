@@ -43,6 +43,7 @@ SPI=/sys/bus/spi/devices/
 IIO=/sys/bus/iio/devices/iio\:device
 IIOD=/sys/kernel/debug/iio/iio\:device
 D426=/dev/acq426
+EK=/etc/acq400
 
 for site in $*; do
         /usr/local/CARE/load.overlay acq426_c32_s${site}_overlay
@@ -67,6 +68,14 @@ for site in $*; do
                         ln -s ${IIO}${iiodev}                    ${D426}/$site/${id}
                         ln -s ${IIOD}${iiodev}/direct_reg_access ${D426}/$direct
                 fi
+        done
+
+        ch=1
+        for chip in ${D426}/${site}/[0123]; do
+                for knob in $chip/in_voltage*_softspan; do
+                        ln -s $knob ${EK}/${site}/gain${ch}
+                        ch=$((ch+1))
+                done
         done
 done
 
