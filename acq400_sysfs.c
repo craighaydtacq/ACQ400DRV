@@ -3680,9 +3680,9 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 	}else if (IS_ACQ424(adev)){
 		specials[nspec++] = acq424_attrs + (legacy_emulate_acq196==1? 0: 1);
 	}else if (IS_ACQ42X(adev)){
-		if (IS_ACQ425(dev)){
+		if (IS_ACQ425(adev)){
 			specials[nspec++] = acq425_attrs;
-		}else if (IS_ACQ426(dev)){
+		}else if (IS_ACQ426(adev)){
 			specials[nspec++] = acq426_attrs;
 		}else{
 			specials[nspec++] = ACQ420_ATTRS;
