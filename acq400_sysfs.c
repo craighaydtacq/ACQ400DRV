@@ -2230,10 +2230,8 @@ static const struct attribute *acq465_attrs[] = {
 };
 
 static const struct attribute *acq426_attrs[] = {
-	&dev_attr_filter_sel.attr,
 	&dev_attr_adc_reset.attr,
 	&dev_attr_adc_status.attr,
-	&dev_attr__adc_hax.attr,
 	&dev_attr_bank_mask.attr,
 	&dev_attr_pack24.attr,
 	NULL
@@ -3682,9 +3680,13 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 	}else if (IS_ACQ424(adev)){
 		specials[nspec++] = acq424_attrs + (legacy_emulate_acq196==1? 0: 1);
 	}else if (IS_ACQ42X(adev)){
-		specials[nspec++] =
-			IS_ACQ425(adev) ? acq425_attrs: ACQ420_ATTRS;
-		specials[nspec++] = acq426_attrs;                         /* @@TODO .. do we need double attrs? */
+		if (IS_ACQ425(dev)){
+			specials[nspec++] = acq425_attrs;
+		}else if (IS_ACQ426(dev)){
+			specials[nspec++] = acq426_attrs;
+		}else{
+			specials[nspec++] = ACQ420_ATTRS;
+		}
 	}else if (IS_ACQ43X(adev)){
 		specials[nspec++] = acq435_attrs;
 	}else if (IS_ACQ465(adev)){
