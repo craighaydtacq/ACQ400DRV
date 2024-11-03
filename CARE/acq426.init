@@ -20,6 +20,8 @@ EOF
 [ -e /mnt/local/sysconfig/acq400.sh ] && source /mnt/local/sysconfig/acq400.sh
 
 
+ACQ426_DEFSPAN=${ACQ426_DEFSPAN:-M10-10}
+
 MODFILE=/mnt/local/acq426.ko
 if [ -e $MODFILE ]; then
         echo loading override /mnt/local/acq426.ko
@@ -74,9 +76,12 @@ for site in $*; do
         for chip in ${D426}/${site}/[0123]; do
                 for knob in $chip/in_voltage*_softspan; do
                         ln -s $knob ${EK}/${site}/gain${ch}
+                        echo $ACQ426_DEFSPAN > $knob 
                         ch=$((ch+1))
                 done
+                
         done
+        echo 
 done
 
 cat - >/tmp/acq426_init.job <<EOF
