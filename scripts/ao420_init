@@ -63,7 +63,7 @@ vset_sys ${KNOBS}/dacspi 0x03000000       # Clear Code
 if [ "$MTYPE" = "$MOD_ID_AO422FMC" ]; then
         vset_sys ${KNOBS}/dacspi 0x06000040      # UP_RATE default
         vset_sys ${KNOBS}/dacspi 0x02004d00      # 5V default
-        make_ao422_range_knobs
+	[ -z $AO422_NO_RANGE_DACSPI ] && make_ao422_range_knobs
 else
         vset_sys ${KNOBS}/dacspi 0x400002	# Soft Reset
 
