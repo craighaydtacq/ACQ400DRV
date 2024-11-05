@@ -131,7 +131,7 @@ build_nodes() {
             build_hb ${MAJOR} ${NAME}
             
             case $(cat /dev/acq400.$ID.knobs/module_type) in            
-            ${MOD_ID_AO420FMC}|${MOD_ID_AO424ELF})
+            ${MOD_ID_AO420FMC}|${MOD_ID_AO424ELF}|${MOD_ID_AO422FMC})
                 mknod /dev/${NAME}.awg c  ${MAJOR} 9
                 mknod /dev/${NAME}.awgc c ${MAJOR} 10
                 mknod /dev/${NAME}.awgr c ${MAJOR} 14
