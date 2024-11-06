@@ -40,11 +40,8 @@ do
 				echo "# ACQ482 REGULAR DETECTED set VRANGE 13V"
 				VRANGE=13
 			fi;;
-		ACQ424*)
-			echo "# ACQ424 DETECTED set VRANGE HI"
-			VRANGE=13;;
-		ACQ426*)
-			echo "# ACQ426 DETECTED set VRANGE HI"
+		ACQ42*)
+			echo "# $PN: ACQ42x DETECTED set VRANGE HI"
 			VRANGE=13;;
 		ACQ465*)
 			echo "# ACQ465 DETECTED set VRANGE 10"
