@@ -1133,7 +1133,11 @@ void acq400_mod_init_defaults(struct acq400_dev* adev)
 	_acq400_mod_init_defaults(adev);
 
 	if (IS_ACQ42X(adev)){
-		acq420_init_defaults(adev);
+		if IS_ACQ426(adev){
+			acq426_init_defaults(adev);
+		}else{
+			acq420_init_defaults(adev);
+		}
 	}else if (IS_DIO(adev)){
 		dio_init_defaults(adev);
 	}else{
@@ -1165,9 +1169,7 @@ void acq400_mod_init_defaults(struct acq400_dev* adev)
 		case MOD_ID_ACQ465ELF:
 			acq465_init_defaults(adev);
 			break;
-		case MOD_ID_ACQ426ELF:
-			acq426_init_defaults(adev);
-			break;
+
 		case MOD_ID_ACQ494FMC:
 			acq494_init_defaults(adev);
 			break;
