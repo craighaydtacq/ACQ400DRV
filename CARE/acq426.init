@@ -74,12 +74,16 @@ for site in $*; do
 
         ch=1
         for chip in ${D426}/${site}/[0123]; do
-                for knob in $chip/in_voltage*_softspan; do
-                        ln -s $knob ${EK}/${site}/gain${ch}
-                        echo $ACQ426_DEFSPAN > $knob 
+                for pchan in 0 1 2 3 4 5 6 7; do
+                        in_v=$chip/in_voltage${pchan}
+                        span=${in_v}_softspan
+                        [ ! -e $span ] && break
+ 
+                        ln -s $span ${EK}/${site}/gain${ch}
+                        echo $ACQ426_DEFSPAN > $span
+                        ln -s ${in_v}_scale ${EK}/${site}/scale${ch}
                         ch=$((ch+1))
                 done
-                
         done
         echo 
 done
