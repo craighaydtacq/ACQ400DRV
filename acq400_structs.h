@@ -474,7 +474,9 @@ struct ADC_dev {
 #define xo_abcde_buf_space(cb)	CIRC_SPACE((cb)->head, (cb)->tail, ABCDE_LEN)
 #define xo_abcde_incr(p)	(((p)+1)&(ABCDE_LEN-1))
 
-#define VALID_ABCDE(bx)		(bx >= 'A' && bx <= 'E')
+extern char max_seg[];
+
+#define VALID_ABCDE(bx)		(max_seg[0] >= 'A' && max_seg[0] <= 'Z' && bx >= 'A' && bx <= max_seg[0])
 
 struct XO_dev {
 	/* woo-ah - are we using site0 playloop_length or site1 wait for testing..*/
