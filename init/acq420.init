@@ -683,7 +683,7 @@ build_site0() {
     ln -s ${ULC}/preset? ${ek}
     ln -s ${ULC}/get_data_size ${ek}/raw_data_size
     echo $HAS_MGTDRAM > ${ek}/has_mgtdram
-    echo "none" > ${ek}/stream_subset;
+    echo "none" > ${ek}/stream_subset_mask;
     IS_TIGA=none
     [ -e ${DK0}/wr_ts_s1_count ] && IS_TIGA=1
     echo $IS_TIGA > ${ek}/is_tiga

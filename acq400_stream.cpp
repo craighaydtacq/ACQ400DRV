@@ -1942,7 +1942,7 @@ void init(int argc, const char** argv) {
 		}
 	}
 	char* subset = new char[128];
-	if (getKnob(0, "/etc/acq400/0/stream_subset", subset) > 0){
+	if (getKnob(0, "/etc/acq400/0/stream_subset_mask", subset) > 0){
 		if (strlen(subset) > 0 && strncmp(subset, "none", 4) != 0){
 			G::subset = subset;
 		}else{
