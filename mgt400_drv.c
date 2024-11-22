@@ -748,7 +748,7 @@ static int __init mgt400_init(void)
 {
         int status;
 
-	printk("D-TACQ MGT400 Comms Module Driver %s\n", REVID);
+	printk("D-TACQ MGT400 Comms Module Driver and CPH was here %s\n", REVID);
 	//kt_period = ktime_set(0, 10000000);
 	kt_period = ktime_set(0, 1000000);
 	mgt400_module_init_proc();
