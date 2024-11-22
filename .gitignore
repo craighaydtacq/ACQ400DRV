@@ -138,3 +138,13 @@ reg_rw
 hudp_config
 tai_server
 awg_composer
+
+spad_update
+.settings
+.tmp_versions
+SNAGGING
+acq480_train
+decimate
+decimate.cpp
+soft_wrtd_x86
+

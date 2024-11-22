@@ -18,14 +18,14 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.                */
 /* ------------------------------------------------------------------------- */
 
-/** @file regfs.h DESCR
+/** @file dsp_atd_908.h DESCR
  * 
  *  Created on: Feb 10, 2012
  *      Author: pgm
  */
 
-#ifndef REGFS_DEV_H_
-#define REGFS_DEV_H_
+#ifndef _DSP_ATD_9802_H_
+#define _DSP_ATD_9802_H_
 
 #define MAXSTACK 4
 
@@ -33,48 +33,33 @@
 #undef PD
 #undef PDSZ
 
-#define MINOR_P0	0
-#define MINOR_PMAX	63	/* 64 pages max */
-#define MINOR_EV	64	/* hook event reader here */
-
-
-struct REGFS_PATH_DESCR {
-	struct REGFS_DEV* rdev;
-	int minor;
-	int int_count;
-};
-
-#define PD(filp)		((struct REGFS_PATH_DESCR*)filp->private_data)
-#define SETPD(filp, value)	(filp->private_data = (value))
-#define PDSZ			(sizeof (struct REGFS_PATH_DESCR))
-
 #define GROUP_FIRST_N_TRIGGERS_ALL	0
 
-struct REGFS_DEV {
-	void* va;
-	struct platform_device* pdev;
-	struct resource *mem;
+#include "regfs.h"
 
-	int istack;
-	struct dentry *dstack[MAXSTACK];
-	struct dentry *top;
-	struct dentry *create_hook;
+struct ATD_9802_DEV {
+	struct REGFS_DEV rdev;
 
 
-	struct cdev cdev;
-	struct list_head list;
-	wait_queue_head_t w_waitq;
+	unsigned status[ATD_TRG_MAXREG];
+	unsigned status_latch[ATD_TRG_MAXREG];
+	unsigned group_status_latch[ATD_TRG_MAXREG];
+	unsigned group_trigger_mask[ATD_TRG_MAXREG];
+	unsigned group_first_n_triggers;      /* trigger if N in the group are set. N=0 -> ALL */
+	enum GSMODE { GS_NOW, GS_HISTORIC } gsmode;
+	unsigned sample_count;
+	unsigned latch_count;
 
-	unsigned ints;
-	unsigned event_client_pid;
-	unsigned client_ready;	/* client requests interrupt status. isr: DO NOT update unless set. */
-
+	void* client;				/* stash subclass data here */
+	struct ATD atd;				/* pulse timers */
+	struct ATD soft_trigger;
 };
+
+#define ATD_DEVP(adev) (&adev->rdev.pdev->dev)
 
 extern irqreturn_t (*regfs_isr)(int irq, void *dev_id);
 extern int regfs_probe(struct platform_device *pdev);
 extern int regfs_probe_rdev(struct platform_device *pdev, struct REGFS_DEV* rdev);
 extern int regfs_remove(struct platform_device *pdev);
-extern struct file_operations regfs_event_fops;
 
-#endif /* REGFS_DEV_H_ */
+#endif /* _DSP_ATD_9802_H_ */

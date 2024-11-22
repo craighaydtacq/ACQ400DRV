@@ -1,0 +1,9 @@
+#!/bin/sh
+
+logger -t acq426_adc.init 01
+
+logger -t acq426_adc.init 99
+
+
+
+

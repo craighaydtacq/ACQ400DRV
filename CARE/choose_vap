@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VRANGE=7
+VRANGE=5
 
 get_vr() {
 	# if a {vmax}V exists in PN, return {vmax}+2 as a reasonable value for the rail
@@ -15,6 +15,7 @@ get_vr() {
 			return
 		fi
 	done
+	echo 0
 }
 
 for file in /dev/sites/[1-6]/details
@@ -22,7 +23,7 @@ do
 	if [ -e $file ]; then
 		source $file
 		PN=${FRU_PART_NUM%% *}
-		[ "x$PN" != "x" ] && VRANGE=13
+
 		case $PN in
 		ACQ480*)
 			echo "# $file: FPN $FRU_PART_NUM PN $PN"		
@@ -39,8 +40,8 @@ do
 				echo "# ACQ482 REGULAR DETECTED set VRANGE 13V"
 				VRANGE=13
 			fi;;
-		ACQ424*)
-			echo "# ACQ424 DETECTED set VRANGE HI"
+		ACQ42*)
+			echo "# $PN: ACQ42x DETECTED set VRANGE HI"
 			VRANGE=13;;
 		ACQ465*)
 			echo "# ACQ465 DETECTED set VRANGE 10"

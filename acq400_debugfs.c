@@ -249,6 +249,13 @@ void acq465_createDebugfs(struct acq400_dev* adev, char* pcursor)
 	DBG_REG_CREATE(ACQ465_DEBUG);
 }
 
+void acq426_createDebugfs(struct acq400_dev* adev, char* pcursor)
+{
+	adc_createDebugfs(adev, pcursor);
+	DBG_REG_CREATE(ADC_TRANSLEN);
+	DBG_REG_CREATE(ACQ465_DEBUG);
+}
+
 void acq494_createDebugfs(struct acq400_dev* adev, char* pcursor)
 {
 	DBG_REG_CREATE(MOD_ID);
@@ -509,6 +516,8 @@ void acq400_createDebugfs(struct acq400_dev* adev)
 		case MOD_ID_ACQ494FMC:
 			acq494_createDebugfs(adev, pcursor);
 			break;
+		case MOD_ID_ACQ426ELF:
+			acq426_createDebugfs(adev, pcursor);
 		case MOD_ID_ACQ480FMC:
 			acq480_createDebugfs(adev, pcursor);
 			break;

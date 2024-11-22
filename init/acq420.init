@@ -131,7 +131,7 @@ build_nodes() {
             build_hb ${MAJOR} ${NAME}
             
             case $(cat /dev/acq400.$ID.knobs/module_type) in            
-            ${MOD_ID_AO420FMC}|${MOD_ID_AO424ELF})
+            ${MOD_ID_AO420FMC}|${MOD_ID_AO424ELF}|${MOD_ID_AO422FMC})
                 mknod /dev/${NAME}.awg c  ${MAJOR} 9
                 mknod /dev/${NAME}.awgc c ${MAJOR} 10
                 mknod /dev/${NAME}.awgr c ${MAJOR} 14
@@ -289,6 +289,7 @@ ACQ425_SITES=""
 ACQ427_SITES=""
 ACQ437_SITES=""
 ACQ400T_SITES=""
+ACQ426_SITES=""
 ACQ465_SITES=""
 DI460_SITES=""
 AO420_SITES=""
@@ -574,7 +575,10 @@ build_knobs_device() {
         ACQ480_SITES="${ACQ480_SITES} $site";;
     ${MOD_ID_ACQ423ELF})
         set_max_min_khz ${site} 200 10
-        ACQ423_SITES="${ACQ423_SITES} $site";;  
+        ACQ423_SITES="${ACQ423_SITES} $site";;
+    ${MOD_ID_ACQ426ELF})
+        set_max_min_khz ${site} 1000 1
+        ACQ426_SITES="${ACQ426_SITES} $site";;
     ${MOD_ID_ACQ465ELF})
         set_max_min_khz ${site} 1400 1
         ACQ465_SITES="${ACQ465_SITES} $site";;
@@ -656,6 +660,7 @@ build_site0() {
         
     [ -e ${dk}/counter_latch ] && ln -s ${dk}/counter_latch ${ek}
 
+
     ln -s $ULB/get.site $ULB/set.site $ULB/awg_abort \
 	$ULB/fit_rtm_translen_to_buffer $ULB/rgm_flush \
         $ULB/run0 $ULB/play0 $ULB/get.xdt \
@@ -663,6 +668,9 @@ build_site0() {
 	$ULB/datals ${ULB}/cstate $ULB/channel_mapping \
 	$ULB/stream_subset \
 	${ek}
+
+    echo "dummy role" > /dev/shm/role
+    ln -s /dev/shm/role ${ek}/sync_role_status
     echo "default 0 ssb=0" >/var/log/run0.log
     ln -s /var/log/run0.log ${ek}/run0_log
 
@@ -675,6 +683,7 @@ build_site0() {
     ln -s ${ULC}/preset? ${ek}
     ln -s ${ULC}/get_data_size ${ek}/raw_data_size
     echo $HAS_MGTDRAM > ${ek}/has_mgtdram
+    echo "none" > ${ek}/stream_subset_mask;
     IS_TIGA=none
     [ -e ${DK0}/wr_ts_s1_count ] && IS_TIGA=1
     echo $IS_TIGA > ${ek}/is_tiga
@@ -847,7 +856,7 @@ build_knobs() {
             fi
         done
 
-        $ULB/acq480.init ${ACQ480_SITES}
+        $ULC/acq480.init ${ACQ480_SITES}
     else
         case $MODEL in
         acq1102)
@@ -860,19 +869,29 @@ build_knobs() {
         esac
     fi
     if [ "x${ACQ423_SITES}" != "x" ]; then
-        $ULB/acq423.init ${ACQ423_SITES}
+        $ULC/acq423.init ${ACQ423_SITES}
         # use /mnt/local/acq420_custom
         #       BLEN=4194304
         #       NBUF=128
     fi
     if [ "x${DI460_SITES}" != "x" ]; then
-		$ULB/di460.init ${DI460_SITES}
+	$ULC/di460.init ${DI460_SITES}
     fi
     if [ "x${ACQ425_SITES}" != "x" ]; then
-        $ULB/acq425.init ${ACQ425_SITES}
+        $ULC/acq425.init ${ACQ425_SITES}
         # use /mnt/local/acq420_custom
         #       BLEN=4194304
         #       NBUF=128
+    elif [ "x${ACQ426_SITES}" != "x" ]; then
+        for site in $ACQ426_SITES; do
+            web_append acq426.$site nomon
+        done
+        acq426_init=$ULC/acq426.init
+        if [ -e /mnt/local/acq426.init ]; then
+                acq426_init=/mnt/local/acq426.init
+                echo "++ Warning using patch $acq426_init"
+        fi
+        $acq426_init ${ACQ426_SITES}
     elif [ "x${ACQ427_SITES}" != "x" ]; then
         case $IS_ACQ427 in
         02|03)
@@ -882,12 +901,12 @@ build_knobs() {
         *)
             echo "ERROR: unknown type ACQ427:${IS_ACQ427}";;
         esac
-        $ULB/acq427.init ${ACQ427_SITES}
+        $ULC/acq427.init ${ACQ427_SITES}
         # use /mnt/local/acq420_custom
         #       BLEN=4194304
         #       NBUF=128
     elif [ "x${ACQ437_SITES}" != "x" ]; then
-        $ULB/acq437.init ${ACQ437_SITES}
+        $ULC/acq437.init ${ACQ437_SITES}
         # use /mnt/local/acq420_custom
         #       BLEN=4194304
         #       NBUF=128
@@ -895,17 +914,17 @@ build_knobs() {
         for site in $ACQ465_SITES; do
             web_append acq465.$site nomon
         done
-        acq465_init=$ULB/acq465.init
+        acq465_init=$ULC/acq465.init
         if [ -e /mnt/local/acq465.init ]; then
         	acq465_init=/mnt/local/acq465.init
         	echo "++ Warning using patch $acq465_init"
         fi
         $acq465_init ${ACQ465_SITES}
     elif [ "x${ACQ494_SITES}" != "x" ]; then
-        [ -z $ACQ494_STUB ] && nice $ULB/acq494.init ${ACQ494_SITES} &
+        [ -z $ACQ494_STUB ] && nice $ULC/acq494.init ${ACQ494_SITES} &
     elif [ "x${ACQ400T_SITES}" != "x" ]; then
-		echo ACQ400T : "calling $ULB/acq400t.init ${ACQ400T_SITES}"
-		$ULB/acq400t.init ${ACQ400T_SITES}
+		echo ACQ400T : "calling $ULC/acq400t.init ${ACQ400T_SITES}"
+		$ULC/acq400t.init ${ACQ400T_SITES}
     fi
     has_sfp=0
     for dir in ${spd}/*mgt400; do

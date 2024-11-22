@@ -1,0 +1,127 @@
+#!/bin/sh
+
+
+echo acq426.init $*  begin 01
+
+for s in $*; do
+    if [ -z $SITES ]; then
+    	SITES=$s
+    else
+    	SITES=$SITES,$s
+    fi
+done
+
+# sourced by init_stream
+cat - >/etc/sysconfig/acq400_streamd.0.conf_acq426 <<EOF
+logger -t acq400_streamd.0.conf_acq426 -- /usr/local/bin/acq426_knobs --dig_if_reset=$SITES
+/usr/local/bin/acq426_knobs --dig_if_reset=$SITES
+EOF
+
+[ -e /mnt/local/sysconfig/acq400.sh ] && source /mnt/local/sysconfig/acq400.sh
+
+
+ACQ426_DEFSPAN=${ACQ426_DEFSPAN:-M10-10}
+
+MODFILE=/mnt/local/acq426.ko
+if [ -e $MODFILE ]; then
+        echo loading override /mnt/local/acq426.ko
+else
+	MODFILE=/usr/local/lib/modules/acq426.ko
+fi
+
+/sbin/insmod $MODFILE acq426_sites=${SITES} HW=1
+
+MODFILE=/mnt/local/ad485x.ko
+if [ -e /mnt/local/ad485x.ko ]; then
+        echo loading override $MODFILE
+else
+        MODFILE=/usr/local/lib/modules/ad485x.ko
+fi
+/sbin/insmod $MODFILE ${AD485x_PARAMS}
+
+mkdir -p /dev/acq426
+
+SPI=/sys/bus/spi/devices/
+IIO=/sys/bus/iio/devices/iio\:device
+IIOD=/sys/kernel/debug/iio/iio\:device
+D426=/dev/acq426
+EK=/etc/acq400
+
+for site in $*; do
+        /usr/local/CARE/load.overlay acq426_c32_s${site}_overlay
+        mkdir -p ${D426}/${site}
+        for spidev in $SPI/spi1.*; do
+                cb=$(printf %x ${spidev#*.})
+                if [ ${cb:0:1} -eq $site ]; then
+                        chip=${cb:1:1}
+                        case $chip in
+                        f)
+                                direct=reg.X
+                                id=X;;
+                        *)
+                                alpha=$(echo $chip | tr 01234567 ABCDEFGH)
+                                id=$chip
+                                ln -s ${D426}/$site/${id} ${D426}/$site/${alpha}
+                                direct=reg.$site.$chip
+                                ln -s ${D426}/$direct ${D426}/reg.$site.$alpha
+                                ;;
+                        esac
+                        iiodev=$(cat ${spidev}/iio_id)
+                        ln -s ${IIO}${iiodev}                    ${D426}/$site/${id}
+                        ln -s ${IIOD}${iiodev}/direct_reg_access ${D426}/$direct
+                fi
+        done
+
+        ch=1
+        for chip in ${D426}/${site}/[0123]; do
+                for pchan in 7 6 5 4 3 2 1 0; do
+                        in_v=$chip/in_voltage${pchan}
+                        span=${in_v}_softspan
+                        [ ! -e $span ] && break
+ 
+                        ln -s $span ${EK}/${site}/gain${ch}
+                        echo $ACQ426_DEFSPAN > $span
+                        ln -s ${in_v}_scale ${EK}/${site}/scale${ch}
+                        ch=$((ch+1))
+                done
+        done
+        echo 
+done
+
+cat - >/tmp/acq426_init.job <<EOF
+#!/bin/sh
+while [ ! -e  /var/www/d-tacq/rc-user-complete ]; do
+	sleep 3
+done
+echo acq426_init.job \$(cat /var/www/d-tacq/rc-user-complete)
+EOF
+
+for site in $*; do	
+	ek=/etc/acq400/${site}
+	dk=/dev/acq400.${site}.knobs
+
+        echo ${ACQ426_DATA32:-0} > $dk/data32
+	rm -f $ek/data32
+	cat - >$ek/data32 <<EOF
+#!/bin/sh
+if [ "x\$1" = "x" ]; then
+	cat $dk/data32
+else
+	echo \$1 > $dk/data32
+        echo set data32
+fi
+EOF
+	chmod a+rx $ek/data32
+	ln -s /usr/local/CARE/acq426_adc.init ${ek} 
+#	(cd ${ek};source /tmp/makeLinks)
+	echo "SITE=$site /usr/local/CARE/acq426_adc.init" >>/tmp/acq426_init.job
+done
+
+chmod a+rx /tmp/acq426_init.job
+nice /tmp/acq426_init.job &
+
+echo acq426.init 99
+
+
+
+

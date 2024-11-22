@@ -39,7 +39,7 @@ set.sys ${KNOBS}/dacreset 1
 set.sys ${KNOBS}/dacreset 0
 set.sys ${KNOBS}/dacspi 0x03000000       # Clear Code
 set.sys ${KNOBS}/dacspi \$range_code
-set.sys ${KNOBS}/dac_range_0$ch
+set.sys ${KNOBS}/dac_range_0$ch \${1:-0}
 set.sys ${KNOBS}/dac_enable 1
 EOF
                 chmod a+rx $knob
@@ -63,7 +63,7 @@ vset_sys ${KNOBS}/dacspi 0x03000000       # Clear Code
 if [ "$MTYPE" = "$MOD_ID_AO422FMC" ]; then
         vset_sys ${KNOBS}/dacspi 0x06000040      # UP_RATE default
         vset_sys ${KNOBS}/dacspi 0x02004d00      # 5V default
-        make_ao422_range_knobs
+	[ -z $AO422_NO_RANGE_DACSPI ] && make_ao422_range_knobs
 else
         vset_sys ${KNOBS}/dacspi 0x400002	# Soft Reset
 

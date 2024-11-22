@@ -474,7 +474,9 @@ struct ADC_dev {
 #define xo_abcde_buf_space(cb)	CIRC_SPACE((cb)->head, (cb)->tail, ABCDE_LEN)
 #define xo_abcde_incr(p)	(((p)+1)&(ABCDE_LEN-1))
 
-#define VALID_ABCDE(bx)		(bx >= 'A' && bx <= 'E')
+extern char max_seg[];
+
+#define VALID_ABCDE(bx)		(max_seg[0] >= 'A' && max_seg[0] <= 'Z' && bx >= 'A' && bx <= max_seg[0])
 
 struct XO_dev {
 	/* woo-ah - are we using site0 playloop_length or site1 wait for testing..*/
@@ -652,6 +654,7 @@ static inline int _is_acq42x(struct acq400_dev *adev) {
 	case MOD_ID_ACQ425ELF:
 	case MOD_ID_ACQ425ELF_2000:
 	case MOD_ID_ACQ424ELF:
+	case MOD_ID_ACQ426ELF:
 	case MOD_ID_ACQ427ELF:
 	case MOD_ID_ACQ427ELF_2000:
 	case MOD_ID_ACQ423ELF:
@@ -665,6 +668,7 @@ static inline int _has_variable_data32(struct acq400_dev *adev) {
 	switch(GET_MOD_ID(adev)){
 	case MOD_ID_ACQ420FMC:
 	case MOD_ID_ACQ425ELF:
+	case MOD_ID_ACQ426ELF:
 	case MOD_ID_ACQ427ELF:
 	case MOD_ID_ACQ465ELF:
 		return true;

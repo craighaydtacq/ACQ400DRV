@@ -16,6 +16,8 @@ obj-m += acq400t.o
 #obj-m += acq4xx_fs.o
 obj-m += mgt400.o
 obj-m += regfs.o
+obj-m += dsp_atd_9802.o
+#obj-m += dsp_atd_32ch.o
 obj-m += acq400_dspfs.o
 
 obj-m += pigcelf.o
@@ -27,6 +29,7 @@ obj-m += ad9510.o
 obj-m += ads62p49.o
 obj-m += ao428.o
 obj-m += z7_eth1_1000X_en.o
+obj-m += acq426.o
 obj-m += acq465.o
 obj-m += acq494.o
 
@@ -65,6 +68,8 @@ mgt400-objs := mgt400_drv.o mgt400_sysfs.o mgt400_procfs.o mgt400_debugfs.o \
 
 acq480-objs := acq480_drv.o hbm.o zynq_peripheral_spi_shim.o
 
+acq426-objs := acq426_drv.o hbm.o zynq_peripheral_spi_shim.o
+
 acq465-objs := acq465_drv.o hbm.o zynq_peripheral_spi_shim.o
 
 acq494-objs := acq494_gpx2_drv.o zynq_peripheral_spi_shim.o
@@ -76,6 +81,10 @@ radcelf-objs := radcelf_drv.o zynq_peripheral_spi_shim.o
 ao428-objs := ao428_drv.o
 
 acq400t-objs := acq400t_drv.o
+
+acq400_dspfs-objs := acq400_dspfs_core.o acq400_dsp_common.o
+
+dsp_atd_9802-objs := dsp_atd_9802_core.o acq400_dsp_common.o
 
 dmatest_pgm-objs := dmatest.o zynq-timer.o
 

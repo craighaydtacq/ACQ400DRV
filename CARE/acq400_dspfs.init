@@ -1,29 +1,39 @@
 #!/bin/sh
 # dsp1.init : instantiate DSP1 fs.
+# acq400_dspfs.init [SPECIALKO]
 
 if [ ! -e /etc/sites ]; then
 	echo "ERROR: /etc/sites does not exist. FPGA not loaded, quit"
 	exit 1
 fi
+
+
 MDIR=/usr/local/lib/modules
+REGFS_KO=regfs.ko
+DSPFS_KO=${1:-acq400_dspfs.ko}
+OVERLAYS=${2:-acq400dsp1 acq400dsp2}
+
 /sbin/insmod $MDIR/debugfs2.ko
-if [ -e /mnt/local/regfs.ko ]; then
-	echo load /mnt/local/regfs.ko
-	/sbin/insmod /mnt/local/regfs.ko
+if [ -e /mnt/local/${REGFS_KO} ]; then
+	echo load /mnt/local/${REGFS_KO}
+	/sbin/insmod /mnt/local/${REGFS_KO}
 else
-	/sbin/insmod $MDIR/regfs.ko
+	/sbin/insmod $MDIR/${REGFS_KO}
 fi
-if [ -e /mnt/local/acq400_dspfs.ko ]; then
-	echo load /mnt/local/acq400_dspfs.ko
-	/sbin/insmod /mnt/local/acq400_dspfs.ko
+
+if [ -e /mnt/local/${DSPFS_KO} ]; then
+	echo load /mnt/local/${DSPFS_KO}
+	/sbin/insmod /mnt/local/${DSPFS_KO}
 else
-	/sbin/insmod $MDIR/acq400_dspfs.ko
+        echo load $MDIR/${DSPFS_KO}
+	/sbin/insmod $MDIR/${DSPFS_KO}
 fi
 
 
 source /usr/local/CARE/load.overlay
 
-load_overlay acq400dsp1
-load_overlay acq400dsp2
+for ovl in $OVERLAYS; do
+        load_overlay $ovl
+done
 
 ln -s /sys/kernel/debug/dsp1/ /dev/dsp1

@@ -6,8 +6,10 @@ echo +++ anatrg.init $SITE
 
 WEB_APPEND_JOB=${WEB_APPEND_JOB:-/tmp/acq420-web-append.job}
 
+#[ -e /mnt/local/debugs ] && /mnt/local/debugs
+
 if [ $SITE -eq 14 ]; then
-	/usr/local/CARE/acq400_dspfs.init
+	/usr/local/CARE/acq400_dspfs.init dsp_atd_9802.ko acq400dsp1
 	/usr/local/CARE/ATD-DSP/atd-dsp1.init
 	set.sys /dev/dsp1/ATD_CSR.MOD_EN 1
 	MAJOR=$(grep dsp1 /proc/devices | awk '{ print $1 }')
@@ -49,7 +51,7 @@ if [ $SITE -eq 14 ]; then
 		mkdir -p /etc/acq400/$site
 		cd /etc/acq400/$site
 		set.sys /dev/dsp1/ATD_CSR.SITE$site 1
-		for ch in $(seq 1 $nc)
+		for ch in $(seq 0 $nc)
 		do
 			ch00=$(printf $fmt $ch)
 			ln -s /usr/local/bin/anatrg anatrg_$ch00
