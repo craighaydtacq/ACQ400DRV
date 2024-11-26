@@ -2229,7 +2229,17 @@ static const struct attribute *acq465_attrs[] = {
 	NULL
 };
 
+MAKE_BITS(va_en, ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_VA_EN);
+MAKE_BITS(vset,  ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_VSET);
+MAKE_BIT_RON(busy,  ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_BSY);
+MAKE_BIT_RON(los,   ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_LOS);
+
 static const struct attribute *acq426_attrs[] = {
+	&dev_attr_va_en.attr,
+	&dev_attr_vset.attr,
+	&dev_attr_busy.attr,
+	&dev_attr_los.attr,
+
 	&dev_attr_adc_reset.attr,
 	&dev_attr_adc_status.attr,
 	&dev_attr_bank_mask.attr,

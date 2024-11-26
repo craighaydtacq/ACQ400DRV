@@ -118,7 +118,7 @@ EOF
 done
 
 chmod a+rx /tmp/acq426_init.job
-nice /tmp/acq426_init.job &
+nice /tmp/acq426_init.job $* &
 
 echo acq426.init 99
 

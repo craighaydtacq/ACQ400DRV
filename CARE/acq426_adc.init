@@ -1,6 +1,13 @@
 #!/bin/sh
 
-logger -t acq426_adc.init 01
+logger -t acq426_adc.init 01 $*
+
+for site in $*; do
+        ek=/etc/acq400/${site}
+        dk=/dev/acq400.${site}.knobs
+
+        echo 1 > ${dk}/va_en
+done
 
 logger -t acq426_adc.init 99
 
