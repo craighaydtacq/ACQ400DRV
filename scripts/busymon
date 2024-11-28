@@ -21,6 +21,11 @@ proc report {} {
 	puts "BUSY=$BUSY"
 }
 
+
+while {! [file exists $PID]} {
+    after 1100
+}
+
 test_busy
 
 if { $::argc > 0 } {
@@ -34,6 +39,10 @@ report
 spawn inotifywait -e close_write $PID -m
 
 while { 1 } {
+	if { ! [file exists $PID] } {
+		puts "ERROR: someone deleted $PID"
+		exit 1
+	}
 	if { $BUSY == 0 } {
 		expect -re "CLOSE_WRITE,CLOSE" {}
 		# match or timeout, no problem
