@@ -1,6 +1,5 @@
 #!/bin/sh
 # busymon : echo 1 if busy
-# busymon PORT  ; run as service at port
 
 PID=/var/run/acq400_stream_main.0.pid
 BUSY=0
@@ -17,17 +16,23 @@ test_busy() {
 	fi
 }
 
+report() {
+        echo BUSY=BUSY
+}
+
 test_busy
+report
 
 while [ 1 ]; do
 	case $BUSY in
 	1)
 		usleep 200000
 		test_busy
-		[ $BUSY -eq 0 ] && echo $BUSY;;
+		[ $BUSY -eq 0 ] && report;;
 	0)
 		inotifywait -e close_write $PID >/dev/null 2>/dev/null
 		test_busy
-		[ $BUSY -eq 1 ] && echo $BUSY;;	
+		[ $BUSY -eq 1 ] && report;;
 	esac
 done
+exit 0
