@@ -22,8 +22,10 @@ proc report {} {
 }
 
 
-while {! [file exists $PID]} {
-    after 1100
+if {! [file exists $PID]} {
+	set fd [open $PID w]
+	puts $fd [expr [exec cat /proc/sys/kernel/pid_max] + 1]
+	close $fd
 }
 
 test_busy
