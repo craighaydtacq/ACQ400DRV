@@ -1,38 +1,47 @@
-#!/bin/sh
-# busymon : echo 1 if busy
+#!/usr/bin/expect
 
-PID=/var/run/acq400_stream_main.0.pid
-BUSY=0
+set PID /var/run/acq400_stream_main.0.pid
+set BUSY 0
+log_user 0
 
-is_busy() {
-	kill -s 0 $(cat $PID) 2>/dev/null
+
+proc test_busy {} {
+	global PID BUSY
+
+	try {
+		exec kill -s 0 [exec cat $PID] 2>/dev/null
+		set BUSY 1
+	} trap CHILDSTATUS {results options} {
+		set BUSY 0
+	}
 }
 
-test_busy() {
-	if $(is_busy); then
-		BUSY=1
-	else
-		BUSY=0
-	fi
-}
-
-report() {
-        echo BUSY=BUSY
+proc report {} {
+	global BUSY
+	puts "BUSY=$BUSY"
 }
 
 test_busy
+
+if { $::argc > 0 } {
+	if { "[lindex $::argv 0]" == "nowait" } {
+		report
+		exit 0
+	}
+}
 report
 
-while [ 1 ]; do
-	case $BUSY in
-	1)
-		usleep 200000
+spawn inotifywait -e close_write $PID -m
+
+while { 1 } {
+	if { $BUSY == 0 } {
+		expect -re "CLOSE_WRITE,CLOSE" {}
+		# match or timeout, no problem
 		test_busy
-		[ $BUSY -eq 0 ] && report;;
-	0)
-		inotifywait -e close_write $PID >/dev/null 2>/dev/null
+		if { $BUSY == 1 } { report }
+	} else {
+		after 100
 		test_busy
-		[ $BUSY -eq 1 ] && report;;
-	esac
-done
-exit 0
+		if { $BUSY == 0 } { report }
+	}
+}

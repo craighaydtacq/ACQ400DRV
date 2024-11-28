@@ -24,7 +24,8 @@ acq400_intmon	4239/tcp
 
 acq400_bos	4240/tcp	# deprecated
 acq400_crb	4241/tcp	# cat raw buffers prefer bigcat
-acq400_bigcat   4242/tcp	# download all capture data 
+acq400_bigcat   4242/tcp	# download all capture data
+acq400_busymon  4243/tcp 
 
 acq400_seg_load 4250/tcp
 acq400_seg_show	4251/tcp
