@@ -1,0 +1,33 @@
+#!/bin/sh
+# busymon : echo 1 if busy
+# busymon PORT  ; run as service at port
+
+PID=/var/run/acq400_stream_main.0.pid
+BUSY=0
+
+is_busy() {
+	kill -s 0 $(cat $PID) 2>/dev/null
+}
+
+test_busy() {
+	if $(is_busy); then
+		BUSY=1
+	else
+		BUSY=0
+	fi
+}
+
+test_busy
+
+while [ 1 ]; do
+	case $BUSY in
+	1)
+		usleep 200000
+		test_busy
+		[ $BUSY -eq 0 ] && echo $BUSY;;
+	0)
+		inotifywait -e close_write $PID >/dev/null 2>/dev/null
+		test_busy
+		[ $BUSY -eq 1 ] && echo $BUSY;;	
+	esac
+done
