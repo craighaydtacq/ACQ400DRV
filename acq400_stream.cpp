@@ -3604,6 +3604,53 @@ public:
 const unsigned MAXBIT = 256;
 typedef std::bitset<MAXBIT> ChannelMask;
 
+#include <sstream>
+
+ChannelMask intListToBitset(const std::string& input) {
+	std::vector<unsigned> numbers;
+	std::stringstream ss(input);
+	int num;
+	char comma;
+
+	while (ss >> num) {
+		numbers.push_back(num);
+		ss >> comma;
+	}
+
+	ChannelMask result;
+	for (unsigned n : numbers) {
+		if (n >= 1 && n <= MAXBIT) {
+			result.set(n-1);
+		}
+	}
+
+	return result;
+}
+
+bool is_number_comma_string(const std::string& input){
+	bool want_comma = false;
+	int ic = 0;
+	for (char c: input){
+		if (want_comma){
+			if (c == ','){
+				want_comma = false;
+			}else if (isdigit(c)){
+				;                // >1 digit is OK
+			}else{
+				return false;    // ! (digit || comma)
+			}
+		}else{
+			if (isdigit(c)){
+				want_comma = true;
+			}else{
+				return false;	// ! (digit)  .. INCLUDING COMMA
+			}
+		}
+		++ic;
+	}
+	return ic != 0;
+}
+
 int get_channelcount(ChannelMask& cm){
         int nset = 0;
         for (int ii = 0; ii < 256; ++ii){
@@ -3691,7 +3738,9 @@ SubsetStreamHeadClient* SubsetStreamHeadClient::instance(const char* def)
 {
 	ChannelMask *cm;
 
-	if (strncmp(def, "0x", 2) == 0){
+	if (is_number_comma_string(def)){
+		cm = new ChannelMask(intListToBitset(def));
+	}else if (strncmp(def, "0x", 2) == 0){
 		cm = new ChannelMask(hexStrToBin(def+2));  // arbitrary mask, hex definition
 	}else if (strncmp(def, "0b", 2) == 0){
 		cm = new ChannelMask(def+2);		   // arbitrary mask, binary definition

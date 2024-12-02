@@ -143,6 +143,9 @@ int getKnob(int idev, const char* knob, char* value)
 	if (fp){
 		int rc = fscanf(fp, "%s", value);
 		fclose(fp);
+		while(value[strlen(value)-1] == '\n'){
+			value[strlen(value)-1] = '\0';
+		}
 		return rc;
 	} else {
 		return -1;
