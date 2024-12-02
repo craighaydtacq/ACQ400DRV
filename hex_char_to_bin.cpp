@@ -35,7 +35,8 @@ static std::string hexCharToBin( char c ) {
 std::string hexStrToBin( const std::string & hs ) {
     std::string bin;
     for (auto it = hs.rbegin(); it != hs.rend(); ++it) {
-        bin += hexCharToBin( *it );
+        bin = hexCharToBin( *it ) + bin;
+        //printf("%c %s %s\n", *it, hexCharToBin(*it).c_str(), bin.c_str());
     }
     return bin;
 }

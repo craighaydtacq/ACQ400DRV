@@ -100,7 +100,7 @@ APPS := mmap acq400_stream permute acq435_decode \
 	wr_reset wrtd soft_wrtd wrtt_mon multicast \
 	mr_offload trigger_at bb_stream reduce \
 	channel_mapping slowmon_hw reg_rw hudp_config tai_server \
-	awg_composer scripts/mod_id.sh
+	awg_composer scripts/mod_id.sh subset_mask_tester
 	
 # data_sink	
 # dropped
@@ -220,6 +220,9 @@ udp_client: udp_client.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lpopt
 	
 acq400_stream: acq400_stream.o  hex_char_to_bin.o
+	$(CXX) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
+
+subset_mask_tester: subset_mask_tester.o  hex_char_to_bin.o
 	$(CXX) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 
 bb: bb.o tcp_server.o

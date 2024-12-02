@@ -3662,7 +3662,7 @@ public:
 		csample = new T[this->len];
 
 		if (verbose){
-			fprintf(stderr, "%s mask %s", __FUNCTION__, cm.to_string().c_str());
+			fprintf(stderr, "%s mask %s\n", __FUNCTION__, cm.to_string().c_str());
 			fprintf(stderr, "%s firstchan:%d topchan:%d len:%d totchan:%d\n",
 					__FUNCTION__, firstchan, topchan, this->len, this->totchan);
 		}
