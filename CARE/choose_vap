@@ -25,6 +25,11 @@ do
 		PN=${FRU_PART_NUM%% *}
 
 		case $PN in
+		ACQ43*)
+			VRANGE=13;;       # but may be qualified by get_vr later..
+		esac
+
+		case $PN in
 		ACQ480*)
 			echo "# $file: FPN $FRU_PART_NUM PN $PN"		
 			echo "# ACQ480 DETECTED set VRANGE LOW"
