@@ -100,7 +100,7 @@ APPS := mmap acq400_stream permute acq435_decode \
 	wr_reset wrtd soft_wrtd wrtt_mon multicast \
 	mr_offload trigger_at bb_stream reduce \
 	channel_mapping slowmon_hw reg_rw hudp_config tai_server \
-	awg_composer scripts/mod_id.sh subset_mask_tester
+	awg_composer scripts/mod_id.sh 
 	
 # data_sink	
 # dropped
