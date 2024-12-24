@@ -107,6 +107,7 @@
 #define ACQ400_MINOR_ADC_SAMPLE_COUNT 39
 #define ACQ400_MINOR_ADC_NACC_SUBRATE 40
 #define ACQ400_MINOR_AWG_ABCDE  41
+#define ACQ400_MINOR_DAC_STEP   42      // write a single NCHAN sample, binary and flush
 
 #define ACQ400_MINOR_MAP_PAGE	64	// 32 : page 0, 33: page 1 .. 47: page 15
 

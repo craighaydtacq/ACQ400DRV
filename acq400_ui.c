@@ -1890,6 +1890,58 @@ int acq400_awg_abcde_open(struct inode *inode, struct file *file)
 	}
 }
 
+ssize_t acq400_dac_step_write(struct file *file, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	struct acq400_path_descriptor* pdesc = PD(file);
+	struct acq400_dev* adev = pdesc->dev;
+	int ssb = pdesc->client_private;
+	int ssw = ssb/sizeof(u32);
+	void *fifo = adev->dev_virtaddr + AXI_FIFO;
+	unsigned* src = (unsigned*)pdesc->lbuf;
+	int rc;
+	int ii;
+
+	if (count != ssb){
+		return -EINVAL;
+	}
+	rc = copy_from_user(pdesc->lbuf, buf, ssb);
+	if (rc != 0){
+		return -EFAULT;
+	}
+	for (ii = 0; ii < ssw; ++ii){
+		dev_dbg(DEVP(adev), "fifo write: %p = 0x%08x\n",
+				fifo + ii*sizeof(unsigned), src[ii]);
+		iowrite32(src[ii], fifo + ii*sizeof(unsigned));
+	}
+	return count;
+}
+
+int acq400_dac_step_release(struct inode *inode, struct file *file)
+{
+	return acq400_release(inode, file);
+}
+int acq400_dac_step_open(struct inode *inode, struct file *file)
+{
+	static struct file_operations acq400_fops_dac_step = {
+			.write = acq400_dac_step_write,
+			.release = acq400_dac_step_release,
+	};
+	struct acq400_path_descriptor* pdesc = PD(file);
+
+	if (pdesc->pid != task_pid_nr(current)){
+		return -EBUSY;
+	}else{
+		struct acq400_dev* adev = pdesc->dev;
+		unsigned cr = acq400rd32(adev, DAC_CTRL);
+
+		acq400wr32(adev, DAC_CTRL, cr|DAC_CTRL_LL|DAC_CTRL_ENABLE_ALL);
+
+		pdesc->client_private = adev->nchan_enabled*adev->word_size;
+		file->f_op = &acq400_fops_dac_step;
+		return 0;
+	}
+}
+
 int acq400_open_ui(struct inode *inode, struct file *file)
 {
         struct acq400_dev *adev;
@@ -1971,9 +2023,12 @@ int acq400_open_ui(struct inode *inode, struct file *file)
         	case ACQ400_MINOR_ADC_NACC_SUBRATE:
         		rc = acq400_nacc_subrate_open(inode, file);
         		break;
-        	case ACQ400_MINOR_AWG_ABCDE:
+                case ACQ400_MINOR_AWG_ABCDE:
         		rc = acq400_awg_abcde_open(inode, file);
         		break;
+                case ACQ400_MINOR_DAC_STEP:
+                        rc = acq400_dac_step_open(inode, file);
+                        break;
             	default:
         		if (minor >= ACQ400_MINOR_MAP_PAGE &&
         		    minor < ACQ400_MINOR_MAP_PAGE+16  ){
