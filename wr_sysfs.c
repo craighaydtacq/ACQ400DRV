@@ -188,6 +188,7 @@ MAKE_WR_EVENT_COUNT(pps_client);
 MAKE_WR_EVENT_COUNT(ts_client);
 MAKE_WR_EVENT_COUNT(wrtt_client0);
 MAKE_WR_EVENT_COUNT(wrtt_client1);
+MAKE_WR_EVENT_COUNT(pkt_rx_client);
 
 const struct attribute *acq2106_wr_attrs[] = {
 	&dev_attr_wr_clk_pv.attr,
@@ -203,6 +204,7 @@ const struct attribute *acq2106_wr_attrs[] = {
 	&dev_attr_wr_ts_client_count.attr,
 	&dev_attr_wr_wrtt_client0_count.attr,
 	&dev_attr_wr_wrtt_client1_count.attr,
+	&dev_attr_wr_pkt_rx_client_count.attr,
 
 	&dev_attr_wr_link_up.attr,
 	&dev_attr_wr_time_valid.attr,

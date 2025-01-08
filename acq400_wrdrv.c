@@ -178,7 +178,11 @@ static irqreturn_t wr_ts_isr(int irq, void *dev_id)
 		wrtt_client_isr_action(&sc_dev->ts_client, wr_ts);
 	}
 	if (int_sta&WR_CTRL_PKT_RX_STA){
-		unsigned wr_ts = acq400rd32(adev, WR_TAI_STAMP);
+		unsigned wr_ts = acq400rd32(adev, WR_TAI_CUR_L);
+		if (wr_ts_drives_soft_trigger){
+			acq400_soft_trigger(1);
+			acq400_soft_trigger(0);
+		}
 		if (wr_ts_wr_streamer_trigger){
 			wr_streamer_trigger_action(adev, wr_ts);
 		}
@@ -269,7 +273,7 @@ void init_scdev(struct acq400_dev* adev)
 	init_waitqueue_head(&sc_dev->ts_client.wc_waitq);
 	init_waitqueue_head(&sc_dev->wrtt_client0.wc_waitq);
 	init_waitqueue_head(&sc_dev->wrtt_client1.wc_waitq);
-
+	init_waitqueue_head(&sc_dev->pkt_rx_client.wc_waitq);
 
 	if (wr_ts_inten){
 		inten |= WR_CTRL_TS_INTEN;
