@@ -34,6 +34,10 @@ int wr_ts_inten = 1;
 module_param(wr_ts_inten, int, 0444);
 MODULE_PARM_DESC(wr_ts_inten, "1: enable Time Stamp interrupts");
 
+int wr_pkt_rx_inten = 1;
+module_param(wr_pkt_rx_inten, int, 0444);
+MODULE_PARM_DESC(wr_pkt_rx_inten, "1: enable PT_RX interrupts");
+
 int wr_ts_drives_soft_trigger;
 module_param(wr_ts_drives_soft_trigger, int, 0644);
 MODULE_PARM_DESC(wr_ts_drives_soft_trigger, "1: output ST on every TS for interrupt latency eval");
@@ -260,6 +264,7 @@ void init_tiga_scdev(struct acq400_dev* adev)
 void init_scdev(struct acq400_dev* adev)
 {
 	struct acq400_sc_dev* sc_dev = container_of(adev, struct acq400_sc_dev, adev);
+	u32 inten = 0;
 	init_waitqueue_head(&sc_dev->pps_client.wc_waitq);
 	init_waitqueue_head(&sc_dev->ts_client.wc_waitq);
 	init_waitqueue_head(&sc_dev->wrtt_client0.wc_waitq);
@@ -267,16 +272,18 @@ void init_scdev(struct acq400_dev* adev)
 
 
 	if (wr_ts_inten){
-		wr_ctrl_set(adev, WR_CTRL_TS_INTEN);
-
+		inten |= WR_CTRL_TS_INTEN;
 	}
 	if (wr_pps_inten){
-		wr_ctrl_set(adev, WR_CTRL_PPS_INTEN);
+		inten |= WR_CTRL_PPS_INTEN;
 	}
 	if (wr_tt_inten){
-		wr_ctrl_set(adev, WR_CTRL_TT1_INTEN);
-		wr_ctrl_set(adev, WR_CTRL_TT0_INTEN);
+		inten |= WR_CTRL_TT0_INTEN|WR_CTRL_TT1_INTEN;
 	}
+	if (wr_pkt_rx_inten){
+		inten |= WR_CTRL_PKT_RX_INTEN;
+	}
+	wr_ctrl_set(adev, inten);
 	if (IS_ACQ2106_TIGA(adev)){
 		init_tiga_scdev(adev);
 	}
@@ -363,6 +370,8 @@ struct WrClient *getWCfromMinor(struct file *file)
 			return &sc_dev->wrtt_client0;
 		case ACQ400_MINOR_WRTT1:
 			return &sc_dev->wrtt_client1;
+		case ACQ400_MINOR_WR_PKT_RX:
+			return &sc_dev->pkt_rx_client;
 		default:
 			dev_err(DEVP(adev), "getWCfromMinor: BAD MINOR %u", minor);
 			return 0;
