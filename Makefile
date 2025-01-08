@@ -100,7 +100,7 @@ APPS := mmap acq400_stream permute acq435_decode \
 	wr_reset wrtd soft_wrtd wrtt_mon multicast \
 	mr_offload trigger_at bb_stream reduce \
 	channel_mapping slowmon_hw reg_rw hudp_config tai_server \
-	awg_composer scripts/mod_id.sh 
+	awg_composer scripts/mod_id.sh  wrs_trigger
 	
 # data_sink	
 # dropped
@@ -320,6 +320,10 @@ mgtdram_descgen: 	mgtdram_descgen.o
 	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
 
 wrtd: 	wrtd.o Multicast.o  knobs.o
+	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+	
+	
+wrs_trigger: 	wrs_trigger.o knobs.o
 	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
 	
 spad_update:	spad_update.o knobs.o

@@ -94,6 +94,12 @@ static void wrtt_client_isr_action(struct WrClient* cli, u32 ts)
 	wake_up_interruptible(&cli->wc_waitq);
 }
 
+static void wr_pkt_rx_client_isr_action(struct WrClient* cli, u32 ts)
+{
+	cli->wc_ts = ts;
+	cli->wc_count++;
+	wake_up_interruptible(&cli->wc_waitq);
+}
 // wr_ticks_per_sec
 
 static int wr_load_tx(struct acq400_dev *adev, unsigned wr_ts1)
@@ -166,6 +172,13 @@ static irqreturn_t wr_ts_isr(int irq, void *dev_id)
 			wr_streamer_trigger_action(adev, wr_ts);
 		}
 		wrtt_client_isr_action(&sc_dev->ts_client, wr_ts);
+	}
+	if (int_sta&WR_CTRL_PKT_RX_STA){
+		unsigned wr_ts = acq400rd32(adev, WR_TAI_STAMP);
+		if (wr_ts_wr_streamer_trigger){
+			wr_streamer_trigger_action(adev, wr_ts);
+		}
+		wr_pkt_rx_client_isr_action(&sc_dev->pkt_rx_client, wr_ts);
 	}
 	acq400wr32(adev, WR_CTRL, int_sta);
 	return IRQ_HANDLED;	/* canned */
@@ -542,6 +555,10 @@ int acq400_wr_open(struct inode *inode, struct file *file)
 		PD_REG(pdesc) =  WR_TAI_TRG1;
 		file->f_op = &acq400_fops_wr_trg;
 		break;
+
+	case ACQ400_MINOR_WR_TS:
+	case ACQ400_MINOR_WR_PPS:
+	case ACQ400_MINOR_WR_PKT_RX:
 	default:
 		dev_dbg(DEVP(ACQ400_DEV(file)), "acq400_wr_open() %d minor %d ", __LINE__, PD(file)->minor);
 		file->f_op = &acq400_fops_wr;

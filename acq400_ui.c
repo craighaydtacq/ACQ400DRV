@@ -2008,6 +2008,7 @@ int acq400_open_ui(struct inode *inode, struct file *file)
         		break;
         	case ACQ400_MINOR_WR_TS:
         	case ACQ400_MINOR_WR_PPS:
+        	case ACQ400_MINOR_WR_PKT_RX:
         	case ACQ400_MINOR_WR_CUR:
         	case ACQ400_MINOR_WR_CUR_TAI:
         	case ACQ400_MINOR_WR_CUR_TRG0:

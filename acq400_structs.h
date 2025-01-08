@@ -403,7 +403,9 @@ struct acq400_sc_dev {
 		unsigned wc_ts;			/* time of event, recorded by ISR */
 		unsigned wc_pid;		/* client pid, singleton 		*/
 		wait_queue_head_t wc_waitq;	/* client blocks on this		*/
-	} pps_client, ts_client,
+	} pps_client,
+	  ts_client,
+	  pkt_rx_client,
 	  wrtt_client0, wrtt_client1;
 
 	struct WrTsPredictor {

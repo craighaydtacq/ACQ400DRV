@@ -180,6 +180,7 @@ init_wr_onetime() {
 	mknod /dev/${NAME}.wr_trg0 c ${MAJOR} 25
 	mknod /dev/${NAME}.wr_trg1 c ${MAJOR} 26
 	mknod /dev/${NAME}.wr_tt1  c ${MAJOR} 27
+	mknod /dev/${NAME}.wr_pkt_rx c ${MAJOR} 43
 	web_append wr nomon
 	web_append wrtd nomon
 	
