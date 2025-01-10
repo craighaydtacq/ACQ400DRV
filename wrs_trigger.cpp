@@ -2,7 +2,7 @@
  * wrs_trigger.cpp: driver for WR streamers
  *
  *  Created on: 8 Jan 2025
- *      Author: pgm
+ *      Author: cph 
  *
  *  Open and hold a mapping on SYSDEV (one page)
  *  Create structure pointers to TX, RX at WRS_PKT_BASE_TX,WRS_PKT_BASE_RX
@@ -11,82 +11,114 @@
  *  Then print the TS from RXDEV and then
  *  Dump RX on RX dev receipt
  *  Toggle an output. Compare SOFT TRIGGER to AUX to find max delay in app layer.
- *
- * mockup:
- *
-TX:
-init:
-acq2106_133> map /usr/local/acq2106.map
-
-per packet .. change value to see ..
-
-acq2106_133> mm $sc+424 c0de1236;md $sc+400
-
-
-RX.
-acq1102_009> cat /dev/acq400.0.wr_pkt_rx  | hexdump -ve '1/4 "%08x\n"'
-677e708d
-
-acq1102_009> mmap -f /dev/acq400.0 -l 4096 | hexdump | grep -A 4 0000440
-0000440 ba11 ba5e ba11 ba5e ba11 ba5e ba11 ba5e
-0000450 1111 1111 2222 2222 3333 3333 4444 4444
-0000460 8888 8888 8888 8888 8888 8888 8888 8888
-0000470 1236 c0de 0000 0000 0000 0000 0000 0000
-0000480 cafe baad cafe baad cafe baad cafe baad
-
-TIMING:
-echo 1 > /sys/module/acq420fmc/parameters/wr_ts_drives_soft_trigger
-
-soft trigger will PULSE on PKT rx
-
-Then PULSE it again as soon as the app has the event, time the difference
-So hit the trigger:
-write 0 to /dev/acq400.0.knobs/soft_trigger
-
-This interface actually makes a pulse for one write.
-
-
-try knobs.h:
-int setKnob(int idev, const char* knob, int value);
-.. rather than code from scratch.
-
- * a second flavour of this app (use command line switch):
- * tx a series of packets at a timed interval.
- * please use popt for option handling, plenty examples in project.
  */
 
-#include "wrs_trigger_int.h"
+#include <fcntl.h>
+#include <fstream>
+#include <iostream>
 #include <stdio.h>
-#include "popt.h"
+#include <unistd.h>
+#include <sys/mman.h>
+#include "wrs_trigger_int.h"
+#include "knobs.h"
+
+#define PAGESIZE 4096
 
 typedef unsigned u32;
 
+// TODO: move this definition into header file
 class WRS_TriggerDrv {
 public:
 	WRS_TriggerDrv();
+    ~WRS_TriggerDrv();
 
+    void dump_rx();
+    void set_wr_ts_drives_soft_trigger();
+    void pulse_soft_trigger();
+
+private:
+    int sysdev_fd;
+    u32 *mapped_base; // Base address of mapped memory
 	u32 *tx_mem;
 	u32 *rx_mem;
 	FILE *rx_feed;
 };
 
+
 WRS_TriggerDrv::WRS_TriggerDrv()
 {
-	// open rx_feed
-	// mmap SYSDEV
-	// set pointers
+    sysdev_fd = open(SYSDEV, O_RDWR | O_SYNC);
+    if (sysdev_fd < 0) {
+        perror("Failed to open SYSDEV");
+        exit(EXIT_FAILURE);
+    }
+
+    // map one page of memory
+    mapped_base = (u32*)mmap(nullptr, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, sysdev_fd, 0);
+    if (mapped_base == MAP_FAILED) {
+        perror("Failed to mmap SYSDEV");
+        close(sysdev_fd);
+        exit(EXIT_FAILURE);
+    }
+
+    rx_mem = mapped_base + (WRS_PKT_BASE_RX / sizeof(u32));
+    tx_mem = mapped_base + (WRS_PKT_BASE_TX / sizeof(u32));
+
+    std::cout << "Driver initialized. RX at " << rx_mem << ", TX at " << tx_mem << std::endl;
 }
+
+WRS_TriggerDrv::~WRS_TriggerDrv() {
+    // Unmap memory and close SYSDEV
+    if (mapped_base != MAP_FAILED) {
+        munmap(mapped_base, PAGESIZE);
+    }
+    close(sysdev_fd);
+}
+
+void WRS_TriggerDrv::dump_rx() {
+    // Dump RX memory content
+    std::cout << "RX: " << std::hex << *rx_mem << std::endl;
+}
+
+void WRS_TriggerDrv::set_wr_ts_drives_soft_trigger() {
+    // soft trigger
+    // write a zero to a file at the place
+    setKnob(0, "/sys/module/acq420fmc/parameters/wr_ts_drives_soft_trigger", 1);
+    //std::cout << "reset trigger" << std::endl;
+}
+
+void WRS_TriggerDrv::pulse_soft_trigger() {
+    // write to the place to pulse soft trigger
+    // write to "/dev/acq400.0.knobs/soft_trigger"
+    setKnob(0, "/dev/acq400.0.knobs/soft_trigger", 1);
+    //setKnob(0, "/dev/acq400.0.knobs/soft_trigger", 0);
+}
+
 
 int main(int argc, const char* argv[])
 {
-/*
-	WRS_TriggerDrv drv;
+    WRS_TriggerDrv drv;
+    
+    // outputs ST on every TS for interrupt latency eval
+    drv.set_wr_ts_drives_soft_trigger();
+    
+    u32 interrup = 0;
+    int fd = open("/dev/acq400.0.wr_pkt_rx", O_RDONLY);
+    if (fd < 0) {
+        std::cerr << "Failed to open device" << std::endl;
+        return 1;
+    }
 
-	while(getline(drv.rx_feed)){
-		dump(drv.rx_mem);
-		toggle output
-	}
+    std::cout << "Waiting for interrupt..." << std::endl;
 
-	return 0;
-*/
+    while (true) {
+        read(fd, &interrup, sizeof(interrup));
+        // immediately set soft trigger to zero
+        drv.pulse_soft_trigger();
+        // RX side: dump memory 
+        drv.dump_rx();
+        // std::cout << "Interrupt detected! interrup = " << interrup << std::endl;
+    }
+    close(fd);
+    return 0;
 }
