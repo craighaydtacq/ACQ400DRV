@@ -181,7 +181,9 @@ static irqreturn_t wr_ts_isr(int irq, void *dev_id)
 		unsigned wr_ts = acq400rd32(adev, WR_TAI_CUR_L);
 		if (wr_ts_drives_soft_trigger){
 			acq400_soft_trigger(1);
-			acq400_soft_trigger(0);
+			if (wr_ts_drives_soft_trigger > 1){
+				acq400_soft_trigger(0);
+			}
 		}
 		if (wr_ts_wr_streamer_trigger){
 			wr_streamer_trigger_action(adev, wr_ts);
