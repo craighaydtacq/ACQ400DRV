@@ -8,7 +8,6 @@
 #ifndef MULTICAST_H_
 #define MULTICAST_H_
 
-
 class MultiCast {
 
 protected:
