@@ -85,19 +85,35 @@
 
 using namespace std;
 
-#define MAC_PFX "00:21:54:33"
+
+#define MAC_PFX "00:21:54:3"
+/*               01234567890 */
 
 
 int get_mac(char* mac, int max_mac)
 {
+	string mac_pfx(MAC_PFX);
 	string _mac;
 	Env env("/tmp/u-boot_env");
 	if (!env("eth2addr").empty()){
 		cerr << "eth2addr found " << env("eth2addr") << endl;
 		_mac = env("eth2addr");
 	}else if (!env("ethaddr").empty()){
+		string dt = env("devicetree_image");
+		int model0 = dt.find("acq");
+	        string model = dt.substr(model0, 7);
+
+		if (model.compare("acq2206") == 0){
+			mac_pfx.append("4");
+		}else if (model.compare("acq1102") == 0){
+			mac_pfx.append("0");
+		}else if (model.compare("acq2106") == 0){
+			mac_pfx.append("3");
+		}else{
+			mac_pfx.append("3");  // keep cpsc2 at 33
+		}
 		string m0 = env("ethaddr");
-		_mac = m0.replace(0, strlen(MAC_PFX), MAC_PFX, strlen(MAC_PFX));
+		_mac = m0.replace(0, mac_pfx.length(), mac_pfx);
 	}else{
 		fprintf(stderr, "ERROR no valid mac address\n");
 	}
