@@ -113,7 +113,7 @@ namespace G {
         const char* dev_ts = DEV_TS;
         unsigned site;
         int ons;					// on next second
-
+        MC_FACTORY* mc_factory;
 }
 
 #define REPORT_THRESHOLD (G::dns/4)
@@ -512,6 +512,9 @@ void get_local_env(void)
 	char envname[80];
 	sprintf(envname, "/dev/shm/wr%d.sh", G::site);
 	get_local_env(envname, G::verbose);
+
+	int use_wrs = Env::getenv("WRTD_USE_WRS", 0);
+	G::mc_factory = use_wrs? WrsCast::factory: MultiCast::factory;
 }
 
 int sleep_if_notenabled(const char* key)
@@ -527,10 +530,9 @@ int sleep_if_notenabled(const char* key)
 	}
 }
 
-
 int rx() {
        return ACQ400Receiver::instance()->event_loop(
-                       TSCaster::factory(MultiCast::factory(G::group, G::port, MultiCast::MC_RECEIVER)));
+                       TSCaster::factory(G::mc_factory(G::group, G::port, MultiCast::MC_RECEIVER)));
 }
 
 
@@ -544,7 +546,7 @@ int tx() {
 	}
 	Transmitter t(G::dev_ts);
 	Receiver* r = Env::getenv("WRTD_LOCAL_RX_ACTION", 0)? Receiver::instance(): 0;
-	return t.event_loop(TSCaster::factory(MultiCast::factory(G::group, G::port, MultiCast::MC_SENDER)), r);
+	return t.event_loop(TSCaster::factory(G::mc_factory(G::group, G::port, MultiCast::MC_SENDER)), r);
 }
 
 int txi() {
@@ -553,14 +555,14 @@ int txi() {
 	}
 	Transmitter t(DEV_CUR, 2*G::dns/1000);
 	Receiver* r = Env::getenv("WRTD_LOCAL_RX_ACTION", 0)? Receiver::instance(): 0;
-	return t.event_loop(TSCaster::factory(MultiCast::factory(G::group, G::port, MultiCast::MC_SENDER)), r);
+	return t.event_loop(TSCaster::factory(G::mc_factory(G::group, G::port, MultiCast::MC_SENDER)), r);
 }
 
 int txq() {
 	if (G::verbose){
 		fprintf(stderr, "%s\n", PFN);
 	}
-	TSCaster& comms = TSCaster::factory(MultiCast::factory(G::group, G::port, MultiCast::MC_SENDER));
+	TSCaster& comms = TSCaster::factory(G::mc_factory(G::group, G::port, MultiCast::MC_SENDER));
 	comms.sendraw(TS_QUICK);
 	return 0;
 }

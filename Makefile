@@ -319,7 +319,7 @@ bigmac.x86: bigmac.o
 mgtdram_descgen: 	mgtdram_descgen.o
 	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
 
-wrtd: 	wrtd.o Multicast.o  knobs.o
+wrtd: 	wrtd.o Multicast.o WrsCast.o knobs.o
 	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
 	
 	
