@@ -7,8 +7,9 @@
 
 #ifndef WRS_TRIGGER_H_
 #define WRS_TRIGGER_H_
-
 struct wrtd_message;
+
+typedef unsigned u32;
 
 class WRS_Trigger {
 protected:
@@ -20,5 +21,4 @@ public:
 	/* reads current RX packet, block for new message if required */
 	virtual int TX_write(wrtd_message* message) = 0;
 };
-
-#endif /* WRS_TRIGGER_H_ */
+#endif /* WRS_TRIGGER_H_ */ 
