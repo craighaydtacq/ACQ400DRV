@@ -12,6 +12,7 @@
 #define WRS_PKT_BASE_RX		0x440
 
 #define SYSDEV			"/dev/acq400.0"
+//#define SYSDEV          "/tmp/my_data_page"
 #define RXDEV			"/dev/acq400.0.wr_pkt_rx"
 
 
