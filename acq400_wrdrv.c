@@ -464,6 +464,50 @@ ssize_t acq400_wr_read(struct file *file, char __user *buf, size_t count, loff_t
 	}
 }
 
+ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count, loff_t *f_pos)
+{
+	struct acq400_path_descriptor* pdesc = PD(file);
+	struct acq400_dev* adev = pdesc->dev;
+	struct WrClient *wc = getWCfromMinor(file);
+	u32 tmp[1+WRS_PKT_LW];
+	int rc;
+
+	if (count < sizeof(u32)){
+		return -EINVAL;
+	}
+	if ((file->f_flags & O_NONBLOCK) == 0){
+		dev_dbg(DEVP(adev), "acq400_wr_read_pkt_rx count:%u %d", count, wc->wc_ts);
+		if (wait_event_interruptible(wc->wc_waitq, wc->wc_ts)){
+			return -EINTR;
+		}
+	}
+	tmp[0] = wc->wc_ts;
+	wc->wc_ts = 0;
+
+	if (count == WRS_PKT_FULL_READ){
+		u32* dst = tmp+1;
+		int ii;
+
+		for (ii = 0; ii < WRS_PKT_LW; ++ii){
+			 dst[ii] = acq400rd32(adev, WRS_PKT_RX+ii*sizeof(u32));
+		}
+		rc = copy_to_user(buf, tmp, WRS_PKT_FULL_READ);
+	}else if (count == sizeof(u32)){
+		rc = copy_to_user(buf, tmp, sizeof(u32));
+	}else{
+		rc = -EINVAL;
+	}
+
+
+	if (rc){
+		return -rc;
+	}else{
+		f_pos += sizeof(u32);
+		return sizeof(u32);
+	}
+}
+
+
 #define PD_REG(pdesc) (pdesc->client_private)
 
 ssize_t acq400_wr_read_cur(struct file *file, char __user *buf, size_t count, loff_t *f_pos)
@@ -513,6 +557,34 @@ ssize_t acq400_wr_write(
 	return sizeof(u32);
 }
 
+ssize_t acq400_wr_write_pkt_tx(
+	struct file *file, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	struct acq400_dev* adev = ACQ400_DEV(file);
+	u32 tmp[WRS_PKT_LW];
+	int rc;
+
+	if (count != WRS_PKT_LW*sizeof(u32)){
+		return -EINVAL;
+	}else{
+		int ii;
+
+		dev_dbg(DEVP(adev), "acq400_wr_write_pkt_tx() ");
+
+		rc = copy_from_user(tmp, buf, count);
+
+		for (ii = 0; ii < WRS_PKT_LW; ++ii){
+			acq400wr32(adev, WRS_PKT_TX+ii*sizeof(u32), tmp[ii]);
+		}
+	}
+
+	*f_pos += count;
+	dev_dbg(DEVP(adev), "acq400_wr_write() return count:%u", sizeof(u32));
+
+	return count;
+}
+
+
 
 int open_ok(struct inode *inode, struct file *file)
 {
@@ -547,6 +619,12 @@ int acq400_wr_open(struct inode *inode, struct file *file)
 			.write = acq400_wr_write,
 			.release = acq400_wr_release
 	};
+	static struct file_operations acq400_fops_wr_pkt_rx = {
+				.open = _acq400_wr_open,
+				.read = acq400_wr_read_pkt_rx,
+				.write = acq400_wr_write_pkt_tx,
+				.release = acq400_wr_release_exclusive
+	};
 	struct acq400_path_descriptor* pdesc = PD(file);
 
 	switch(pdesc->minor){
@@ -570,10 +648,11 @@ int acq400_wr_open(struct inode *inode, struct file *file)
 		PD_REG(pdesc) =  WR_TAI_TRG1;
 		file->f_op = &acq400_fops_wr_trg;
 		break;
-
+	case ACQ400_MINOR_WR_PKT_RX:
+		file->f_op = &acq400_fops_wr_pkt_rx;
+		break;
 	case ACQ400_MINOR_WR_TS:
 	case ACQ400_MINOR_WR_PPS:
-	case ACQ400_MINOR_WR_PKT_RX:
 	default:
 		dev_dbg(DEVP(ACQ400_DEV(file)), "acq400_wr_open() %d minor %d ", __LINE__, PD(file)->minor);
 		file->f_op = &acq400_fops_wr;

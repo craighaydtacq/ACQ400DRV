@@ -646,6 +646,10 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define WR_CUR_VERNR		(0x0218)
 #define WR_TAI_TRG1		(0x021C)
 
+#define WRS_PKT_TX		(0x0400)
+#define WRS_PKT_RX		(0x0440)
+#define WRS_PKT_LW		10
+#define WRS_PKT_FULL_READ	((1+WRS_PKT_LW)*sizeof(u32)) /* full count in bytes */
 
 #define WR_CTRL_PKT_RX_STA	(1<<13)
 #define WR_CTRL_PKT_RX_INTEN	(1<<12)
