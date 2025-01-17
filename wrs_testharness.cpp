@@ -21,6 +21,9 @@
 #define WRS_DEV	"/dev/acq400.0.wr_pkt_rx"    // bad name, receives and transmits
 
 #define PKT_LW	10
+#define WRS_PKT_LW		10
+#define WRS_PKT_FULL_READ	((1+WRS_PKT_LW)*sizeof(u32)) /* full count in bytes */
+
 
 typedef unsigned u32;
 
@@ -81,9 +84,8 @@ void tx() {
 }
 
 void rx() {
-	int rc = read(G::fd, void buf[.count], size_t count);
-	int rc = fread(G::read_data, sizeof(u32), PKT_LW+1, G::fp);
-	assert(rc == PKT_LW+1);
+	int rc = read(G::fd, G::read_data, WRS_PKT_FULL_READ);
+	assert(rc == WRS_PKT_FULL_READ);
 	dump_pkt(G::rx_pkt, "RX"); printf("TS:%08x", G::read_data[0]); printf("\n");
 }
 int main(int argc, const char* argv[])
