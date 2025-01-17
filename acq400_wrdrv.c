@@ -472,7 +472,9 @@ ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count,
 	u32 tmp[1+WRS_PKT_LW];
 	int rc;
 
-	if (count < sizeof(u32)){
+	dev_dbg(DEVP(adev), "acq400_wr_read_pkt_rx count:%u %d", count, wc->wc_ts);
+
+	if (count != sizeof(u32) || count != WRS_PKT_FULL_READ){
 		return -EINVAL;
 	}
 	if ((file->f_flags & O_NONBLOCK) == 0){
@@ -483,6 +485,8 @@ ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count,
 	}
 	tmp[0] = wc->wc_ts;
 	wc->wc_ts = 0;
+
+	adev->booleans.RW32_debug = 1;
 
 	if (count == WRS_PKT_FULL_READ){
 		u32* dst = tmp+1;
@@ -498,6 +502,7 @@ ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count,
 		rc = -EINVAL;
 	}
 
+	adev->booleans.RW32_debug = 0;
 
 	if (rc){
 		return -rc;
