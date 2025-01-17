@@ -401,8 +401,8 @@ int _acq400_wr_open(struct inode *inode, struct file *file)
 
 	if (wc == 0){
 		return -ENODEV;
-	}else if (minor!=ACQ400_MINOR_WR_TS && (file->f_flags & O_WRONLY)) {		// only ts is writeable
-		return -EACCES;
+	}else if ((file->f_flags & O_WRONLY) && (minor!=ACQ400_MINOR_WR_TS||minor!=ACQ400_MINOR_WR_PKT_RX)){
+		return -EACCES;                      // only TS or PKT_RX are writeable
 	}else if (READ_REQUESTED(file) && wc->wc_pid != 0 && wc->wc_pid != current->pid){
 		return -EBUSY;
 	}else{
@@ -471,10 +471,11 @@ ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count,
 	struct WrClient *wc = getWCfromMinor(file);
 	u32 tmp[1+WRS_PKT_LW];
 	int rc;
+	int ncopy = 0;
 
 	dev_dbg(DEVP(adev), "acq400_wr_read_pkt_rx count:%u %d", count, wc->wc_ts);
 
-	if (count != sizeof(u32) || count != WRS_PKT_FULL_READ){
+	if (count != sizeof(u32) && count != WRS_PKT_FULL_READ){
 		return -EINVAL;
 	}
 	if ((file->f_flags & O_NONBLOCK) == 0){
@@ -495,9 +496,9 @@ ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count,
 		for (ii = 0; ii < WRS_PKT_LW; ++ii){
 			 dst[ii] = acq400rd32(adev, WRS_PKT_RX+ii*sizeof(u32));
 		}
-		rc = copy_to_user(buf, tmp, WRS_PKT_FULL_READ);
+		rc = copy_to_user(buf, tmp, ncopy = WRS_PKT_FULL_READ);
 	}else if (count == sizeof(u32)){
-		rc = copy_to_user(buf, tmp, sizeof(u32));
+		rc = copy_to_user(buf, tmp, ncopy = sizeof(u32));
 	}else{
 		rc = -EINVAL;
 	}
@@ -507,8 +508,8 @@ ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count,
 	if (rc){
 		return -rc;
 	}else{
-		f_pos += sizeof(u32);
-		return sizeof(u32);
+		f_pos += ncopy;
+		return ncopy;
 	}
 }
 

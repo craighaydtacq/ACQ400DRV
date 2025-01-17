@@ -55,9 +55,9 @@ const char* ui(int argc, const char** argv)
 
 	G::fp = fopen(WRS_DEV, mode);
 	assert(G::fp);
+	G::fd = fileno(G::fp);
 
 	if (G::rx_block == 0){
-		G::fd = fileno(G::fp);
 		int flags = fcntl(G::fd, F_GETFL, 0);
 		int rc = fcntl(G::fd, F_SETFL, flags|O_NONBLOCK);
 		assert(rc != -1);
