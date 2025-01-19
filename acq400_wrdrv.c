@@ -63,7 +63,9 @@ int wr_tt_inten = 1;
 module_param(wr_tt_inten, int, 0444);
 MODULE_PARM_DESC(wr_tt_inten, "1: enable WRTT interrupts");
 
-
+int wr_pkt_debug = 0;
+module_param(wr_pkt_debug, int, 0644);
+MODULE_PARM_DESC(wr_pkt_debug, "set register access trace for wr_pkt read/write 2: dev_info(), 1:dev_db()");
 
 static inline u32 wr_ctrl_set(struct acq400_dev *adev, unsigned bits){
 	u32 ctrl = acq400rd32(adev, WR_CTRL);
@@ -178,7 +180,7 @@ static irqreturn_t wr_ts_isr(int irq, void *dev_id)
 		wrtt_client_isr_action(&sc_dev->ts_client, wr_ts);
 	}
 	if (int_sta&WR_CTRL_PKT_RX_STA){
-		unsigned wr_ts = acq400rd32(adev, WR_TAI_CUR_L);
+		unsigned wr_ts = acq400rd32(adev, WR_CUR_VERNR);
 		if (wr_ts_drives_soft_trigger){
 			acq400_soft_trigger(1);
 			if (wr_ts_drives_soft_trigger > 1){
@@ -401,17 +403,15 @@ int _acq400_wr_open(struct inode *inode, struct file *file)
 
 	if (wc == 0){
 		return -ENODEV;
-	}else if ((file->f_flags & O_WRONLY) && (minor!=ACQ400_MINOR_WR_TS||minor!=ACQ400_MINOR_WR_PKT_RX)){
+	}else if ((file->f_flags & O_WRONLY) && (!(minor==ACQ400_MINOR_WR_TS || minor==ACQ400_MINOR_WR_PKT_RX))){
 		return -EACCES;                      // only TS or PKT_RX are writeable
 	}else if (READ_REQUESTED(file) && wc->wc_pid != 0 && wc->wc_pid != current->pid){
 		return -EBUSY;
 	}else{
-		if ((file->f_flags & O_ACCMODE) != O_WRONLY){
-			wc->wc_pid = current->pid;
-			if ((file->f_flags & O_NONBLOCK) == 0){
-				dev_dbg(DEVP(adev), "_acq400_wr_open clear %d", wc->wc_ts);
-				wc->wc_ts = 0;
-			}
+		wc->wc_pid = current->pid;
+		if ((file->f_flags & O_NONBLOCK) == 0){
+			dev_dbg(DEVP(adev), "_acq400_wr_open clear %d", wc->wc_ts);
+			wc->wc_ts = 0;
 		}
 		return 0;
 	}
@@ -464,6 +464,7 @@ ssize_t acq400_wr_read(struct file *file, char __user *buf, size_t count, loff_t
 	}
 }
 
+
 ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count, loff_t *f_pos)
 {
 	struct acq400_path_descriptor* pdesc = PD(file);
@@ -487,14 +488,18 @@ ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count,
 	tmp[0] = wc->wc_ts;
 	wc->wc_ts = 0;
 
-	adev->booleans.RW32_debug = 1;
-
 	if (count == WRS_PKT_FULL_READ){
 		u32* dst = tmp+1;
 		int ii;
 
+
+
 		for (ii = 0; ii < WRS_PKT_LW; ++ii){
-			 dst[ii] = acq400rd32(adev, WRS_PKT_RX+ii*sizeof(u32));
+			if (wr_pkt_debug) adev->booleans.RW32_debug = wr_pkt_debug;
+
+			dst[ii] = acq400rd32(adev, WRS_PKT_RX+ii*sizeof(u32));
+
+			if (wr_pkt_debug) adev->booleans.RW32_debug = 0;
 		}
 		rc = copy_to_user(buf, tmp, ncopy = WRS_PKT_FULL_READ);
 	}else if (count == sizeof(u32)){
@@ -502,8 +507,6 @@ ssize_t acq400_wr_read_pkt_rx(struct file *file, char __user *buf, size_t count,
 	}else{
 		rc = -EINVAL;
 	}
-
-	adev->booleans.RW32_debug = 0;
 
 	if (rc){
 		return -rc;
@@ -570,22 +573,28 @@ ssize_t acq400_wr_write_pkt_tx(
 	u32 tmp[WRS_PKT_LW];
 	int rc;
 
+	dev_dbg(DEVP(adev), "acq400_wr_write_pkt_tx() 01 count %d\n", count);
+
 	if (count != WRS_PKT_LW*sizeof(u32)){
 		return -EINVAL;
 	}else{
 		int ii;
 
-		dev_dbg(DEVP(adev), "acq400_wr_write_pkt_tx() ");
+		dev_dbg(DEVP(adev), "acq400_wr_write_pkt_tx() 40 ");
 
 		rc = copy_from_user(tmp, buf, count);
 
 		for (ii = 0; ii < WRS_PKT_LW; ++ii){
+			if (wr_pkt_debug) adev->booleans.RW32_debug = wr_pkt_debug;
+
 			acq400wr32(adev, WRS_PKT_TX+ii*sizeof(u32), tmp[ii]);
+
+			if (wr_pkt_debug) adev->booleans.RW32_debug = 0;
 		}
 	}
 
 	*f_pos += count;
-	dev_dbg(DEVP(adev), "acq400_wr_write() return count:%u", sizeof(u32));
+	dev_dbg(DEVP(adev), "acq400_wr_write() return count:%u", count);
 
 	return count;
 }

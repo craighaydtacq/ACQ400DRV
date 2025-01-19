@@ -77,10 +77,11 @@ void dump_pkt(u32* pkt, const char* id){
 	}
 }
 void tx() {
-	int rc = fwrite(G::tx_pkt, sizeof(u32), PKT_LW, G::fp);
-	assert(rc == PKT_LW);
+	int rc = write(G::fd, G::tx_pkt, sizeof(u32)*PKT_LW);
+	assert(rc == sizeof(u32)*PKT_LW);
 	dump_pkt(G::tx_pkt, "TX"); printf("\n");
 	G::tx_pkt[PKT_LW-1] += 1;
+	G::tx_pkt[0] = (G::tx_pkt[0]&~0x00ff00) | ((G::tx_pkt[0]&0x0ff00)+(1<<8));
 }
 
 void rx() {
