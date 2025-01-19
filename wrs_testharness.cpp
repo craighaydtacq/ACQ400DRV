@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <signal.h>
 
 
 #include "Env.h"
@@ -28,12 +29,14 @@
 typedef unsigned u32;
 
 namespace G {
+	int rx_target_count;
 	int rx_count;
 	int tx_count;
 	int usleep;
 	int rx_block;
 	FILE *fp;
 	int fd;
+	int rt_prio = 0;
 
 	u32 tx_pkt[PKT_LW];
 	u32 read_data[PKT_LW+1];
@@ -41,17 +44,23 @@ namespace G {
 
 };
 
+void get_status(int sig){
+	fprintf(stderr, "rx_count to %d left out of %d\n", G::rx_count, G::rx_target_count);
+}
+
 const char* ui(int argc, const char** argv)
 {
-	G::rx_count = Env::getenv("RX", 1);
+	G::rx_target_count = G::rx_count = Env::getenv("RX", 1);
 	G::tx_count = Env::getenv("TX", 0);
 	G::usleep   = Env::getenv("US", 0);
 	G::rx_block = Env::getenv("RX_BLOCK", 1);
+	G::rt_prio  = Env::getenv("RTPRIO", 0);
 
 	const char* mode = G::rx_count&&G::tx_count? "r+": G::tx_count? "w": "r";
 
 	assert(G::rx_count||G::tx_count);
 
+	signal(SIGINT, get_status);
 
 	G::fp = fopen(WRS_DEV, mode);
 	assert(G::fp);
@@ -66,6 +75,10 @@ const char* ui(int argc, const char** argv)
 
 	for (int ii = 0; ii < PKT_LW; ++ii){
 		G::tx_pkt[ii] = 0xaabb0000|ii;
+	}
+
+	if (G::rt_prio){
+		goRealTime(G::rt_prio);
 	}
 	return 0;
 }
@@ -89,6 +102,8 @@ void rx() {
 	assert(rc == WRS_PKT_FULL_READ);
 	dump_pkt(G::rx_pkt, "RX"); printf("TS:%08x", G::read_data[0]); printf("\n");
 }
+
+
 int main(int argc, const char* argv[])
 {
 	ui(argc, argv);
