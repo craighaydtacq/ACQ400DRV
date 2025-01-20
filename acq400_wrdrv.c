@@ -67,6 +67,10 @@ int wr_pkt_debug = 0;
 module_param(wr_pkt_debug, int, 0644);
 MODULE_PARM_DESC(wr_pkt_debug, "set register access trace for wr_pkt read/write 2: dev_info(), 1:dev_db()");
 
+int wr_tx_count = 0;
+module_param(wr_tx_count, int, 0644);
+MODULE_PARM_DESC(wr_tx_count, "transmit packet count");
+
 static inline u32 wr_ctrl_set(struct acq400_dev *adev, unsigned bits){
 	u32 ctrl = acq400rd32(adev, WR_CTRL);
 	ctrl |= bits;
@@ -591,6 +595,7 @@ ssize_t acq400_wr_write_pkt_tx(
 
 			if (wr_pkt_debug) adev->booleans.RW32_debug = 0;
 		}
+		wr_tx_count++;
 	}
 
 	*f_pos += count;
