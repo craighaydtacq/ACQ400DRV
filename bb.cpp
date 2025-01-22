@@ -422,7 +422,7 @@ int fill() {
 	}else{
 		nsamples = _load();
 	}
-	printf("DONE %d\n", nsamples);
+	syslog(LOG_DEBUG, "DONE %d\n", nsamples);
 	return nsamples;
 }
 
@@ -503,7 +503,7 @@ int set_segment_start(int seg)
 	setKnob(-1, DSO, seg);
 
 
-	fprintf(stderr, "%s seg:%d G::buffer00:%d G::buffer0:%d seg_bufs:%d\n",
+	syslog(LOG_DEBUG, "%s seg:%d G::buffer00:%d G::buffer0:%d seg_bufs:%d\n",
 			__FUNCTION__, seg, G::buffer00, G::buffer0, seg_bufs);
 	return seg_bufs;
 }

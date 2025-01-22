@@ -127,15 +127,16 @@ static const unsigned xflags[2] = { DMA_WAIT_EV0|DMA_SET_EV1,  DMA_WAIT_EV1|DMA_
 #define STEV sflags 		/* Set EV 	*/
 #define WFST xflags		/* Wait For EV, Set EV */
 
-
-#define DMA_ASYNC_PUSH(lvar, adev, chan, hbm, flags)	do {		\
+/* len_nz : use this len if Non Zero, else hbm->len */
+#define DMA_ASYNC_PUSH(lvar, adev, chan, hbm, len_nz, flags)	do {	\
 	unsigned _flags = DMA_DS0_FLAGS|(flags[chan]);			\
 	lvar = dma_async_memcpy_callback(adev->dma_chan[chan], 		\
-			FIFO_PA(adev0), hbm->pa, hbm->len, 	\
+			FIFO_PA(adev0), hbm->pa, len_nz? len_nz:hbm->len, 	\
 			_flags, acq400_dma_callback, adev);		\
 	dev_dbg(DEVP(adev), "DMA_ASYNC_PUSH #%d [%d] ix:%d pa:0x%08x len:0x%08x %s",\
-		__LINE__, chan, hbm->ix, hbm->pa, hbm->len, flags2str(_flags)); \
+		__LINE__, chan, hbm->ix, hbm->pa, len_nz? len_nz:hbm->len, flags2str(_flags)); \
 	} while(0)
+
 
 #define DMA_ASYNC_ISSUE_PENDING(chan) _dma_async_issue_pending(adev, chan, __LINE__)
 
@@ -218,13 +219,18 @@ int xo_data_loop(void *data)
 
 	int continuous_at_start = AO_CONTINUOUS;
 	int last_push_done = 0;
+	size_t hbl = 0;
 
 	dev_dbg(DEVP(adev), "xo_data_loop() ib set %d playloop:%d hbs:%d shot_buffer_count:%d",
 				IB, xo_dev->AO_playloop.length, ao_samples_per_hb, shot_buffer_count);
 
 	if (shot_buffer_count*ao_samples_per_hb < xo_dev->AO_playloop.length){
 		shot_buffer_count += 1;
-		dev_dbg(DEVP(adev), "ao play data buffer overspill");
+
+		if (shot_buffer_count == 1){
+			hbl = xo_dev->AO_playloop.length * xo_distributor_sample_size;
+		}
+		dev_dbg(DEVP(adev), "ao play data buffer overspill %d hbl:%u", shot_buffer_count, hbl);
 	}
 	IBRESET;
 	xo_data_loop_stats_init(adev);
@@ -236,14 +242,14 @@ int xo_data_loop(void *data)
 	 * 0 starts filling right away
 	 * */
 	if (shot_buffer_count > 1){
-		DMA_ASYNC_PUSH(adev->dma_cookies[1], adev, 1, hbm0[IB+1], WFST);
-		DMA_ASYNC_PUSH(adev->dma_cookies[0], adev, 0, hbm0[IB+0], STEV);
+		DMA_ASYNC_PUSH(adev->dma_cookies[1], adev, 1, hbm0[IB+1], hbl, WFST);
+		DMA_ASYNC_PUSH(adev->dma_cookies[0], adev, 0, hbm0[IB+0], hbl, STEV);
 		IBINCR;
 		IBINCR;
 
 		DMA_ASYNC_ISSUE_PENDING(adev->dma_chan[1]);
 	}else{
-		DMA_ASYNC_PUSH(adev->dma_cookies[0], adev, 0, hbm0[IB+0], STEV);
+		DMA_ASYNC_PUSH(adev->dma_cookies[0], adev, 0, hbm0[IB+0], hbl, STEV);
 		IBINCR;
 	}
 
@@ -311,10 +317,10 @@ int xo_data_loop(void *data)
 		if (adev->stats.xo.dma_buffers_out < shot_buffer_count){
 			int cc;
 			if (LAST_PUSH){
-				DMA_ASYNC_PUSH(cc, adev, ic, hbm0[IB], WFEV);
+				DMA_ASYNC_PUSH(cc, adev, ic, hbm0[IB+0], hbl, WFEV);
 				last_push_done = 1;
 			}else{
-				DMA_ASYNC_PUSH(cc, adev, ic, hbm0[IB], WFST);
+				DMA_ASYNC_PUSH(cc, adev, ic, hbm0[IB+0], hbl, WFST);
 			}
 			adev->dma_cookies[ic] = cc;
 			IBINCR;
@@ -397,6 +403,15 @@ int streamdac_stalls[MAX_STALL_RETRIES/STALL_BIN_WIDTH+1];
 int streamdac_stalls_count = MAX_STALL_RETRIES/STALL_BIN_WIDTH+1;
 module_param_array(streamdac_stalls, int, &streamdac_stalls_count, 0444);
 
+#undef DMA_ASYNC_PUSH
+#define DMA_ASYNC_PUSH(lvar, adev, chan, hbm, flags)	do {		\
+	unsigned _flags = DMA_DS0_FLAGS|(flags[chan]);			\
+	lvar = dma_async_memcpy_callback(adev->dma_chan[chan], 		\
+			FIFO_PA(adev0), hbm->pa, hbm->len, 	\
+			_flags, acq400_dma_callback, adev);		\
+	dev_dbg(DEVP(adev), "DMA_ASYNC_PUSH #%d [%d] ix:%d pa:0x%08x len:0x%08x %s",\
+		__LINE__, chan, hbm->ix, hbm->pa, hbm->len, flags2str(_flags)); \
+	} while(0)
 
 int streamdac_data_loop(void *data)
 {
