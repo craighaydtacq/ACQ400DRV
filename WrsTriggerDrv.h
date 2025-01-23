@@ -21,6 +21,7 @@ public:
     int interrupt_fd;
 
     int check_interrupt();
+    int write_tx();
     int dump_rx();
     int dump_rx(void*);
     void set_wr_ts_drives_soft_trigger();

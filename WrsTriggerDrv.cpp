@@ -52,7 +52,7 @@ WrsTriggerDrv::WrsTriggerDrv()
     // TODO: update this so that these start at the first byte
     // dump_rx() function should dump the whole packet rather than 1 long word
     rx_mem = mapped_base + (WRS_PKT_BASE_RX / sizeof(u32));
-   // tx_mem = mapped_base + (WRS_PKT_BASE_TX / sizeof(u32));
+    tx_mem = mapped_base + (WRS_PKT_BASE_TX / sizeof(u32));
 
     std::cout << "Driver initialized. RX at " << rx_mem << std::endl;
         //", TX at " << tx_mem << std::endl;
@@ -87,7 +87,8 @@ int WrsTriggerDrv::check_interrupt() {
 void WrsTriggerDrv::copy_integers(uint32_t* dest, const uint32_t* src, size_t count) {
     unsigned int microseconds = 10000;
     int sleepflag = 0;
-    for (size_t i = 0; i < count; ++i) {
+    // TODO: change this loop to start back at 0
+    for (size_t i = 8; i < count; ++i) {
         dest[i] = src[i];
         printf("writing %d", i);
         //if (sleepflag == 0) {
@@ -131,6 +132,15 @@ int WrsTriggerDrv::sync_mem() {
         exit(0);
     }
     return sync_check;
+}
+
+int WrsTriggerDrv::write_tx() {
+    std::cout << "Writing to packet: " << std::hex << 0xDEADBEEF << std::endl;
+    u32* tx_mem_u32 = static_cast<u32*>(tx_mem);
+    tx_mem_u32[0] = 0xDEADBEEF;
+    tx_mem_u32[9] = 0xDEADD0D0;
+    std::cout << "Transmitting..." << std::endl;
+    return 0;
 }
 
 int WrsTriggerDrv::dump_rx() {

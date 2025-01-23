@@ -66,8 +66,17 @@ public:
 		WrsCastImpl(_group, _port)
 	{}
 	virtual int sendto(const void* message, int len) {
+        int rc = -1;
+
         if (verbose > 1) printf("WrsCastSender()::sendto 99\n");
-        return 0;
+        std::cout << "Readying transmission..." << std::endl;
+        rc = drv.write_tx();
+        if (rc < 0) {
+            perror("transmission failed...");
+            exit(1);
+        }
+        std::cout << "Transmission complete." << std::endl;
+        return rc;
 	}
 };
 
