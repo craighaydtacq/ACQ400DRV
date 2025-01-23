@@ -1,3 +1,4 @@
+#
 # Cross compiler makefile for FIFO DMA example
 #KERN_SRC=~/PROJECTS/ACQ400/linux-xlnx
 obj-m += xilinx_devcfg.o
@@ -38,10 +39,14 @@ obj-m += acq494.o
 DC := $(shell date +%y%m%d%H%M%S)
 SEQ=10
 
+CXXFLAGS += -std=c++17
+#CPPFLAGS += -O3 -Wall
+CPPFLAGS += -Wall -Wextra -g
+# additional warning flags
+#CPPFLAGS += -Wfloat-equal -Wundef -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code -Wformat=2
 
-CPPFLAGS += -O3 -Wall
-CXXFLAGS += -std=c++11
-
+# flags that can be added to get assembly output
+#ASMFLAGS += -S
 
 acq420fmc-objs := acq400_drv.o  acq400_ui.o acq400_fs.o dma_shims.o \
 	acq400_core.o acq400_init_defaults.o \
@@ -211,150 +216,149 @@ mmaptest: mmaptest.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lpopt
 
 acq400_sls: acq400_sls.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt	-lacq
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt	-lacq
 
 watchdog_PIL: watchdog_PIL.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 			
 udp_client: udp_client.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lpopt
 	
 acq400_stream: acq400_stream.o  hex_char_to_bin.o
-	$(CXX) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 
 subset_mask_tester: subset_mask_tester.o  hex_char_to_bin.o
-	$(CXX) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 
 bb: bb.o tcp_server.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 
 bb_stream: bb_stream.o tcp_server.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 
 multi_event: multi_event.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 
 wr_reset: wr_reset.o Env.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 	
 bbq_send_ai: bbq_send_ai.o Socket.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 data_sink: data_sink.o Socket.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS)  -lpopt -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)  -lpopt -lpthread -lrt
 	
 subr: subr.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS)  -lpopt -lpthread -lrt
-	#$(CXX) -O3 -o $@ $^ $(LDFLAGS)  -lpopt -lpthread -lrt -lacq
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)  -lpopt -lpthread -lrt
+	#$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)  -lpopt -lpthread -lrt -lacq
 		
 phased_array: phased_array.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lpthread -lrt
 	
 dawg: dawg.o
-	$(CXX) -O3 -o dawg dawg.o $(LDFLAGS) -lacq -lpopt -lrt
+	$(CXX) $(CPPFLAGS) -o dawg dawg.o $(LDFLAGS) -lacq -lpopt -lrt
 	
 tblock2file: tblock2file.o 
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lacq -lpthread -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt -lacq -lpthread -lrt
 
 is_ramp: is_ramp.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 	
 acq400_knobs: acq400_knobs.o tcp_server.o Env.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lacq  -lpopt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lacq  -lpopt
 
 anatrg: anatrg.o 
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq
 
 soft_atd: soft_atd.o 
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq
 	
 multisitecheckramp: multisitecheckramp.cpp
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 	
 acq480_knobs: acq480_knobs.o ads5294.o  knobs.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 	
 acq465_knobs: acq465_knobs.o knobs.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 		
 wavegen: wavegen.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lm
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lm
 	
 acq435_decode: acq435_decode.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lpthread
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lpthread
 	
 acq400_axi_dma_test_harness: acq400_axi_dma_test_harness.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lpthread
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lpthread
 
 acq435_rtm_trim: acq435_rtm_trim.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lpthread
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lpthread
 	
 bigmac: bigmac.o
-	$(CXX) -mcpu=cortex-a9 -mfloat-abi=softfp -mfpu=neon \
+	$(CXX) $(CPPFLAGS) -mcpu=cortex-a9 -mfloat-abi=softfp -mfpu=neon \
 		-DHASNEON \
-		-O3 -o bigmac bigmac.o $(LDFLAGS) -lpopt
+		-O1 -o bigmac bigmac.o $(LDFLAGS) -lpopt
 bigcat: bigcat.cpp
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lpthread
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lpthread
 
 lilmac: lilmac.o
-	$(CXX) -O3 -o lilmac lilmac.o $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) -o lilmac lilmac.o $(LDFLAGS) -lpopt
 
 hudp_config: hudp_config.o knobs.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq
 
 mr_offload: mr_offload.o knobs.o connect_to.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 
 channel_mapping: channel_mapping.o knobs.o 
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 	
 muxdec: muxdec.o
-	$(CXX) -O3 -o muxdec muxdec.o $(LDFLAGS) -lacq
+	$(CXX) $(CPPFLAGS) -o muxdec muxdec.o $(LDFLAGS) -lacq
 
 bpaste: bpaste.o
-	$(CXX) -O3 -o bpaste bpaste.o
+	$(CXX) $(CPPFLAGS) -o bpaste bpaste.o
 	
 bigmac.x86: bigmac.o
-	$(CXX) -O3 -o $@ $^ -lpopt	
+	$(CXX) $(CPPFLAGS) -o $@ $^ -lpopt	
 	
 mgtdram_descgen: 	mgtdram_descgen.o
-	$(CXX) -O3 -o $@ $^ $(LDFLAGS) -lpopt
-
-wrtd: 	wrtd.o Multicast.o WrsCast.o knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 
 wrs_testharness: wrs_testharness.o
 	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
-	
-	
-wrs_trigger: 	wrs_trigger.o knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+
+wrtd: 	wrtd.o Multicast.o WrsCast.o knobs.o WrsTriggerDrv.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+
+wrs_trigger: 	wrs_trigger.o knobs.o WrsTriggerDrv.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
 	
 spad_update:	spad_update.o knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt	
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt	
 	
 soft_wrtd: 	soft_wrtd.o Multicast.o  knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
 	
 soft_wrtd_x86: 	soft_wrtd.cpp Multicast.cpp  knobs.cpp -lrt
-	$(CXX) -std=c++11 -O3 -o $@ $^ -lpopt
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ -lpopt
 	
 soft_wrtd_x86_clean: 
 	rm -f soft_wrtd_x86 soft_wrtd.o Multicast.o  knobs.o
 		
 multicast: 	multicast.o Multicast.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 		
 trigger_at: trigger_at.o knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 	
 clocks_to_first_edge: clocks_to_first_edge.o knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS)	
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)	
 	
 slowmon_hw: slowmon_hw.o knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 	
 awg_composer: awg_composer.o knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt	
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt	
 			
 rtpackage:
 	tar cvzf dmadescfs-$(DC).tgz dmadescfs* scripts/load.dmadescfs
@@ -367,7 +371,7 @@ LIBSRCS = acq-util.c knobs.cpp acq_rt.cpp Buffer.cpp ES.cpp
 
 ./lib/$(ARCHD)/$(LIBACQSONAME): $(LIBSRCS)
 	mkdir -p ./lib/$(ARCHD)
-	$(CXX) -shared -Wl,-soname,$(LIBACQSONAME) -fPIC -o $@ $^
+	$(CXX) $(CPPFLAGS) -shared -Wl,-soname,$(LIBACQSONAME) -fPIC -o $@ $^
 	cd ./lib/$(ARCHD); ln -fs $(LIBACQSONAME) $(LIBACQSO)
 	echo lib for local use:
 	ls -l ./lib/$(ARCHD)
