@@ -14,10 +14,20 @@ fi
 
 SITE=${1:-0}
 MTYPE=${2:-0}
+FRU_PART_NUM=${3:-NOFRUPART}
 KNOBS=/dev/acq400.${SITE}.knobs
 # MODEL re
 MODEL=$(cat $KNOBS/module_name)
 EK=/etc/acq400/$SITE
+
+
+
+case $FRU_PART_NUM in
+AO420FMC-4-16-CS3*)
+        SET_UNIPOLAR=1;;
+*)
+        SET_UNIPOLAR=0;;
+esac
 
 mkdir -p ${EK}
 
@@ -72,7 +82,11 @@ else
 		vset_sys ${KNOBS}/dacspi 0x200002;; # +/- Ref Mult.
 	*)
 		vset_sys ${KNOBS}/dacspi 0x400002   # @@todo .. probably redundant
-		vset_sys ${KNOBS}/dacspi 0x200000;;
+		if [ $SET_UNIPOLAR -eq 1 ]; then
+		      vset_sys ${KNOBS}/dacspi 0x200002
+		else
+		      vset_sys ${KNOBS}/dacspi 0x200000
+		fi;;
 	esac
 fi
 vset_sys ${KNOBS}/dac_enable ${EN}
