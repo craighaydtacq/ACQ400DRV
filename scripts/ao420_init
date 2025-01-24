@@ -83,7 +83,7 @@ else
 	*)
 		vset_sys ${KNOBS}/dacspi 0x400002   # @@todo .. probably redundant
 		if [ $SET_UNIPOLAR -eq 1 ]; then
-		      vset_sys ${KNOBS}/dacspi 0x200002
+		      vset_sys ${KNOBS}/dacspi 0x200012
 		else
 		      vset_sys ${KNOBS}/dacspi 0x200000
 		fi;;
