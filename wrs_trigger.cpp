@@ -6,9 +6,9 @@
  *
  *  Open and hold a mapping on SYSDEV (one page)
  *  Create structure pointers to TX, RX at WRS_PKT_BASE_TX,WRS_PKT_BASE_RX
- *  Block on RXDEV, read one u32.
+ *  Block on WRS_DEV, read one u32.
  *  Time critical:Immediately, set soft_trigger to zero,
- *  Then print the TS from RXDEV and then
+ *  Then print the TS from WRS_DEV and then
  *  Dump RX on RX dev receipt
  *  Toggle an output. Compare SOFT TRIGGER to AUX to find max delay in app layer.
  */

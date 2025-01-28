@@ -6,65 +6,110 @@
  *
  *  Open and hold a mapping on SYSDEV (one page)
  *  Create structure pointers to TX, RX at WRS_PKT_BASE_TX,WRS_PKT_BASE_RX
- *  Block on RXDEV, read one u32.
+ *  Block on WRS_DEV, read one u32.
  *  Time critical:Immediately, set soft_trigger to zero,
- *  Then print the TS from RXDEV and then
+ *  Then print the TS from WRS_DEV and then
  *  Dump RX on RX dev receipt
  *  Toggle an output. Compare SOFT TRIGGER to AUX to find max delay in app layer.
  */
-
+#include <assert.h>
 #include <fcntl.h>
-#include <fstream>
-#include <iostream>
+#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <cstring>
 #include <errno.h>
+
+#include <cstring>
+#include <fstream>
+#include <iostream>
+
+#include "Env.h"
+#include "acq-util.h"
 #include "wrs_trigger_int.h"
 #include "WrsTriggerDrv.h"
 #include "knobs.h"
+
+
 
 #define PAGESIZE 400
 #define RX_OFFSET WRS_PKT_BASE_RX
 #define TX_OFFSET WRS_PKT_BASE_TX
 
-
-
 WrsTriggerDrv::WrsTriggerDrv()
 {
-    sysdev_fd = open(SYSDEV, O_RDWR | O_SYNC);
-    if (sysdev_fd < 0) {
-        perror("Failed to open SYSDEV");
-        exit(EXIT_FAILURE);
+
+
+    rx_target_count = rx_count = Env::getenv("RX", 1);
+	tx_count = Env::getenv("TX", 0);
+	usleep_time   = Env::getenv("US", 0);
+	rx_block = Env::getenv("RX_BLOCK", 1);
+    rt_prio = Env::getenv("RTPRIO", 0);
+
+	const char* mode = rx_count&&tx_count ? "r+": tx_count ? "w": "r";
+
+	assert(rx_count||tx_count);
+
+    // TODO: not compiling with this, remove or fix
+    //signal(SIGINT, get_status);
+
+
+	fp = fopen(WRS_DEV, mode);
+	assert(fp);
+	fd = fileno(fp);
+
+	if (rx_block == 0){
+		int flags = fcntl(fd, F_GETFL, 0);
+		int rc = fcntl(fd, F_SETFL, flags|O_NONBLOCK);
+		assert(rc != -1);
+	}
+
+
+	for (int ii = 0; ii < PKT_LW; ++ii){
+		tx_pkt[ii] = 0xaabb0000|ii;
+	}
+
+    if (rt_prio) {
+        goRealTime(rt_prio);
     }
-    off_t offset = 0;
+    /*
+//    sysdev_fd = open(SYSDEV, O_RDWR | O_SYNC);
+//    if (sysdev_fd < 0) {
+//        perror("Failed to open SYSDEV");
+//        exit(EXIT_FAILURE);
+//    }
+//    off_t offset = 0;
     
-    std::cout << PAGESIZE << sysdev_fd << std::hex << offset;
+//    std::cout << PAGESIZE << sysdev_fd << std::hex << offset;
 
     // map one page of memory
-    mapped_base = (u32*)mmap(nullptr, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, sysdev_fd, offset);
-    if (mapped_base == MAP_FAILED) {
-        perror("Failed to mmap SYSDEV");
-        close(sysdev_fd);
-        exit(EXIT_FAILURE);
-    }
+//    mapped_base = (u32*)mmap(nullptr, PAGESIZE, PROT_READ | PROT_WRITE, MAP_SHARED, sysdev_fd, offset);
+//    if (mapped_base == MAP_FAILED) {
+//        perror("Failed to mmap SYSDEV");
+//        close(sysdev_fd);
+//        exit(EXIT_FAILURE);
+//    }
     // TODO: update this so that these start at the first byte
     // dump_rx() function should dump the whole packet rather than 1 long word
-    rx_mem = mapped_base + (WRS_PKT_BASE_RX / sizeof(u32));
-    tx_mem = mapped_base + (WRS_PKT_BASE_TX / sizeof(u32));
+//    rx_mem = mapped_base + (WRS_PKT_BASE_RX / sizeof(u32));
+   // tx_mem = mapped_base + (WRS_PKT_BASE_TX / sizeof(u32));
 
-    std::cout << "Driver initialized. RX at " << rx_mem << std::endl;
+//    std::cout << "Driver initialized. RX at " << rx_mem << std::endl;
         //", TX at " << tx_mem << std::endl;
+*/
 }
 
 WrsTriggerDrv::~WrsTriggerDrv() {
-    // Unmap memory and close SYSDEV
+    /* Unmap memory and close SYSDEV
     if (mapped_base != MAP_FAILED) {
         munmap(mapped_base, PAGESIZE);
     }
     close(sysdev_fd);
+*/
+}
 
+void WrsTriggerDrv::get_status(int sig){
+	fprintf(stderr, "rx_count to %d left out of %d\n", rx_count, rx_target_count);
 }
 
 int WrsTriggerDrv::check_interrupt() {
@@ -87,14 +132,9 @@ int WrsTriggerDrv::check_interrupt() {
 void WrsTriggerDrv::copy_integers(uint32_t* dest, const uint32_t* src, size_t count) {
     unsigned int microseconds = 10000;
     int sleepflag = 0;
-    // TODO: change this loop to start back at 0
-    for (size_t i = 8; i < count; ++i) {
+    for (size_t i = 0; i < count; ++i) {
         dest[i] = src[i];
         printf("writing %d", i);
-        //if (sleepflag == 0) {
-        //usleep(microseconds);
-        //sleepflag += 1;
-        //}
     }
 }
 
@@ -134,22 +174,12 @@ int WrsTriggerDrv::sync_mem() {
     return sync_check;
 }
 
-int WrsTriggerDrv::write_tx() {
-    std::cout << "Writing to packet: " << std::hex << 0xDEADBEEF << std::endl;
-    u32* tx_mem_u32 = static_cast<u32*>(tx_mem);
-    tx_mem_u32[0] = 0xDEADBEEF;
-    tx_mem_u32[9] = 0xDEADD0D0;
-    std::cout << "Transmitting..." << std::endl;
-    return 0;
-}
-
 int WrsTriggerDrv::dump_rx() {
 
     // Dump RX memory content
     constexpr size_t word_count = 16;
     constexpr size_t bytes_per_word = sizeof(u32);
     constexpr size_t total_bytes = word_count * bytes_per_word;
-    constexpr size_t total_mapped_size = PAGESIZE;
 
     // Copy 10 long words from rx_mem to dest
     u32* rx_mem_u32 = static_cast<u32*>(rx_mem);
@@ -171,7 +201,6 @@ int WrsTriggerDrv::dump_rx(void* dest) {
     constexpr size_t word_count = 16;
     constexpr size_t bytes_per_word = sizeof(u32);
     constexpr size_t total_bytes = word_count * bytes_per_word;
-    constexpr size_t total_mapped_size = PAGESIZE;
 
 
     std::cout << "dest: " << std::hex << dest << std::endl;
@@ -193,7 +222,6 @@ int WrsTriggerDrv::dump_rx(void* dest) {
     
 
 
-   // memcpy(const_cast<const void*>(dest_u32),const_cast<const void*>(rx_mem_u32), total_bytes);
 
     /*
     for (size_t i = 0; i < word_count; ++i) {
@@ -209,7 +237,7 @@ int WrsTriggerDrv::dump_rx(void* dest) {
         std::cout << std::hex << rx_mem_u32[i] << " ";
     }
     std::cout << std::endl;
-*/
+    */
     copy_integers(dest_u32, rx_mem_u32, 10);
     sync_mem();
     unsigned int microseconds = 10000;
@@ -234,11 +262,6 @@ int WrsTriggerDrv::dump_rx(void* dest) {
     }
     std::cout << std::endl;
    
-  //  int cnt = 50;
- //   dump_chars(rx_mem_u32, cnt);
-
-//    dump_chars(dest_u32, cnt);
-
     // write to file
     write_to_file(rx_mem_u32, 10,"/tmp/my_zero_page");
 
@@ -267,6 +290,118 @@ void WrsTriggerDrv::pulse_soft_trigger() {
     //setKnob(0, "/dev/acq400.0.knobs/soft_trigger", 0);
 }
 
+const char* WrsTriggerDrv::ui(int argc, const char** argv)
+{
+	
+    rx_target_count = rx_count = Env::getenv("RX", 1);
+	tx_count = Env::getenv("TX", 0);
+	usleep_time   = Env::getenv("US", 0);
+	rx_block = Env::getenv("RX_BLOCK", 1);
+    rt_prio = Env::getenv("RTPRIO", 0);
+
+	const char* mode = rx_count&&tx_count ? "r+": tx_count ? "w": "r";
+
+	assert(rx_count||tx_count);
+
+    // TODO: not compiling with this, remove or fix
+    //signal(SIGINT, get_status);
+
+
+	fp = fopen(WRS_DEV, mode);
+	assert(fp);
+	fd = fileno(fp);
+
+	if (rx_block == 0){
+		int flags = fcntl(fd, F_GETFL, 0);
+		int rc = fcntl(fd, F_SETFL, flags|O_NONBLOCK);
+		assert(rc != -1);
+	}
+
+
+	for (int ii = 0; ii < PKT_LW; ++ii){
+		tx_pkt[ii] = 0xaabb0000|ii;
+	}
+
+    if (rt_prio) {
+        goRealTime(rt_prio);
+    }
+	return 0;
+}
+
+void WrsTriggerDrv::dump_pkt(u32* pkt, const char* id){
+    printf("%4s: ", id);
+	for (int ii = 0; ii < PKT_LW; ++ii){
+		printf("%08x,", pkt[ii]);
+	}
+}
+
+void WrsTriggerDrv::dump_ts(const char* id){
+    printf("%4s: ", id);
+	printf("%08x,", ts);
+	
+}
+
+int WrsTriggerDrv::transmit() {
+	int rc = write(fd, tx_pkt, sizeof(u32)*PKT_LW);
+	assert(rc == PKT_LW*sizeof(u32));
+	dump_pkt(tx_pkt, "TX"); printf("\n");
+	tx_pkt[PKT_LW-1] += 1;
+    tx_pkt[0] = (tx_pkt[0]&~0x00ff00) | ((tx_pkt[0]&0x0ff00)+(1<<8));
+    return rc;
+}
+
+int WrsTriggerDrv::receive(u32 *buf) {
+    if (verbose) printf("Entering WrsTriggerDrv::receive()");
+    int rc = -1;
+    u32 temp_read_buf[WRS_PKT_FULL_READ];
+	int bytes_read = read(fd, temp_read_buf, WRS_PKT_FULL_READ);
+    if (bytes_read == WRS_PKT_FULL_READ) {
+        u32 timestamp;
+        memcpy(buf, &temp_read_buf[1], 10 * sizeof(u32));
+        rx_pkt = buf;
+        ts = temp_read_buf[0];
+        rc = 40;
+    }
+    else {
+        if (verbose) {
+            perror("Error reading data");
+        }
+    }
+    if (bytes_read == 44) {
+        rc = 40;
+    }
+	//assert(rc == WRS_PKT_FULL_READ);
+    return rc;
+}
+
+void WrsTriggerDrv::hello() {
+    printf("hello");
+}
+/*
+int main(int argc, const char* argv[])
+{
+    WrsTriggerDrv drv;
+	drv.ui(argc, argv);
+//	WRS_Trigger* trigger = WRS_Trigger::factory(site)l
+
+	while (drv.tx_count || drv.rx_count){
+		if (drv.tx_count){
+			drv.transmit();
+            // TODO: move decrement into tx() function or its own function
+			--drv.tx_count;
+			if (drv.usleep_time){
+				usleep(100);
+			}
+		}
+		if (drv.rx_count){
+			drv.receive();
+            // TODO: move decrement into rx() function or its own function
+			--drv.rx_count;
+		}
+	}
+	return 0;
+}
+*/
 
 /*
 int main(int argc, const char* argv[])

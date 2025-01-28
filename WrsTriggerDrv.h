@@ -12,31 +12,56 @@ struct wrtd_message;
 
 typedef unsigned u32;
 
+#define PKT_LW	10
+#define WRS_PKT_LW		10
+#define WRS_PKT_FULL_READ	((1+WRS_PKT_LW)*sizeof(u32)) /* full count in bytes */
 
 class WrsTriggerDrv {
 public:
-	WrsTriggerDrv();
+    WrsTriggerDrv();
     ~WrsTriggerDrv();
 
     int interrupt_fd;
+    int rx_target_count;
+    int rx_count;
+    int tx_count;
+    int usleep_time;
+    int rx_block;
+    FILE *fp;
+    int fd;
+    int rt_prio = 0;
+    int verbose = 0;
+    unsigned ts;
 
+    u32 tx_pkt[PKT_LW];
+//	u32 read_data[PKT_LW+1];
+    u32* rx_pkt;
+
+    void get_status(int);
     int check_interrupt();
-    int write_tx();
     int dump_rx();
     int dump_rx(void*);
+    void dump_ts(const char*);
     void set_wr_ts_drives_soft_trigger();
     void pulse_soft_trigger();
 
-private:
-    int sysdev_fd;
-    u32 *mapped_base;
-	u32 *tx_mem;
-	u32 *rx_mem;
-	FILE *rx_feed;
+    int transmit();
+    int receive(u32*);
+
     void copy_integers(uint32_t*, const uint32_t*, size_t);
     void dump_chars(const void*);
     void dump_chars(const void*, int);
     void write_to_file(const uint32_t*, size_t, const char*);
     int sync_mem();
+
+    const char* ui(int argc, const char** argv);
+    void dump_pkt(u32* pkt, const char* id);
+
+private:
+    int sysdev_fd;
+    u32 *mapped_base;
+    u32 *tx_mem;
+    u32 *rx_mem;
+    FILE *rx_feed;
 };
 #endif /* WRS_TRIGGER_DRV_H_ */
