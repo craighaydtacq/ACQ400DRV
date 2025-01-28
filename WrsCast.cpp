@@ -133,6 +133,7 @@ public:
         if (rc < 0) {
             perror("recvfrom");
             exit(1);
+        }
         
         
         if (rc == 1) {
