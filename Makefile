@@ -40,8 +40,11 @@ DC := $(shell date +%y%m%d%H%M%S)
 SEQ=10
 
 CXXFLAGS += -std=c++17
+# original CPPFLAGS are directly below
 #CPPFLAGS += -O3 -Wall
-CPPFLAGS += -Wall -Wextra -g
+#CPPFLAGS += -Wall -Wextra -g
+# the below CPPFLAGS are cph debugging
+CPPFLAGS += -Og -Wall -g
 # additional warning flags
 #CPPFLAGS += -Wfloat-equal -Wundef -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code -Wformat=2
 
@@ -106,6 +109,7 @@ APPS := mmap acq400_stream permute acq435_decode \
 	mr_offload trigger_at bb_stream reduce \
 	channel_mapping slowmon_hw reg_rw hudp_config tai_server \
 	awg_composer scripts/mod_id.sh  wrs_trigger wrs_testharness
+#	wrstriggerdrv_testharness
 	
 # data_sink	
 # dropped
@@ -329,6 +333,15 @@ wrs_testharness: wrs_testharness.o
 
 wrtd: 	wrtd.o Multicast.o WrsCast.o knobs.o WrsTriggerDrv.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+<<<<<<< HEAD
+=======
+	
+wrs_testharness: wrs_testharness.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+
+#wrstriggerdrv_testharness: wrstriggerdrv_testharness.o WrsTriggerDrv.o
+#	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+>>>>>>> b6fcf1c9 (Enable debug compiler flags)
 
 wrs_trigger: 	wrs_trigger.o knobs.o WrsTriggerDrv.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
