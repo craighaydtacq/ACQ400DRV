@@ -686,7 +686,12 @@ static DEVICE_ATTR(decimate, S_IRUGO|S_IWUSR, show_decim, store_decim);
 
 MAKE_BITS(gt_reset,    AURORA_CR,      MAKE_BITS_FROM_MASK,	AURORA_GT_RESET);
 
+MAKE_BITS(raw_data_on,    ZDMA_CR, MAKE_BITS_FROM_MASK, ZDMA_CR_RAW_DATA_ON);
+MAKE_BITS(cooked_data_on, ZDMA_CR, MAKE_BITS_FROM_MASK, ZDMA_CR_COOKED_DATA_ON);
+
 static const struct attribute *sysfs_base_attrs[] = {
+	&dev_attr_raw_data_on.attr,
+	&dev_attr_cooked_data_on.attr,
 	&dev_attr_module_type.attr,
 	&dev_attr_module_name.attr,
 	&dev_attr_enable.attr,
@@ -699,8 +704,6 @@ static const struct attribute *sysfs_base_attrs[] = {
 
 MAKE_BITS(mgt508_dma_len, MGT508_LEN, MAKE_BITS_FROM_MASK, 0x3fff);
 
-MAKE_BITS(raw_data_on,    ZDMA_CR, MAKE_BITS_FROM_MASK, ZDMA_CR_RAW_DATA_ON);
-MAKE_BITS(cooked_data_on, ZDMA_CR, MAKE_BITS_FROM_MASK, ZDMA_CR_COOKED_DATA_ON);
 
 static const struct attribute *sysfs_aurora_attrs[] = {
 	&dev_attr_aurora_enable.attr,
@@ -726,8 +729,7 @@ static const struct attribute *sysfs_aurora_attrs[] = {
 	&dev_attr_aggregator.attr,
 	&dev_attr_spad.attr,
 	&dev_attr_auto_dma.attr,
-	&dev_attr_raw_data_on.attr,
-	&dev_attr_cooked_data_on.attr,
+
 	&dev_attr_kill_comms.attr,
 	&dev_attr_ident.attr,
 	&dev_attr_decimate.attr,
