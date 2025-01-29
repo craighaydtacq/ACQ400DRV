@@ -403,6 +403,8 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define GET_MOD_ID_VERSION(adev) (((adev)->mod_id>>MOD_ID_VERSION_SHL)&0xff)
 #define GET_MOD_IDV(adev) 	 (((adev)->mod_id>>MOD_ID_VERSION_SHL)&0x3f)
 
+#define MOD_ID_BIT(adev, bit) 	((adev)->mod_id & 1<<(bit))
+
 #define GET_FPGA_REV(adev)	((adev)->mod_id&0x0000ffff)
 
 
@@ -471,21 +473,19 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 
 #define IS_ACQ1102SC(adev)	(GET_MOD_ID(adev) == MOD_ID_ACQ1102SC)
 
-#define IS_ACQ2106_AXI64(adev)  \
-	(IS_ACQ2X06SC(adev) && (GET_MOD_ID_VERSION(adev)&0x2) != 0)
-#define IS_ACQ2106_STACK(adev) \
-	(IS_ACQ2X06SC(adev) && (GET_MOD_ID_VERSION(adev)&0x3) == 0x3)
-
-
-#define IS_ACQ2106_STAGGER(adev) \
-	(IS_ACQ2106_STACK(adev) && (GET_MOD_ID_VERSION(adev)&0x4) != 0)
-#define IS_ACQ2106_WR(adev) 	((GET_MOD_ID_VERSION(adev)&0x8) != 0)
-#define IS_ACQ1102_WR(adev) 	((GET_MOD_ID_VERSION(adev)&0x8) != 0)
-#define IS_AXI64_AGG32(adev)	((GET_MOD_ID_VERSION(adev)&0x10) != 0)
-#define IS_ACQ2106_TIGA(adev) 	((GET_MOD_ID_VERSION(adev)&0x20) != 0)
-
 #define IS_ACQ2X06SC(adev) (IS_ACQ2006SC(adev) || IS_ACQ2106SC(adev) || IS_ACQ2206SC(adev))
 #define IS_ACQ1001SC(adev) (GET_MOD_ID(adev) == MOD_ID_ACQ1001SC)
+#define IS_ACQ_MGTSC(adev) (IS_ACQ2106SC(adev)||IS_ACQ2206SC(adev)||IS_ACQ1102SC(adev))
+#define IS_ACQxxxXSC(adev) (IS_ACQ2X06SC(adev)||IS_ACQ1001SC(adev)||IS_ACQ1102SC(adev))
+
+#define IS_ACQ2106_AXI64(adev)   (IS_ACQ2X06SC(adev)     && MOD_ID_BIT(adev,17))
+#define IS_ACQ2106_STACK(adev)   (IS_ACQ2106_AXI64(adev) && MOD_ID_BIT(adev,16))
+#define IS_ACQ2106_STAGGER(adev) (IS_ACQ2106_STACK(adev) && MOD_ID_BIT(adev,18))
+#define IS_ACQ2106_WR(adev)      (IS_ACQ2X06SC(adev)     && MOD_ID_BIT(adev,19))
+#define IS_ACQ1102_WR(adev)      (IS_ACQ1102SC(adev)     && MOD_ID_BIT(adev,19))
+#define IS_AXI64_AGG32(adev)     (IS_ACQxxxXSC(adev)     && MOD_ID_BIT(adev,20))
+#define IS_ACQ2106_TIGA(adev)    (IS_ACQ2106SC(adev)     && MOD_ID_BIT(adev,21))
+#define IS_MULTIPATH(adev)       (IS_ACQ_MGTSC(adev)     && MOD_ID_BIT(adev,22))
 
 #define IS_KMCU_SC(dev)		(GET_MOD_ID(adev) == MOD_ID_KMCU)
 #define IS_KMCU30_SC(dev)	(GET_MOD_ID(adev) == MOD_ID_KMCU30)
