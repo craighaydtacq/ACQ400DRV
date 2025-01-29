@@ -31,6 +31,8 @@
 #define MGT_DRAM_RX_CNT	(0x0084)
 #define MGT_DRAM_TX_CNT (0x0088)
 
+#define ZDMA_CR_COOKED_DATA_ON  (1<<16)
+#define ZDMA_CR_RAW_DATA_ON     (1<<15)
 
 #define ZDMA_CR_KILL_COMMS      (1<<3)
 #define ZDMA_CR_AUTO_PUSH_DMA	(1<<1)
