@@ -3535,6 +3535,19 @@ static const struct attribute *fmc_fp_attrs[] = {
 	NULL
 };
 
+MAKE_BITS(afwm_sites, 	AGG_FIFO_WMASK, MAKE_BITS_FROM_MASK, AFWM_SITES);
+MAKE_BITS(afwm_spad, 	AGG_FIFO_WMASK, MAKE_BITS_FROM_MASK, AFMW_SPAD);
+MAKE_BITS(afwm_cooked,	AGG_FIFO_WMASK, MAKE_BITS_FROM_MASK, AFWM_COOKED);
+MAKE_BITS(afwm_raw, 	AGG_FIFO_WMASK, MAKE_BITS_FROM_MASK, AFWM_RAW);
+
+static const struct attribute *multipath_sc_attrs[] = {
+	&dev_attr_afwm_sites.attr,
+	&dev_attr_afwm_spad.attr,
+	&dev_attr_afwm_cooked.attr,
+	&dev_attr_afwm_raw.attr,
+	NULL
+};
+
 
 extern const struct attribute *spadcop_attrs[];
 
@@ -3609,6 +3622,11 @@ int _acq400_createSysfsSC(struct device *dev, struct acq400_dev *adev, const str
 			dev_err(dev, "failed to create sysfs axi64");
 		}
 	}
+	if (IS_MULTIPATH(adev)){
+		if (sysfs_create_files(&dev->kobj, multipath_sc_attrs)){
+			dev_err(dev, "failed to create sysfs multipath");
+		}
+	}
 
 	if (IS_ACQ2X06SC(adev)){
 		specials[nspec++] = acq2006sc_attrs;
@@ -3618,6 +3636,7 @@ int _acq400_createSysfsSC(struct device *dev, struct acq400_dev *adev, const str
 		if (IS_ACQ2106_TIGA(adev)){
 			specials[nspec++] = acq2106_tiga_attrs;
 		}
+
 	}else if (IS_ACQ1001SC(adev)){
 		if (IS_ACQ1014(adev)){
 			dev_info(dev, "ACQ1014: loading extra knobs");
