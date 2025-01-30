@@ -658,6 +658,7 @@ build_site0() {
 
     ln -s ${dk}/aggregator ${dk}/distributor ${dk}/decimate ${dk}/zclk_sel \
         ${dk}/soft_trigger ${dk}/bufferlen ${dk}/rtm12 ${ek}
+    find ${dk}/ -name afwm\* -exec ln -s {} ${ek} \;
         
     [ -e ${dk}/counter_latch ] && ln -s ${dk}/counter_latch ${ek}
 
