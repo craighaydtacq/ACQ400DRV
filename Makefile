@@ -41,10 +41,10 @@ SEQ=10
 
 CXXFLAGS += -std=c++17
 # original CPPFLAGS are directly below
-#CPPFLAGS += -O3 -Wall
+CPPFLAGS += -O3 -Wall
 #CPPFLAGS += -Wall -Wextra -g
 # the below CPPFLAGS are cph debugging
-CPPFLAGS += -Og -Wall -g
+# CPPFLAGS += -Og -Wall -g
 # additional warning flags
 #CPPFLAGS += -Wfloat-equal -Wundef -Wshadow -Wpointer-arith -Wcast-align -Wstrict-prototypes -Wstrict-overflow=5 -Wwrite-strings -Waggregate-return -Wcast-qual -Wswitch-default -Wswitch-enum -Wconversion -Wunreachable-code -Wformat=2
 
