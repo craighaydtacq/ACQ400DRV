@@ -18,7 +18,7 @@ typedef unsigned u32;
 
 class WrsTriggerDrv {
 public:
-    WrsTriggerDrv();
+    WrsTriggerDrv(const std::string&, int, int, bool);
     ~WrsTriggerDrv();
 
     int interrupt_fd;
@@ -45,7 +45,7 @@ public:
     void set_wr_ts_drives_soft_trigger();
     void pulse_soft_trigger();
 
-    int transmit();
+    int transmit(u32*);
     int receive(u32*);
 
     void copy_integers(uint32_t*, const uint32_t*, size_t);

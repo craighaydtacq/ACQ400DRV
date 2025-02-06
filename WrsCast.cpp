@@ -16,6 +16,7 @@
 #include <strings.h>
 #include <fcntl.h>
 #include <iostream>
+#include <string>
 
 #include "knobs.h"
 #include "wrs_trigger_int.h"
@@ -35,13 +36,11 @@ protected:
 public:
     int fd;
     u32 interrup = 0;
-    WrsTriggerDrv drv;
 	WrsCastImpl(const char* _group, int _port):
 		group(_group), port(_port), verbose(0)
 	{
         if (getenv("WrsCastVerbose")) {
             verbose = atoi(getenv("WrsCastVerbose"));
-            drv.verbose = verbose;
         }
 
         if (verbose > 1) printf("WrsCastImpl()\n");
@@ -63,13 +62,18 @@ public:
 class WrsCastSender : public WrsCastImpl {
 
 public:
+    WrsTriggerDrv drv;
 	WrsCastSender(const char* _group, int _port):
-		WrsCastImpl(_group, _port)
-	{}
+	    WrsCastImpl(_group, _port), drv("tx", 15, 0, false)
+	{
+	    drv.verbose = verbose;
+	}
 	virtual int sendto(const void* message, int len) {
         if (verbose > 1) printf("WrsCastSender()::sendto 99\n");
-	int rc = drv.transmit();
+	u32 *tx_message_u32 = (u32*)message;
+        int rc = this->drv.transmit(tx_message_u32);
 	// decrement drv.tx_count
+        if (verbose > 1) printf("sent a message\n Also got rc = %d", rc);
         return 0;
 	}
 };
@@ -77,10 +81,12 @@ public:
 
 class WrsCastReceiver : public WrsCastImpl {
 public:
+    	WrsTriggerDrv drv;
 	WrsCastReceiver(const char* _group, int _port):
-		WrsCastImpl(_group, _port)
+	    WrsCastImpl(_group, _port), drv("rx", 15, 0, true)
 	{
-        if (verbose > 1) printf("WrsCastReceiver() 99\n");
+		if (verbose > 1) printf("WrsCastReceiver() 99\n");
+		drv.verbose = verbose;
 	}
 
 	virtual int recvfrom(void* message, int len) {
@@ -96,10 +102,10 @@ public:
         // std::cout << "message address: " << std::hex << &message << std::endl;
         u32 *message_u32 = (u32*)message;
         rc = drv.receive(message_u32);
-        drv.dump_pkt(drv.rx_pkt, "RX"); 
-        drv.dump_ts("TS");
+        if (verbose > 1) drv.dump_pkt(drv.rx_pkt, "RX"); 
+        if (verbose > 1) drv.dump_ts("TS");
         //printf("TS:%08x", 32[]); //drv.read_data[0]); 
-        printf("\n");
+        if (verbose > 1) printf("\n");
         // TODO: decrement drv.rx_count
         //rc = drv.dump_rx(message);
         if (verbose > 1) printf("got a message\n Also got rc = %d", rc);

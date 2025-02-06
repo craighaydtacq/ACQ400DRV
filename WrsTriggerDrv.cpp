@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <string>
 
 #include <cstring>
 #include <fstream>
@@ -33,38 +34,62 @@
 
 
 #define PAGESIZE 400
-#define RX_OFFSET WRS_PKT_BASE_RX
-#define TX_OFFSET WRS_PKT_BASE_TX
 
-WrsTriggerDrv::WrsTriggerDrv()
+WrsTriggerDrv::WrsTriggerDrv(const std::string& mode, int rtprio, int usleep, bool rxblock)
 {
 
 
-    rx_target_count = rx_count = Env::getenv("RX", 1);
-	tx_count = Env::getenv("TX", 0);
-	usleep_time   = Env::getenv("US", 0);
-	rx_block = Env::getenv("RX_BLOCK", 1);
-    rt_prio = Env::getenv("RTPRIO", 0);
-
-	const char* mode = rx_count&&tx_count ? "r+": tx_count ? "w": "r";
-
-	assert(rx_count||tx_count);
+    //rx_target_count = rx_count = Env::getenv("RX", 0);
+    // tx_count = Env::getenv("TX", 0);
+    // usleep_time   = Env::getenv("US", 0);
+    // rx_block = Env::getenv("RX_BLOCK", 1);
+    //rt_prio = Env::getenv("RTPRIO", 0);
+    if (mode == "rx") {
+        rx_target_count = rx_count = 1;
+    }
+    else if (mode == "tx") {
+	tx_count = 1;
+    }
+    usleep_time   = usleep; 
+    rx_block = rxblock;
+    rt_prio = rtprio;
+    //const char* mode = "r+"; //rx_count&&tx_count ? "r+": tx_count ? "w": "r";
+    const char* write_mode = "w";
+    const char* read_mode = "r";
+    assert(rx_count||tx_count);
 
     // TODO: not compiling with this, remove or fix
     //signal(SIGINT, get_status);
+	
+    const char* mode_used;
+    if (mode == "rx") {
+        fp = fopen(WRS_DEV, read_mode);
+        std::string mode_used = read_mode;
+    }
+    else if (mode == "tx") {
+        fp = fopen(WRS_DEV, write_mode);
+        std::string mode_used = write_mode;
+    }
+    else {
+        printf("Must set mode to rx or tx");
+    }
 
-
-	fp = fopen(WRS_DEV, mode);
+    if (!fp) {
+        perror("fopen failed");
+        exit(EXIT_FAILURE);
+    }
+    fprintf(stderr, "got fp: %d from fopen()", fp);
 	assert(fp);
 	fd = fileno(fp);
 
+/*
 	if (rx_block == 0){
 		int flags = fcntl(fd, F_GETFL, 0);
 		int rc = fcntl(fd, F_SETFL, flags|O_NONBLOCK);
 		assert(rc != -1);
 	}
 
-
+*/
 	for (int ii = 0; ii < PKT_LW; ++ii){
 		tx_pkt[ii] = 0xaabb0000|ii;
 	}
@@ -341,12 +366,28 @@ void WrsTriggerDrv::dump_ts(const char* id){
 	
 }
 
-int WrsTriggerDrv::transmit() {
-	int rc = write(fd, tx_pkt, sizeof(u32)*PKT_LW);
-	assert(rc == PKT_LW*sizeof(u32));
-	dump_pkt(tx_pkt, "TX"); printf("\n");
-	tx_pkt[PKT_LW-1] += 1;
-    tx_pkt[0] = (tx_pkt[0]&~0x00ff00) | ((tx_pkt[0]&0x0ff00)+(1<<8));
+int WrsTriggerDrv::transmit(u32 *buf) {
+    int rc = -1;
+    u32 temp_write_buf[WRS_PKT_FULL_READ];
+    // changed the write call to take buf instead of the test packet tx_pkt
+    int bytes_written = write(fd, buf, sizeof(u32)*PKT_LW); 
+    if (bytes_written == -1) {
+	printf("Error on write() in WrsTriggerDrv::transmit()\nIs file open for writing?");
+	exit(1);
+    }
+    assert(bytes_written == PKT_LW*sizeof(u32));
+    if (verbose > 1) dump_pkt(buf, "TX"); 
+    if (verbose > 1) printf("\n");
+    /* all of this stuff is to do with generation of test packets
+    // TODO: break into own function
+	
+    // dump_pkt(tx_pkt, "TX"); printf("\n");
+	//tx_pkt[PKT_LW-1] += 1;
+    //tx_pkt[0] = (tx_pkt[0]&~0x00ff00) | ((tx_pkt[0]&0x0ff00)+(1<<8)); 
+    */
+    if (bytes_written = 44) {
+        rc = 40; //Caller expects rc to be bytes written = packet size (not packet + TS)
+    }
     return rc;
 }
 
@@ -374,9 +415,6 @@ int WrsTriggerDrv::receive(u32 *buf) {
     return rc;
 }
 
-void WrsTriggerDrv::hello() {
-    printf("hello");
-}
 /*
 int main(int argc, const char* argv[])
 {
