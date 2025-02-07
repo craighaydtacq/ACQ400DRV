@@ -1138,7 +1138,7 @@ void acq400_mod_init_defaults(struct acq400_dev* adev)
 		}else{
 			acq420_init_defaults(adev);
 		}
-	}else if (IS_DIO(adev)){
+	}else if (IS_DIO(adev) || IS_DIO422AQB(adev)){
 		dio_init_defaults(adev);
 	}else{
 		switch(GET_MOD_ID(adev)){
