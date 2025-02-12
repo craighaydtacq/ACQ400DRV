@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.903"
+#define REVID 			"3.905"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
@@ -2624,7 +2624,7 @@ int acq400_modprobe_sc(struct acq400_dev* adev)
 	acq400_init_proc(adev);
 	acq2006_createDebugfs(adev);
 	acq400sc_init_defaults(adev);
-	if (IS_ACQ2106_WR(adev)){
+	if (IS_ACQ2106_WR(adev) || IS_ACQ1102_WR(adev)){
 		if (acq400_wr_init_irq(adev)){
 			return -1;
 		}

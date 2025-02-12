@@ -1353,8 +1353,12 @@ esac
 
 start_knob_services
 
-[ -e /tmp/acq420.init-postpowerup-action ] && 
-    source /tmp/acq420.init-postpowerup-action
+if [ -e /tmp/acq420.init-postpowerup-action ]; then
+	mkdir -p /etc/epics.d/
+	chmod a+rx /tmp/acq420.init-postpowerup-action
+	mv /tmp/acq420.init-postpowerup-action /etc/epics.d/
+fi
+
 
 nice daemon $WEB_APPEND_JOB
 
