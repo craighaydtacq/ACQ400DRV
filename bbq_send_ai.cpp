@@ -186,6 +186,7 @@ void ui(int argc, const char** argv)
 	if (G::spad){
 		sscanf(G::spad, "1,%u,%*d", &G::spadlen);
 	}
+	goRealTime(10);
 }
 
 #define NLSPAD		4
@@ -234,7 +235,7 @@ void send(int ib)
 }
 int run(void)
 {
-	File bq("/dev/acq400.0.bq", "r");
+	File bq("/dev/acq400.0.bqf", "r");
 	char bufnum[32];
 
 	while(fgets(bufnum, 32, bq())){
