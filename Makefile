@@ -351,7 +351,7 @@ clocks_to_first_edge: clocks_to_first_edge.o knobs.o
 	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS)	
 	
 slowmon_hw: slowmon_hw.o knobs.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
 	
 awg_composer: awg_composer.o knobs.o
 	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt	
