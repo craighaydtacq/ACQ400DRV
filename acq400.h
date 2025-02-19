@@ -156,8 +156,6 @@
 
 /* MOD_ID Bitfields */
 #define MOD_ID_TYPE_SHL		24
-#define MOD_ID_IS_SLAVE		(1<<23)
-#define MOD_ID_IS_CLKOUT	(1<<22)		// SITE 0 ONLY
 #define MOD_ID_VERSION_SHL	16
 #define MOD_ID_REV_SHL		0
 #define MOD_ID_REV_MASK		0x0000ffff
@@ -401,6 +399,7 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 
 #define GET_MOD_ID(adev) 	 ((adev)->mod_id>>MOD_ID_TYPE_SHL)
 #define GET_MOD_ID_VERSION(adev) (((adev)->mod_id>>MOD_ID_VERSION_SHL)&0xff)
+/* IDV excludes the MASTER/SLAVE bit and so is more useful */
 #define GET_MOD_IDV(adev) 	 (((adev)->mod_id>>MOD_ID_VERSION_SHL)&0x3f)
 
 #define MOD_ID_BIT(adev, bit) 	((adev)->mod_id & 1<<(bit))
@@ -459,10 +458,7 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 
 #define IS_AO420_HALF436(adev)	((GET_MOD_IDV(adev)&1) != 0)
 
-/* SC MOD_ID only ! */
-#define IS_AXI(adev)	((GET_MOD_ID_VERSION(adev)&0x2) != 0)
-#define IS_AXI_32(adev)	(IS_AXI(adev) && (GET_MOD_ID_VERSION(adev)&0x10) != 0)
-#define IS_AXI_64(adev)	(IS_AXI(adev) && (GET_MOD_ID_VERSION(adev)&0x10) == 0)
+
 
 #define IS_ACQ2006SC(adev) (GET_MOD_ID(adev) == MOD_ID_ACQ2006SC)
 #define IS_ACQ2006B(adev) \
@@ -478,14 +474,28 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define IS_ACQ_MGTSC(adev) (IS_ACQ2106SC(adev)||IS_ACQ2206SC(adev)||IS_ACQ1102SC(adev))
 #define IS_ACQxxxXSC(adev) (IS_ACQ2X06SC(adev)||IS_ACQ1001SC(adev)||IS_ACQ1102SC(adev))
 
-#define IS_ACQ2106_AXI64(adev)   (IS_ACQ2X06SC(adev)     && MOD_ID_BIT(adev,17))
-#define IS_ACQ2106_STACK(adev)   (IS_ACQ2106_AXI64(adev) && MOD_ID_BIT(adev,16))
-#define IS_ACQ2106_STAGGER(adev) (IS_ACQ2106_STACK(adev) && MOD_ID_BIT(adev,18))
-#define IS_ACQ2106_WR(adev)      (IS_ACQ2X06SC(adev)     && MOD_ID_BIT(adev,19))
-#define IS_ACQ1102_WR(adev)      (IS_ACQ1102SC(adev)     && MOD_ID_BIT(adev,19))
-#define IS_AXI64_AGG32(adev)     (IS_ACQxxxXSC(adev)     && MOD_ID_BIT(adev,20))
-#define IS_ACQ2106_TIGA(adev)    (IS_ACQ2106SC(adev)     && MOD_ID_BIT(adev,21))
-#define IS_MULTIPATH(adev)       (IS_ACQ_MGTSC(adev)     && MOD_ID_BIT(adev,22))
+/* MOD_ID_VERSION CAPABILITIES BITS */
+#define IS_ACQ2106_STACK(adev)   (IS_ACQ2106_AXI64(adev) && MOD_ID_BIT(adev,SCMIB_CAP_STACK))
+
+#define IS_AXI(adev)		 (IS_SC(adev)            && MOD_ID_BIT(adev,SCMIB_CAP_AXI))
+
+#define IS_ACQ2106_AXI64(adev)   (IS_ACQ2X06SC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_AXI))
+#define IS_ACQ2106_STAGGER(adev) (IS_ACQ2106_STACK(adev) && MOD_ID_BIT(adev,SCMIB_CAP_STAGGER))
+
+#define IS_ACQ2106_WR(adev)      (IS_ACQ2X06SC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_WR))
+#define IS_ACQ1102_WR(adev)      (IS_ACQ1102SC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_WR))
+
+#define IS_AXI64_AGG32(adev)     (IS_ACQxxxXSC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_AGG32))
+#define IS_ACQ2106_TIGA(adev)    (IS_ACQ2106SC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_TIGA))
+#define IS_MULTIPATH(adev)       (IS_ACQ_MGTSC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_MULTIPATH))
+#define IS_SLAVE(adev)		 (!IS_SC(adev) 		 && MOD_ID_BIT(adev,MMIB_CAP_SLAVE))
+#define IS_MASTER(adev)		 (!IS_SLAVE(adev))
+
+
+/* SC MOD_ID only ! */
+#define IS_AXI_32(adev)	(IS_AXI(adev) && (IS_AXI64_AGG32(adev))
+#define IS_AXI_64(adev)	(IS_AXI(adev) && !(IS_AXI64_AGG32(adev))
+
 
 #define IS_KMCU_SC(dev)		(GET_MOD_ID(adev) == MOD_ID_KMCU)
 #define IS_KMCU30_SC(dev)	(GET_MOD_ID(adev) == MOD_ID_KMCU30)
@@ -496,31 +506,29 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 
 #define IS_MTCA_AMC_SC(dev)	(IS_KMCx_SC(dev)||IS_Z7IO_SC(dev))
 
-#define IS_ACQ1001_AXI64(adev) \
-	(IS_ACQ1001SC(adev) && (GET_MOD_ID_VERSION(adev)&0x2) != 0)
+#define IS_ACQ1001_AXI64(adev)  (IS_ACQ1001SC(adev) && MOD_ID_BIT(adev,SCMIB_CAP_AXI))
 
-#define IS_ACQ1102_AXI64(adev) \
-	(IS_ACQ1102SC(adev) && (GET_MOD_ID_VERSION(adev)&0x2) != 0)
+#define IS_ACQ1102_AXI64(adev)  (IS_ACQ1102SC(adev) && MOD_ID_BIT(adev,SCMIB_CAP_AXI))
 
-#define IS_KMCx_AXI64(adev) \
-	(IS_KMCx_SC(adev) && (GET_MOD_ID_VERSION(adev)&0x2) != 0)
+#define IS_KMCx_AXI64(adev)	(IS_KMCx_SC(adev) && MOD_ID_BIT(adev,SCMIB_CAP_AXI))
 
-#define IS_Z7IO_AXI64(adev) \
-	(IS_Z7IO_SC(dev) && (GET_MOD_ID_VERSION(adev)&0x2) != 0)
+#define IS_Z7IO_AXI64(adev)	(IS_Z7IO_SC(dev) && MOD_ID_BIT(adev,SCMIB_CAP_AXI))
 
 
 #define IS_AXI64(adev) \
 	(IS_ACQ2106_AXI64(adev) || IS_ACQ1001_AXI64(adev) || IS_KMCx_AXI64(adev) || IS_Z7IO_AXI64(adev) || IS_ACQ1102_AXI64(adev))
 
 #define IS_AXI64_DUALCHAN_CAPABLE(adev)	\
-	(IS_AXI64(adev) && (GET_MOD_ID_VERSION(adev)&0x3) == 0x3)
+	(IS_AXI64(adev) && MOD_ID_BIT(adev,SCMIB_CAP_AXI) && MOD_ID_BIT(adev,SCMIB_CAP_STACK))
 
 #define IS_AXI64_DUALCHAN(adev) \
 	(IS_AXI64(adev) && adev->dma_chan[0] && adev->dma_chan[1])
 
+/* @@todo maybe a simpler way to do this eg adev->of_prams.site==0 ? */
 #define IS_SC(adev) \
 	(IS_ACQ2X06SC(adev)||IS_ACQ1001SC(adev)||IS_KMCx_SC(dev)||IS_Z7IO_SC(adev)||IS_ACQ1102SC(adev))
 
+/* RE-USE of the WR bit - it'S OK, acq1001 can NEVER do WR */
 #define IS_ACQ1014(adev) \
 	(IS_ACQ1001SC(adev) && (GET_MOD_ID_VERSION(adev)&0x4) != 0)
 

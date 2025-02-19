@@ -461,9 +461,9 @@ void acq2006_aggregator_disable(struct acq400_dev *adev)
 void acq400_enable_trg_if_master(struct acq400_dev *adev)
 {
 	dev_dbg(DEVP(adev), "acq400_enable_trg_if_master %d = %d",
-			adev->of_prams.site, ((adev->mod_id&MOD_ID_IS_SLAVE) == 0));
+			adev->of_prams.site, IS_MASTER(adev));
 
-	if ((adev->mod_id&MOD_ID_IS_SLAVE) == 0){
+	if (IS_MASTER(adev)){
 		acq400_enable_trg(adev, 1);
 	}
 	acq400_enable_adc(adev);

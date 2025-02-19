@@ -1705,11 +1705,9 @@ static ssize_t show_module_role(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 
 	if (adev->of_prams.site == 0){
-		int clkout = adev->mod_id& MOD_ID_IS_CLKOUT;
-		return sprintf(buf, "%s\n", clkout? "CLKOUT": "CLKIN");
+		return sprintf(buf, "%s %s\n", "SC", IS_MULTIPATH(adev)? "MULTIPATH": "");
 	}else{
-		int slave = adev->mod_id&MOD_ID_IS_SLAVE;
-		return sprintf(buf, "%s\n", slave ? "SLAVE": "MASTER");
+		return sprintf(buf, "%s\n", IS_MASTER(adev) ? "MASTER": "SLAVE");
 	}
 }
 
@@ -3726,7 +3724,7 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 		specials[nspec++] = playloop_attrs;
 		specials[nspec++] = dacspi_attrs;
 		if (IS_AO420_HALF436(adev)){
-			specials[nspec++] = ((adev->mod_id&MOD_ID_IS_SLAVE) == 0)?
+			specials[nspec++] = IS_MASTER(adev)?
 					acq436_upper_half_attrs_master:
 					acq436_upper_half_attrs;
 			specials[nspec++] = ao420_half_436_attrs;
