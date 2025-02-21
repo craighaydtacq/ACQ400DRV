@@ -155,10 +155,10 @@
 #define STATUS_TO_HISTO(stat)	((stat)&ADC_FIFO_SAMPLE_MASK)
 
 /* MOD_ID Bitfields */
-#define MOD_ID_TYPE_SHL		24
-#define MOD_ID_VERSION_SHL	16
-#define MOD_ID_REV_SHL		0
-#define MOD_ID_REV_MASK		0x0000ffff
+#define MOD_ID_TYPE_SHL         24 		/* 8 bit ID code */
+#define MOD_ID_VERSION_SHL      16		/* 8 bit VERSION, includes CAPability bits */
+#define MOD_ID_REV_SHL          0		/* 16 bit revision */
+#define MOD_ID_REV_MASK         0x0000ffff
 
 
 
@@ -488,8 +488,9 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define IS_AXI64_AGG32(adev)     (IS_ACQxxxXSC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_AGG32))
 #define IS_ACQ2106_TIGA(adev)    (IS_ACQ2106SC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_TIGA))
 #define IS_MULTIPATH(adev)       (IS_ACQ_MGTSC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_MULTIPATH))
-#define IS_SLAVE(adev)		 (!IS_SC(adev) 		 && MOD_ID_BIT(adev,MMIB_CAP_SLAVE))
-#define IS_MASTER(adev)		 (!IS_SLAVE(adev))
+#define IS_CLKOUT(adev)          (IS_ACQ1001SC(adev)     && MOD_ID_BIT(adev,SCMIB_CAP_CLKOUT))
+#define IS_SLAVE(adev)           (!IS_SC(adev)           && MOD_ID_BIT(adev,MMIB_CAP_SLAVE))
+#define IS_MASTER(adev)          (!IS_SLAVE(adev))
 
 
 /* SC MOD_ID only ! */

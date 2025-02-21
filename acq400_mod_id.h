@@ -121,6 +121,7 @@
 #define SCMIB_CAP_AGG32		20
 #define SCMIB_CAP_TIGA		21
 #define SCMIB_CAP_MULTIPATH	22
+#define SCMIB_CAP_CLKOUT	22	/* ACQ1001 special only */
 #define MMIB_CAP_SLAVE		23	/* modules only */
 
 

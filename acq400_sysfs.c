@@ -1705,7 +1705,9 @@ static ssize_t show_module_role(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 
 	if (adev->of_prams.site == 0){
-		return sprintf(buf, "%s %s\n", "SC", IS_MULTIPATH(adev)? "MULTIPATH": "");
+		return sprintf(buf, "SC %s %s\n",
+				IS_CLKOUT(adev)? "CLKOUT":"CLKIN",
+				IS_MULTIPATH(adev)? "MULTIPATH ": "");
 	}else{
 		return sprintf(buf, "%s\n", IS_MASTER(adev) ? "MASTER": "SLAVE");
 	}
