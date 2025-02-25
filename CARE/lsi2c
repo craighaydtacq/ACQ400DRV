@@ -3,7 +3,16 @@
 get_names() {
 	bus=$1
 	dev=$2
-	echo bus:$bus dev:$dev $(cat /sys/bus/i2c/devices/$bus/$dev/name)
+	devname=$(cat /sys/bus/i2c/devices/$bus/$dev/name)
+	
+        present=\?	
+	case $devname in
+	ad7417)
+		present=$(cat /sys/bus/i2c/devices/$bus/$dev/hwmon/hwmon?/temp1_input);;
+	24c64)
+                [ -e /sys/bus/i2c/devices/$bus/$dev/eeprom ] && present=YES;;
+	esac
+	echo bus:$bus dev:$dev $devname present:$present
 }
 
 for bus in $(ls /sys/bus/i2c/devices/ | grep i2c | sort -n -t- -k2); do echo $bus $(ls /sys/bus/i2c/devices/$bus/ | grep ${bus#*-}-0); done
