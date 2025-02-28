@@ -79,7 +79,7 @@
 #define FNAME  "/dev/acq32/acq32.1.raw"
 
 #define HELP								\
-	"mmap $Revision: 1.4 $\n"					\
+	"mmap $Revision: 1.5 $\n"					\
 	"usage: mmap opts\n"						\
 	"    -f device name\n"						\
 	"    -r read [default]\n"					\
@@ -215,6 +215,22 @@ static void install_handlers(void) {
 }
 
 
+void readl(unsigned *region, unsigned offset32, int length32)
+{
+	unsigned* src = region + offset32;
+	unsigned* lbuf = calloc(length32, sizeof(unsigned));
+	unsigned* dst = lbuf;
+	unsigned* dst99 = lbuf+length32;
+
+	dbg(1, "readl region:%p offset32:%d src:%p length32:%d\n", region, offset32, src, length32);
+	for (;  dst != dst99; ){
+		*dst++ = *src++;
+	}
+	write( 1, (char*)lbuf, length32*sizeof(unsigned));
+	free(lbuf);
+}
+
+
 int main( int argc, const char** argv)
 {
 	/* WORKTODO ... args handling */
@@ -227,17 +243,21 @@ int main( int argc, const char** argv)
 	int rc;
 	unsigned fill_value = 0xdeadbeef;
 	int fill_incr = 0;
-	enum MODE { M_READ, M_WRITE, M_FILL, M_TEST, M_NOP, M_WRITEL } mode = M_READ;
+	enum MODE { M_READ, M_WRITE, M_FILL, M_TEST, M_NOP, M_WRITEL, M_READL } mode = M_READ;
 	char *map_offset_str;
+	int read_l_n32;
+	int write_l_n32;
+	int read_l_b = 0;
 
 	struct poptOption opt_table[] = {
 		{ "device", 'f', POPT_ARG_STRING,  &fname, 0   },
-		{ "help",   'h', POPT_ARG_NONE,         0, 'h' },
-		{ "read",   'r', POPT_ARG_NONE,         0, 'r' },
+		{ "read",   'r', POPT_ARG_INT,  &read_l_b, 'r' },
+		{ "read_b", 'y', POPT_ARG_INT,  &read_l_b, 'r' },
+		{ "read_l", 'R', POPT_ARG_INT,&read_l_n32, 'R', "read longs"},
 		{ "write",  'w', POPT_ARG_NONE,         0, 'w' },
 		{ "writel", 'W', POPT_ARG_NONE,         0, 'W', "write longs default: same reg, to increment, set fill_incr" },
 		{ "nop",    'n', POPT_ARG_NONE,         0, 'n' },
-		{ "fill",   'b', POPT_ARG_NONE,         0, 'f' },
+		{ "fill",   'b', POPT_ARG_INT,&write_l_n32, 'f' },
 		{ "fill_incr", 'I', POPT_ARG_INT, &fill_incr, 'i' },
 		{ "offset", 'o', POPT_ARG_INT,    &offset, 'o' },
 		{ "length", 'l', POPT_ARG_INT,    &length, 'l' },
@@ -257,11 +277,10 @@ int main( int argc, const char** argv)
 	int mmap_mode = PROT_READ;
 
 	while ( (rc = poptGetNextOpt( opt_context )) > 0 ){
+		//fprintf(stderr, "opt %c\n", rc);
 		switch( rc ){
-		case 'h':
-			fprintf( stderr, HELP );
-			return 1;
 		case 'r':
+			if (read_l_b == 0) read_l_b = length;
 			mode = M_READ;
 			break;
 		case 'w':
@@ -288,6 +307,9 @@ int main( int argc, const char** argv)
 		case 'M':
 			map_offset = strtoul(map_offset_str, 0, 0);
 			break;
+		case 'R':
+			mode = M_READL;
+			break;
 		}
 	}  // processes all other opts via arg pointers
 
@@ -313,16 +335,21 @@ int main( int argc, const char** argv)
 
 	switch( mode ){
 	default:
+	case M_READL:
+		dbg(1, "M_READL %d lw", read_l_n32);
+		readl((unsigned*)region, offset/sizeof(u32), read_l_n32);
+
+		break;
 	case M_READ:
-
+		dbg(1, "M_READ %d bytes", read_l_b);
 		// spew to stdout in one big blurt
-
-		write( 1, (char*)region+offset, length );
+		dbg(1, "read region:%p offsetb8:%d src:%p lengthb:%d\n", region, offset, (char*)region+offset, read_l_b);
+		write( 1, (char*)region+offset, read_l_b );
 		break;
 	case M_FILL: {
 		unsigned* praw = (unsigned*)&((char*)region)[offset];
 		int iwrite;
-		int imax = length/sizeof(unsigned);
+		int imax = write_l_n32;
 
 		for ( iwrite = 0; iwrite != imax; ++iwrite ){
 			praw[iwrite] = fill_value;
