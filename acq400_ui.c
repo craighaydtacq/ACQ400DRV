@@ -1344,55 +1344,60 @@ ssize_t acq400_nacc_subrate_read(
 #define PD_GATHER_DESC(pdesc) (pdesc->client_private)
 
 
-void acq400_sc_nacc_service_original(unsigned *lbuf, struct GatherDesc* gd0, int imax)
+void acq400_sc_nacc_service_original(unsigned *lbuf, struct GatherDesc* gd0, int max_desc)
 {
-	struct GatherDesc *gd = gd0;
+	struct GatherDesc *gd;
 
-	for (gd = gd0; gd-gd0 < imax; ++gd){
+	for (gd = gd0; gd-gd0 < max_desc; ++gd){
 		unsigned *ubuf = lbuf + gd->dst_idx;
 		struct acq400_dev *sdev = gd->adev;
-		unsigned imax = gd->n32;
+		const unsigned imax = gd->n32;
+		int offset = gd->src_off;
 		unsigned ii;
-		for (ii = 0; ii < imax; ++ii){
-			ubuf[ii] = acq400rd32(sdev, gd->src_off+ii*sizeof(unsigned));
+
+		for (ii = 0; ii < imax; ++ii, offset += sizeof(unsigned)){
+			ubuf[ii] = acq400rd32(sdev, offset);
 		}
 	}
 }
 
-void acq400_sc_nacc_service_ioread(unsigned *lbuf, struct GatherDesc* gd0, int imax)
+void acq400_sc_nacc_service_ioread(unsigned *lbuf, struct GatherDesc* gd0, int max_desc)
 /* optimise by skipping logging fluff */
 {
-	struct GatherDesc *gd = gd0;
+	struct GatherDesc *gd;
 
-	for (gd = gd0; gd-gd0 < imax; ++gd){
+	for (gd = gd0; gd-gd0 < max_desc; ++gd){
 		unsigned *ubuf = lbuf + gd->dst_idx;
 		struct acq400_dev *sdev = gd->adev;
-		unsigned imax = gd->n32;
+		const unsigned imax = gd->n32;
+		char* src = sdev->dev_virtaddr + gd->src_off;
 		unsigned ii;
-		for (ii = 0; ii < imax; ++ii){
-			ubuf[ii] = ioread32(sdev->dev_virtaddr + gd->src_off+ii*sizeof(unsigned));
+
+		for (ii = 0; ii < imax; ++ii, src += sizeof(unsigned)){
+			ubuf[ii] = ioread32(src);
 		}
 	}
 }
 
-void acq400_sc_nacc_service_mm(unsigned *lbuf, struct GatherDesc* gd0, int imax)
+void acq400_sc_nacc_service_mm(unsigned *lbuf, struct GatherDesc* gd0, int max_desc)
 /* optimise by skipping logging fluff */
 {
-	struct GatherDesc *gd = gd0;
+	struct GatherDesc *gd;
 
-	for (gd = gd0; gd-gd0 < imax; ++gd){
+	for (gd = gd0; gd-gd0 < max_desc; ++gd){
 		unsigned *ubuf = lbuf + gd->dst_idx;
 		struct acq400_dev *sdev = gd->adev;
 		unsigned imax = gd->n32;
 		unsigned ii;
+		unsigned* src = (unsigned*)(sdev->dev_virtaddr + gd->src_off);
+
 		for (ii = 0; ii < imax; ++ii){
-			ubuf[ii] = *(unsigned*)sdev->dev_virtaddr + gd->src_off+ii;
+			ubuf[ii] = src[ii];
 		}
 	}
 }
 
-void (* acq400_sc_nacc_service)(unsigned *lbuf, struct GatherDesc* gd0, int imax)=
-		acq400_sc_nacc_service_original;
+void (* acq400_sc_nacc_service)(unsigned*, struct GatherDesc*, int) = acq400_sc_nacc_service_original;
 
 ssize_t acq400_sc_nacc_subrate_read(
 	struct file *file, char *buf, size_t count, loff_t *f_pos)
