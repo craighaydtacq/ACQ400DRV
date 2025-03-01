@@ -53,6 +53,15 @@ int subrate_verbose = 0;
 module_param(subrate_verbose, int, 0644);
 MODULE_PARM_DESC(subrate_verbose, "view subrate gather pattern");
 
+int acq400_sc_nacc_readfun = 0;
+module_param(acq400_sc_nacc_readfun, int, 0644);
+MODULE_PARM_DESC(acq400_sc_nacc_readfun, "0: normal, 1: optimised, 2:mm");
+
+int acq400_sc_nacc_readoff = 0;
+module_param(acq400_sc_nacc_readoff, int, 0644);
+MODULE_PARM_DESC(acq400_sc_nacc_readfun, "0: normal ADC_");
+
+
 int xo400_awg_open(struct inode *inode, struct file *file)
 /* if write mode, reset length */
 {
@@ -1335,7 +1344,7 @@ ssize_t acq400_nacc_subrate_read(
 #define PD_GATHER_DESC(pdesc) (pdesc->client_private)
 
 
-void acq400_sc_nacc_service(unsigned *lbuf, struct GatherDesc* gd0, int imax)
+void acq400_sc_nacc_service_original(unsigned *lbuf, struct GatherDesc* gd0, int imax)
 {
 	struct GatherDesc *gd = gd0;
 
@@ -1349,6 +1358,41 @@ void acq400_sc_nacc_service(unsigned *lbuf, struct GatherDesc* gd0, int imax)
 		}
 	}
 }
+
+void acq400_sc_nacc_service_ioread(unsigned *lbuf, struct GatherDesc* gd0, int imax)
+/* optimise by skipping logging fluff */
+{
+	struct GatherDesc *gd = gd0;
+
+	for (gd = gd0; gd-gd0 < imax; ++gd){
+		unsigned *ubuf = lbuf + gd->dst_idx;
+		struct acq400_dev *sdev = gd->adev;
+		unsigned imax = gd->n32;
+		unsigned ii;
+		for (ii = 0; ii < imax; ++ii){
+			ubuf[ii] = ioread32(sdev->dev_virtaddr + gd->src_off+ii*sizeof(unsigned));
+		}
+	}
+}
+
+void acq400_sc_nacc_service_mm(unsigned *lbuf, struct GatherDesc* gd0, int imax)
+/* optimise by skipping logging fluff */
+{
+	struct GatherDesc *gd = gd0;
+
+	for (gd = gd0; gd-gd0 < imax; ++gd){
+		unsigned *ubuf = lbuf + gd->dst_idx;
+		struct acq400_dev *sdev = gd->adev;
+		unsigned imax = gd->n32;
+		unsigned ii;
+		for (ii = 0; ii < imax; ++ii){
+			ubuf[ii] = *(unsigned*)sdev->dev_virtaddr + gd->src_off+ii;
+		}
+	}
+}
+
+void (* acq400_sc_nacc_service)(unsigned *lbuf, struct GatherDesc* gd0, int imax)=
+		acq400_sc_nacc_service_original;
 
 ssize_t acq400_sc_nacc_subrate_read(
 	struct file *file, char *buf, size_t count, loff_t *f_pos)
@@ -1429,14 +1473,29 @@ int acq400_sc_nacc_subrate_open(struct inode *inode, struct file *file)
 	dev_dbg(DEVP(adev), "%s 01", __FUNCTION__);
 	gd++;  				// skip first descriptor
 
+	switch(acq400_sc_nacc_readfun){
+	case 0:
+	default:
+		acq400_sc_nacc_service = acq400_sc_nacc_service_original;
+		break;
+	case 1:
+		acq400_sc_nacc_service = acq400_sc_nacc_service_ioread;
+		break;
+	case 2:
+		acq400_sc_nacc_service = acq400_sc_nacc_service_mm;
+		break;
+	}
 	for (idev = 0; idev < MAXDEVICES; ++idev){
 		struct acq400_dev* slave = sc_dev->aggregator_set[idev];
-		dev_dbg(DEVP(adev), "%s idev:%d slave:%s dst_idx %d", __FUNCTION__, idev, slave? slave->site_no: "x", dst_idx);
+		unsigned readoff = acq400_sc_nacc_readoff? acq400_sc_nacc_readoff: ADC_NACC_SAMPLES;
+
+		dev_dbg(DEVP(adev), "%s idev:%d slave:%s dst_idx %d readoff:%x",
+				__FUNCTION__, idev, slave? slave->site_no: "x", dst_idx, readoff);
 		if (slave){
 			unsigned n32 = slave->nchan_enabled >> (slave->booleans.data32? 0: 1);
 			struct GatherDesc tmp = {
 				.adev = slave,
-				.src_off = ADC_NACC_SAMPLES,
+				.src_off = readoff,
 				.n32 = n32,
 				.dst_idx = dst_idx
 			};
