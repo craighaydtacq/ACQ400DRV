@@ -353,7 +353,6 @@ protected:
 		}
 		return 0;
 	}
-public:
 	KnobX(const char* _name) : Knob(_name), site(get_site(_name)) {
 		struct stat sb;
 		int ic = 0; attr[ic] = '\0';
@@ -372,6 +371,8 @@ public:
 			fprintf(stderr, "ERROR: KnobX \"%s\" does not exist\n", _name);
 		}
 	}
+public:
+
 
 	virtual int get(char* buf, int maxbuf) {
 		char cmd[128];
@@ -382,7 +383,11 @@ public:
 	virtual const char* getAttr() {
 		return attr;
 	}
+
+	static KnobX* factory(const char* _name);
 };
+
+
 
 int KnobX::runcmd(const char* cmd, char* buf, int maxbuf){
 	char cmd2[128];
@@ -410,10 +415,49 @@ int KnobX::runcmd(const char* cmd, char* buf, int maxbuf){
 }
 
 
+#define CAPUT "/usr/local/bin/caput"
+#define CAGET "/usr/local/bin/caget"
+
+class KnobCa: public KnobX{
+
+protected:
+	KnobCa(const char* _name, const char* link, bool can_put):
+		KnobX(_name)
+	{
+		/* build explicit "caput PV %s", "caget PV strings" and
+		 * exec them directly when required rather than rely on
+		 * a shell script trampoline:
+		 * eg  /etc/acq400/1/GAIN:01
+		 * we're still using the trampoline as an initialisation,
+		 * but there's no shell in the way at run time.
+		 * However, tests indicate there's not much in it, so park for now..
+		 */
+
+	}
+friend class KnobX;
+};
+
+
+
+
+KnobX* KnobX::factory(const char* _name) {
+    char link_target[1024];
+    ssize_t len = readlink(_name, link_target, sizeof(link_target) - 1);
+
+    if (len > 0){
+	    link_target[len] = '\0';
+	    if (strncmp(link_target, CAPUT, strlen(CAPUT)) == 0){
+		    return new KnobCa(_name, link_target, true);
+	    }else if (strncmp(link_target, CAGET, strlen(CAGET)) == 0){
+		    return new KnobCa(_name, link_target, false);
+	    }
+    }
+
+    return new KnobX(_name);
+}
 
 #define HASX(mode) 	(((mode)&(S_IXUSR|S_IXGRP|S_IXOTH)) != 0)
 #define HASW(mode)	(((mode)&(S_IWUSR|S_IWGRP|S_IWOTH)) != 0)
-
 
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -526,7 +570,7 @@ Knob* Knob::create(const string _name, mode_t mode)
 		verbosek = 1;
 	}
 	if (HASX(mode)){
-		knob = new KnobX(name);
+		knob = KnobX::factory(name);
 	}else if (HASW(mode)){
 		static int limit_check = -2;
 
