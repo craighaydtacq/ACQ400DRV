@@ -53,7 +53,7 @@ int subrate_verbose = 0;
 module_param(subrate_verbose, int, 0644);
 MODULE_PARM_DESC(subrate_verbose, "view subrate gather pattern");
 
-int acq400_sc_nacc_readfun = 0;
+int acq400_sc_nacc_readfun = 1;
 module_param(acq400_sc_nacc_readfun, int, 0644);
 MODULE_PARM_DESC(acq400_sc_nacc_readfun, "0: normal, 1: optimised, 2:mm");
 
