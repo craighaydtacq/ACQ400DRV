@@ -3695,6 +3695,10 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 			specials[nspec++] = dio482_pg32_attrs;
 		}
 		specials[nspec++] = gpg_attrs;
+	}else if (IS_DI460AQB(adev)){
+		dev_info(dev, "IS_DI460_AQB");
+		specials[nspec++] = sysfs_di460_aqb_attrs;
+		specials[nspec++] = es_enable_attrs;
 	}else if (IS_DIO422AQB(adev)){
 		dev_info(dev, "IS_DIO422AQB");
 		specials[nspec++] = sysfs_qen_attrs;
@@ -3756,6 +3760,8 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 			specials[nspec++] = dio460_stim_attrs;
 		}else if (IS_DI460_HS_CNTR(adev)){
 			specials[nspec++] = dio482_cntr_attrs;
+		}else if (IS_DI460AQB(adev)){
+			printk("IS_DI460_AQB @@todo\n");
 		}
 		specials[nspec++] = dio4xx_snoop_attrs;
 	}else if (IS_DIO_5CH(adev)){

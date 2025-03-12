@@ -13,6 +13,7 @@ extern const struct attribute *atd_attrs[];
 extern const struct attribute *dtd_attrs[];
 extern const struct attribute *sysfs_diobiscuit_attrs[];
 extern const struct attribute *sysfs_qen_attrs[];
+extern const struct attribute *sysfs_di460_aqb_attrs[];
 extern const struct attribute **acq480_attrs;
 extern const struct attribute *acq480_ffir_attrs[];
 extern const struct attribute *sysfs_acq1014_attrs[];

@@ -549,7 +549,7 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define IS_DIO482_HS_CNTR(adev)	(GET_MOD_ID(adev) == MOD_ID_DIO482FMC && GET_MOD_IDV(adev) == MOD_IDV_HSCNTR)
 #define IS_DI460ELF(adev)	(GET_MOD_ID(adev) == MOD_ID_DI460ELF)
 #define IS_DI460ELF_DIO(adev)	(GET_MOD_ID(adev) == MOD_ID_DI460ELF && GET_MOD_IDV(adev) == MOD_IDV_DI460_DIO)
-#define IS_DI460_AQB(adev)	(GET_MOD_ID(adev) == MOD_ID_DI460ELF && GET_MOD_IDV(adev) == MOD_IDV_DI460_AQB)
+#define IS_DI460AQB(adev)	(GET_MOD_ID(adev) == MOD_ID_DI460ELF && GET_MOD_IDV(adev) == MOD_IDV_DI460_AQB)
 #define IS_DI460_HS_CNTR(adev)  (GET_MOD_ID(adev) == MOD_ID_DI460ELF && GET_MOD_IDV(adev) == MOD_IDV_HSCNTR)
 #define IS_DI460_STIM(adev)	(GET_MOD_ID(adev) == MOD_ID_DI460ELF && GET_MOD_IDV(adev) == MOD_IDV_DI460_STIM)
 
@@ -577,7 +577,7 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define IS_DIO_BISCUIT_GENERIC(adev)  (GET_MOD_ID(adev) == MOD_ID_DIO_BISCUIT)
 #define IS_DIO_BISCUIT(adev)	(IS_DIO_BISCUIT_GENERIC(adev) && GET_MOD_IDV(adev) == MOD_IDV_DIO)
 #define IS_V2F(adev)		(IS_DIO_BISCUIT_GENERIC(adev) && GET_MOD_IDV(adev) == MOD_IDV_V2F)
-#define IS_QEN(adev)		((IS_DIO_BISCUIT_GENERIC(adev) && GET_MOD_IDV(adev)==MOD_IDV_QEN)   || IS_DIO422AQB(adev))
+#define IS_QEN(adev)		((IS_DIO_BISCUIT_GENERIC(adev) && GET_MOD_IDV(adev)==MOD_IDV_QEN)   || IS_DIO422AQB(adev) || IS_DI460AQB(adev))
 /* @@todo there's already IS_ACQ1014 tied to sc .. */
 #define IS_ACQ1014_M(adev)	(IS_DIO_BISCUIT_GENERIC(adev) && GET_MOD_IDV(adev) == MOD_IDV_ACQ1014)
 
@@ -1186,6 +1186,12 @@ enum DIO432_MODE { DIO432_DISABLE, DIO432_IMMEDIATE, DIO432_CLOCKED };
 #define QEN_DIO_CTRL_DO_IMM	0x000f
 
 #define HALF_SITE		100		/* MFD, half sites at 100+ overlay 0+ */
+
+/* DI460_AQB */
+
+#define DI460_NCHAN		6
+#define DI460_AQB_CTRL		(ADC_BASE+0x5c)
+#define DI460_AQB_COUNT(n)	(ADC_BASE+0x60+(n-1)*4) /* n=1..6 */
 
 /* PWM */
 #define PWM_SOURCE_CLK_CTRL_DIV_SHL	16
