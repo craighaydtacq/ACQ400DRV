@@ -92,50 +92,16 @@ public:
 	virtual int recvfrom(void* message, int len) {
         if (verbose > 1) printf("WrsCastReceiver::recvfrom() 01\n");
         int rc = -1;
-        // drv.check_interrupt();
-        // immediately set soft trigger to zero
         
-        // drv.pulse_soft_trigger();
         
         // RX side: dump memory 
-        // std::cout << "message: " << std::hex << message << std::endl;
-        // std::cout << "message address: " << std::hex << &message << std::endl;
         u32 *message_u32 = (u32*)message;
         rc = drv.receive(message_u32);
         if (verbose > 1) drv.dump_pkt(drv.rx_pkt, "RX"); 
         if (verbose > 1) drv.dump_ts("TS");
-        //printf("TS:%08x", 32[]); //drv.read_data[0]); 
         if (verbose > 1) printf("\n");
-        // TODO: decrement drv.rx_count
-        //rc = drv.dump_rx(message);
         if (verbose > 1) printf("got a message\n Also got rc = %d", rc);
-        
-        // TODO: also got drv.dump_rx();
-        // if (verbose > 1) drv.dump_rx();
-        
 
-        // std::cout << "Interrupt detected! interrup = " << interrup << std::endl;
-
-        /*
-        while (true) {
-            //drv.check_interrupt();
-            // immediately set soft trigger to zero
-            drv.pulse_soft_trigger();
-            // RX side: dump memory 
-            std::cout << "message: " << std::hex << message << std::endl;
-            std::cout << "message address: " << std::hex << &message << std::endl;
-            drv.hello();
-            rc = drv.receive();
-	        drv.dump_pkt(drv.rx_pkt, "RX"); 
-            printf("TS:%08x", drv.read_data[0]); 
-            printf("\n");
-	    // TODO: decrement drv.rx_count
-	    //rc = drv.dump_rx(message);
-            if (verbose > 1) printf("got a message\n Also got rc = %d", rc);
-            if (verbose > 1) drv.dump_rx();
-            // std::cout << "Interrupt detected! interrup = " << interrup << std::endl;
-        }
-        */
         if (rc < 0) {
             perror("recvfrom");
             exit(1);
