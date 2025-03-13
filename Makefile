@@ -333,15 +333,12 @@ wrs_testharness: wrs_testharness.o
 
 wrtd: 	wrtd.o Multicast.o WrsCast.o knobs.o WrsTriggerDrv.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
-<<<<<<< HEAD
-=======
 	
 wrs_testharness: wrs_testharness.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
 
 #wrstriggerdrv_testharness: wrstriggerdrv_testharness.o WrsTriggerDrv.o
 #	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
->>>>>>> b6fcf1c9 (Enable debug compiler flags)
 
 wrs_trigger: 	wrs_trigger.o knobs.o WrsTriggerDrv.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
