@@ -1380,7 +1380,7 @@ void acq400_sc_nacc_service_ioread(unsigned *lbuf, struct GatherDesc* gd0, int m
 }
 
 void acq400_sc_nacc_service_mm(unsigned *lbuf, struct GatherDesc* gd0, int max_desc)
-/* optimise by skipping logging fluff */
+/* optimise by using memory mapping directly .. assuming that works */
 {
 	struct GatherDesc *gd;
 
