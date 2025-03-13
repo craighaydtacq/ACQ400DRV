@@ -21,7 +21,6 @@ public:
     WrsTriggerDrv(const std::string&, int, int, bool);
     ~WrsTriggerDrv();
 
-    int interrupt_fd;
     int rx_target_count;
     int rx_count;
     int tx_count;
@@ -34,13 +33,8 @@ public:
     unsigned ts;
 
     u32 tx_pkt[PKT_LW];
-//	u32 read_data[PKT_LW+1];
     u32* rx_pkt;
 
-    void get_status(int);
-    int check_interrupt();
-    int dump_rx();
-    int dump_rx(void*);
     void dump_ts(const char*);
     void set_wr_ts_drives_soft_trigger();
     void pulse_soft_trigger();
@@ -49,10 +43,7 @@ public:
     int receive(u32*);
 
     void copy_integers(uint32_t*, const uint32_t*, size_t);
-    void dump_chars(const void*);
-    void dump_chars(const void*, int);
     void write_to_file(const uint32_t*, size_t, const char*);
-    int sync_mem();
 
     const char* ui(int argc, const char** argv);
     void dump_pkt(u32* pkt, const char* id);
