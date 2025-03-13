@@ -26,10 +26,10 @@
 
 int main(int argc, const char* argv[])
 {
-    WrsTriggerDrv drv;
+ //   WrsTriggerDrv drv;
     
     // outputs ST on every TS for interrupt latency eval
-    drv.set_wr_ts_drives_soft_trigger();
+//    drv.set_wr_ts_drives_soft_trigger();
     
     u32 interrup = 0;
     int fd = open("/dev/acq400.0.wr_pkt_rx", O_RDONLY);
@@ -43,9 +43,9 @@ int main(int argc, const char* argv[])
     while (true) {
         read(fd, &interrup, sizeof(interrup));
         // immediately set soft trigger to zero
-        drv.pulse_soft_trigger();
+        //drv.pulse_soft_trigger();
         // RX side: dump memory 
-        drv.dump_rx();
+        //drv.dump_rx();
         // std::cout << "Interrupt detected! interrup = " << interrup << std::endl;
     }
     close(fd);
