@@ -106,7 +106,7 @@ APPS := mmap acq400_stream permute acq435_decode \
 # dropped
 # multi_event 
 
-LIBINC = acq-util.h Buffer.h ES.h
+LIBINC = acq-util.h Buffer.h ES.h split2.h
 LIBACQSO = libacq.so
 LIBACQSONAME = libacq.so.1
 
