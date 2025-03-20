@@ -43,7 +43,7 @@ make_ao422_range_knobs() {
 #!/bin/sh
 # arg: 1:10V, anything else: 5V
 range_code=0x02004d00
-[ "x$1" = "x1" ] && range_code=0x02004e00
+[ "x\$1" = "x1" ] && range_code=0x02004e00
 set.sys ${KNOBS}/dac_enable 0
 set.sys ${KNOBS}/dacreset 1
 set.sys ${KNOBS}/dacreset 0
