@@ -212,11 +212,12 @@ public:
 class Knob {
 
 protected:
-	Knob(const char* _name) {
+	Knob(const char* _name, const char* _ktype = "Knob"): ktype(_ktype) {
 		name = new char[strlen(_name)+1];
 		strcpy(name, _name);
 		validator = NullValidator::instance();
 	}
+	const char* ktype;
 	char* name;
 	Validator *validator;
 
@@ -234,7 +235,9 @@ public:
 
 	vector<Knob*> peers;
 
-	char* getName() { return name; }
+	const char* getName() { return name; }
+	const char* getKtype() { return ktype; }
+
 	virtual const char* getAttr() {
 		return "";
 	}
@@ -269,7 +272,7 @@ protected:
 		return -snprintf(buf, maxbuf, "ERROR: \"%s\" is read-only", name);
 	}
 public:
-	KnobRO(const char* _name) : Knob(_name) {}
+	KnobRO(const char* _name, const char* _ktype="KnobRO") : Knob(_name, _ktype) {}
 
 
 	virtual int get(char* buf, int maxbuf) {
@@ -304,7 +307,7 @@ protected:
 		}
 	}
 public:
-	KnobRW(const char* _name) : KnobRO(_name) {
+	KnobRW(const char* _name) : KnobRO(_name, "KnobRW") {
 	}
 
 
@@ -353,7 +356,7 @@ protected:
 		}
 		return 0;
 	}
-	KnobX(const char* _name) : Knob(_name), site(get_site(_name)) {
+	KnobX(const char* _name, const char* _ktype = "KnobX") : Knob(_name, _ktype), site(get_site(_name)) {
 		struct stat sb;
 		int ic = 0; attr[ic] = '\0';
 		if (stat(name, &sb) != -1){
@@ -422,7 +425,7 @@ class KnobCa: public KnobX{
 
 protected:
 	KnobCa(const char* _name, const char* link, bool can_put):
-		KnobX(_name)
+		KnobX(_name, "KnobCA")
 	{
 		/* build explicit "caput PV %s", "caget PV strings" and
 		 * exec them directly when required rather than rely on
@@ -790,8 +793,7 @@ public:
 class Help2: public Help {
 protected:
 	virtual int query(Knob* knob, char* buf, int buflen){
-		snprintf(buf, buflen, "%-20s : %4s ", knob->getName(), knob->getAttr());
-		knob->print();
+		snprintf(buf, buflen, "%-20s : %4s %s\n", knob->getName(), knob->getAttr(), knob->getKtype());
 		return 1;
 	}
 public:
