@@ -790,7 +790,8 @@ public:
 class Help2: public Help {
 protected:
 	virtual int query(Knob* knob, char* buf, int buflen){
-		snprintf(buf, buflen, "help2 is deprecated, please contact D-TACQ for a copy of your device specific command reference\n");
+		snprintf(buf, buflen, "%-20s : %4s ", knob->getName(), knob->getAttr());
+		knob->print();
 		return 1;
 	}
 public:
