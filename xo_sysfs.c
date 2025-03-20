@@ -541,9 +541,11 @@ MAKE_DAC_RANGE(04,  ao420_physChan(4));
 #ifdef PGMCOMOUT
 MAKE_DAC_RANGE(05,  ao420_physChan(5));  /* @@todo alias REF! Wrong! */
 #endif
-MAKE_DAC_RANGE(05,  ao420_physChan(6));  /* suggestion adopted 240812 */
+MAKE_DAC_RANGE(05,  AO422_RANGE_CH(5));  /* suggestion adopted 240812 */
 MAKE_DAC_RANGE(REF, 4);                  /* 1<<4 */
 
+MAKE_BITS(dac_range_en, AO420_RANGE, MAKE_BITS_FROM_MASK, AO422_RANGE_EN);
+MAKE_BITS(dac_ref5v,   AO420_RANGE, MAKE_BITS_FROM_MASK, AO422_RANGE_REF5);
 
 /*
  * GO : Gain + Offset
@@ -1261,6 +1263,8 @@ const struct attribute *ao422_attrs[] = {
 	&dev_attr_AO_04.attr, &dev_attr_dac_range_04.attr,
 	&dev_attr_AO_05.attr, &dev_attr_dac_range_05.attr,
 	&dev_attr_ch5_en.attr,
+	&dev_attr_dac_range_en.attr,
+	&dev_attr_dac_ref5v.attr,
 	NULL
 };
 

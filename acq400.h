@@ -66,6 +66,11 @@
 
 #define ACQ435_MODE		(ADC_BASE+0x44)
 #define AO420_RANGE		(ADC_BASE+0x44)
+
+#define AO422_RANGE_EN          (1<<6)
+#define AO422_RANGE_REF5	(1<<4)
+#define AO422_RANGE_CH(ch)	(1<<((ch) ==5? 5: (ch)-1))
+
 #define ACQ425_BANK             (ADC_BASE+0x44) /* MUST MATCH ACQ435_MODE in address and meaning! */
 #define ACQ423_BANK		(ADC_BASE+0x44)
 #define AO420_DACSPI		(ADC_BASE+0x48)
