@@ -1526,7 +1526,7 @@ static ssize_t store_hi_res_mode(
 	}
 }
 
-static DEVICE_ATTR(hi_res_mode,
+DEVICE_ATTR(hi_res_mode,
 		S_IRUGO|S_IWUSR, show_hi_res_mode, store_hi_res_mode);
 
 /** NB inverted to 1: enabled */
@@ -3697,7 +3697,10 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 		specials[nspec++] = gpg_attrs;
 	}else if (IS_DI460AQB(adev)){
 		dev_info(dev, "IS_DI460_AQB");
-		specials[nspec++] = sysfs_di460_aqb_attrs;
+		specials[nspec++] =
+			GET_MOD_IDV(adev) == MOD_IDV_DI460_AQB_42?
+			sysfs_di460_aqb42_attrs:
+			sysfs_di460_aqb43_attrs;
 		specials[nspec++] = es_enable_attrs;
 	}else if (IS_DIO422AQB(adev)){
 		dev_info(dev, "IS_DIO422AQB");

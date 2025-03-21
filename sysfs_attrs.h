@@ -13,7 +13,7 @@ extern const struct attribute *atd_attrs[];
 extern const struct attribute *dtd_attrs[];
 extern const struct attribute *sysfs_diobiscuit_attrs[];
 extern const struct attribute *sysfs_qen_attrs[];
-extern const struct attribute *sysfs_di460_aqb_attrs[];
+
 extern const struct attribute **acq480_attrs;
 extern const struct attribute *acq480_ffir_attrs[];
 extern const struct attribute *sysfs_acq1014_attrs[];
@@ -38,6 +38,10 @@ extern const struct attribute *dio422_attrs[];
 extern const struct attribute **dio4xx_snoop_attrs;
 
 extern const struct attribute *dio482_cntr_attrs[];
+extern const struct attribute *sysfs_di460_aqb43_attrs[];
+
+#define sysfs_di460_aqb42_attrs (sysfs_di460_aqb43_attrs+1)
+
 extern const struct attribute *dio460_stim_attrs[];
 
 extern const struct attribute *dio_attrs[];
