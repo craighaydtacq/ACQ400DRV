@@ -106,11 +106,24 @@
 
 /* DI460  */
 #define MOD_IDV_DI460_DIO	MOD_IDV_DIO422_DIO
-#define MOD_IDV_DI460_AQB 	MOD_IDV_DIO422_AQB
+#define MOD_IDV_DI460_AQB_42 	0x11
+#define MOD_IDV_DI460_AQB_43 	0x12
 #define MOD_IDV_DI460_STIM	0x3f
 
 
+/* System Controller Mod Id Bits, in 32 bit field as per doxy
+ * Module Mod Id Bit : only one global example
+ */
 
+#define SCMIB_CAP_STACK		16
+#define SCMIB_CAP_AXI		17
+#define SCMIB_CAP_STAGGER 	18
+#define SCMIB_CAP_WR		19
+#define SCMIB_CAP_AGG32		20
+#define SCMIB_CAP_TIGA		21
+#define SCMIB_CAP_MULTIPATH	22
+#define SCMIB_CAP_CLKOUT	22	/* ACQ1001 special only */
+#define MMIB_CAP_SLAVE		23	/* modules only */
 
 
 

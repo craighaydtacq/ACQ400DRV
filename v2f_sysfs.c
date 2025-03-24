@@ -324,6 +324,32 @@ const struct attribute *sysfs_qen_attrs[] = {
 };
 
 
+MAKE_DNUM(qen_count1,    DI460_AQB_COUNT(1),        0xffffffff);
+MAKE_DNUM(qen_count2,    DI460_AQB_COUNT(2),        0xffffffff);
+MAKE_DNUM(qen_count3,    DI460_AQB_COUNT(3),        0xffffffff);
+MAKE_DNUM(qen_count4,    DI460_AQB_COUNT(4),        0xffffffff);
+MAKE_DNUM(qen_count5,    DI460_AQB_COUNT(5),        0xffffffff);
+MAKE_DNUM(qen_count6,    DI460_AQB_COUNT(6),        0xffffffff);
+
+extern struct device_attribute dev_attr_hi_res_mode;
+
+const struct attribute *sysfs_di460_aqb43_attrs[] = {
+	&dev_attr_hi_res_mode.attr,
+	&dev_attr_phaseA_en.attr,
+	&dev_attr_phaseB_en.attr,
+	&dev_attr_ctr_reset.attr,
+	&dev_attr_qen_count1.attr,
+	&dev_attr_qen_count2.attr,
+	&dev_attr_qen_count3.attr,
+	&dev_attr_qen_count4.attr,
+	&dev_attr_qen_count5.attr,
+	&dev_attr_qen_count6.attr,
+	NULL
+};
+
+
+
+
 #define ACQ1014_REG(FUN, fun)							\
 static ssize_t show_acq1014_##fun(						\
 	struct device * dev,							\

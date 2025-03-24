@@ -1526,7 +1526,7 @@ static ssize_t store_hi_res_mode(
 	}
 }
 
-static DEVICE_ATTR(hi_res_mode,
+DEVICE_ATTR(hi_res_mode,
 		S_IRUGO|S_IWUSR, show_hi_res_mode, store_hi_res_mode);
 
 /** NB inverted to 1: enabled */
@@ -1705,11 +1705,11 @@ static ssize_t show_module_role(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 
 	if (adev->of_prams.site == 0){
-		int clkout = adev->mod_id& MOD_ID_IS_CLKOUT;
-		return sprintf(buf, "%s\n", clkout? "CLKOUT": "CLKIN");
+		return sprintf(buf, "SC %s %s\n",
+				IS_CLKOUT(adev)? "CLKOUT":"CLKIN",
+				IS_MULTIPATH(adev)? "MULTIPATH ": "");
 	}else{
-		int slave = adev->mod_id&MOD_ID_IS_SLAVE;
-		return sprintf(buf, "%s\n", slave ? "SLAVE": "MASTER");
+		return sprintf(buf, "%s\n", IS_MASTER(adev) ? "MASTER": "SLAVE");
 	}
 }
 
@@ -3695,6 +3695,13 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 			specials[nspec++] = dio482_pg32_attrs;
 		}
 		specials[nspec++] = gpg_attrs;
+	}else if (IS_DI460AQB(adev)){
+		dev_info(dev, "IS_DI460_AQB");
+		specials[nspec++] =
+			GET_MOD_IDV(adev) == MOD_IDV_DI460_AQB_42?
+			sysfs_di460_aqb42_attrs:
+			sysfs_di460_aqb43_attrs;
+		specials[nspec++] = es_enable_attrs;
 	}else if (IS_DIO422AQB(adev)){
 		dev_info(dev, "IS_DIO422AQB");
 		specials[nspec++] = sysfs_qen_attrs;
@@ -3726,7 +3733,7 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 		specials[nspec++] = playloop_attrs;
 		specials[nspec++] = dacspi_attrs;
 		if (IS_AO420_HALF436(adev)){
-			specials[nspec++] = ((adev->mod_id&MOD_ID_IS_SLAVE) == 0)?
+			specials[nspec++] = IS_MASTER(adev)?
 					acq436_upper_half_attrs_master:
 					acq436_upper_half_attrs;
 			specials[nspec++] = ao420_half_436_attrs;
@@ -3756,6 +3763,8 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 			specials[nspec++] = dio460_stim_attrs;
 		}else if (IS_DI460_HS_CNTR(adev)){
 			specials[nspec++] = dio482_cntr_attrs;
+		}else if (IS_DI460AQB(adev)){
+			printk("IS_DI460_AQB @@todo\n");
 		}
 		specials[nspec++] = dio4xx_snoop_attrs;
 	}else if (IS_DIO_5CH(adev)){

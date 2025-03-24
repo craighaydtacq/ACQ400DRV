@@ -230,7 +230,7 @@ void acq43x_createDebugfs(struct acq400_dev* adev, char* pcursor)
 		DBG_REG_CREATE(ACQ435_SW_EMB_WORD2);
 		break;
 	case MOD_ID_ACQ430FMC:
-		if (!(adev->mod_id&MOD_ID_IS_SLAVE)){
+		if (IS_MASTER(adev)){
 			DBG_REG_CREATE(FMC_DSR);
 		}
 	}
@@ -401,6 +401,8 @@ void dio_biscuit_createDebugfs(struct acq400_dev* adev, char* pcursor)
 	DBG_REG_CREATE(DIOUSB_CTRL);
 	DBG_REG_CREATE(DIOUSB_STAT);
 }
+
+
 void qen_createDebugfs(struct acq400_dev* adev, char* pcursor)
 {
 	DBG_REG_CREATE(QEN_CTRL);
@@ -426,6 +428,31 @@ void qen_createDebugfs(struct acq400_dev* adev, char* pcursor)
 	DBG_REG_CREATE(QEN_POS_PRD_CNT);
 }
 
+void di460_aqb_createDebugfs(struct acq400_dev* adev, char* pcursor)
+{
+	int ch;
+
+	DBG_REG_CREATE(MOD_ID);
+	DBG_REG_CREATE(MCR);
+	DBG_REG_CREATE(TIM_CTRL);
+	DBG_REG_CREATE(ADC_FIFO_SAMPLES);
+	DBG_REG_CREATE(ADC_FIFO_STA);
+	DBG_REG_CREATE(ADC_INT_CSR);
+	DBG_REG_CREATE(ADC_SAMPLE_CTR);
+	DBG_REG_CREATE(ADC_SAMPLE_CLK_CTR);
+	if (GET_MOD_IDV(adev) == MOD_IDV_DI460_AQB_43){
+		DBG_REG_CREATE(ACQ435_MODE);
+	}
+	DBG_REG_CREATE(DI460_DBG);
+	DBG_REG_CREATE(ADC_TRANSLEN);
+	DBG_REG_CREATE(QEN_DIO_CTRL);
+	DBG_REG_CREATE(DI460_AQB_CTRL);
+
+
+	for (ch = 1; ch <= DI460_NCHAN; ++ch){
+		DBG_REG_CREATE_NAME_NC_NUM("cnt", ch, "CNTR", DI460_AQB_COUNT(ch));
+	}
+}
 void acq1014_createDebugfs(struct acq400_dev* adev, char* pcursor)
 {
 	DBG_REG_CREATE(DIO1014_CR);
@@ -486,10 +513,12 @@ void acq400_createDebugfs(struct acq400_dev* adev)
 
 	if (IS_ACQ42X(adev)){
 		acq420_createDebugfs(adev, pcursor);
-	}else if (IS_DIO432X(adev) || IS_DIO482TD_PG(adev) || IS_DI460ELF(adev)){
-		dio432_createDebugfs(adev, pcursor);
+	}else if (IS_DI460AQB(adev)){
+		di460_aqb_createDebugfs(adev, pcursor);
 	}else if (IS_DIO422AQB(adev)){
 		qen_createDebugfs(adev, pcursor);
+	}else if (IS_DIO432X(adev) || IS_DIO482TD_PG(adev) || IS_DI460ELF(adev)){
+		dio432_createDebugfs(adev, pcursor);
 	}else if (IS_DIO_5CH(adev)){
 		dio432_createDebugfs(adev, pcursor);  // @@worktodo dubious, placeholder
 	}else{

@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include <signal.h>
 
+#include "acq-util.h"
+
 
 /* meta data front and back. no math! */
 #define META1	sizeof(long)
@@ -170,6 +172,10 @@ void ui()
 		G::usec = usec;
 		ualarm(G::usec, G::usec); //alarm in a second, and every second after that.
 		setKnob(0, "/etc/acq400/0/slowmon_us", usec);
+	}
+	unsigned priority;
+	if (getKnob(0, "/etc/acq400/0/slowmon_prio", &priority) >= 0){
+		goRealTime(priority);
 	}
 }
 

@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.905"
+#define REVID 			"3.917"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
@@ -765,19 +765,6 @@ void acq400_bq_notify(struct acq400_dev *adev, struct HBM *hbm)
 	dev_dbg(DEVP(adev), "acq400_bq_notify() nelems:%d", nelems);
 }
 
-
-int over_open_backlog(struct acq400_dev *adev)
-{
-	if (list_empty(&adev->OPENS)){
-		return 0;
-	}else if (OPEN_BACKLOG == 0){
-		return 1;
-	}else{
-		return list_depth(&adev->OPENS) >= OPEN_BACKLOG;
-	}
-}
-
-
 void _acq400_continuous_read_update_hb0(struct acq400_dev *adev, struct HBM *hbm)
 {
 	/* update every hb0 or at least once per second */
@@ -836,9 +823,12 @@ ssize_t acq400_continuous_read(struct file *file, char __user *buf, size_t count
 
 	if (adev->rt.please_stop){
 		return -1;		/* EOF ? */
-	}
-	while (over_open_backlog(adev)){
-		putEmpty(adev);
+	}else{
+		int backlog = list_depth(&adev->OPENS);
+		while (backlog-- > OPEN_BACKLOG){
+			putEmpty(adev);
+			adev->rt.buffers_dropped += 1;
+		}
 	}
 
 	dev_dbg(DEVP(adev), "acq400_continuous_read():getFull()");
@@ -1762,9 +1752,9 @@ int axi64_data_loop(void* data)
 		}
 		if (hbm == 0){
 			++adev->stats.errors;
+			adev->rt.buffers_dropped += list_depth(&adev->REFILLS);
 			move_list_to_empty(adev, &adev->REFILLS);
 			dev_warn(DEVP(adev), "discarded FULL Q\n");
-			++adev->rt.buffers_dropped;
 
 			if (quit_on_buffer_exhaustion){
 				adev->rt.refill_error = 1;
@@ -1929,10 +1919,10 @@ int axi64_dual_data_loop(void* data)
 		}
 		if (hbm0 == 0 || hbm1 == 0){
 			++adev->stats.errors;
+			adev->rt.buffers_dropped += list_depth(&adev->REFILLS);
 			move_list_to_empty(adev, &adev->REFILLS);
 			move_list_to_empty(adev, &adev->REFILLS);
 			dev_warn(DEVP(adev), "discarded FULL Q\n");
-			++adev->rt.buffers_dropped;
 
 			if (quit_on_buffer_exhaustion){
 				adev->rt.refill_error = 1;
@@ -2087,9 +2077,9 @@ int ai_data_loop(void *data)
 				//acq420_enable_interrupt(adev);
 			}
 			if (emergency_drain_request){
+				adev->rt.buffers_dropped += list_depth(&adev->REFILLS);
 				move_list_to_empty(adev, &adev->REFILLS);
 				dev_warn(DEVP(adev), "discarded FULL Q\n");
-				++adev->rt.buffers_dropped;
 
 				if (quit_on_buffer_exhaustion){
 					adev->rt.refill_error = 1;

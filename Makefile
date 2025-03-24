@@ -115,7 +115,7 @@ APPS := mmap acq400_stream permute acq435_decode \
 # dropped
 # multi_event 
 
-LIBINC = acq-util.h Buffer.h ES.h
+LIBINC = acq-util.h Buffer.h ES.h split2.h
 LIBACQSO = libacq.so
 LIBACQSONAME = libacq.so.1
 
@@ -365,7 +365,8 @@ clocks_to_first_edge: clocks_to_first_edge.o knobs.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)	
 	
 slowmon_hw: slowmon_hw.o knobs.o
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
+
 	
 awg_composer: awg_composer.o knobs.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt	

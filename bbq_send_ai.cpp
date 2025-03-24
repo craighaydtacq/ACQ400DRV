@@ -130,6 +130,9 @@ struct poptOption opt_table[] = {
 #define BUFLEN	 MODPRAMS "bufferlen"
 #define NBUF	 MODPRAMS "nbuffers"
 #define SSB	 "/etc/acq400/0/ssb"
+
+char* debug_buffer;
+
 void ui(int argc, const char** argv)
 {
 	poptContext opt_context =
@@ -175,6 +178,8 @@ void ui(int argc, const char** argv)
 	}
 
 	if (G::stdout){
+		debug_buffer = new char[G::sample_size_bytes];
+		memset(debug_buffer, 0, G::sample_size_bytes);
 		G::sender = Socket::createIpSocket("stdout", 0, 0);
 	}else{
 		if (G::rhost == 0 || G::rport == 0){
@@ -186,6 +191,7 @@ void ui(int argc, const char** argv)
 	if (G::spad){
 		sscanf(G::spad, "1,%u,%*d", &G::spadlen);
 	}
+	goRealTime(10);
 }
 
 #define NLSPAD		4
@@ -213,6 +219,10 @@ void send(int ib)
 		int stride = G::buffer_data_bytes/G::packets_per_buffer;
 		static unsigned local_spad[NLSPAD];
 
+		if (G::verbose && G::stdout){
+			debug_buffer[0] = ib;
+			fwrite(debug_buffer, G::sample_size_bytes, 1, stdout);
+		}
 		for (int pkt = 0; pkt < G::packets_per_buffer; ++pkt, cursor += stride){
 			for (int ii = 0; ii < G::samples_per_packet; ++ii){
 				if (G::spad == 0){
@@ -234,7 +244,7 @@ void send(int ib)
 }
 int run(void)
 {
-	File bq("/dev/acq400.0.bq", "r");
+	File bq("/dev/acq400.0.bqf", "r");
 	char bufnum[32];
 
 	while(fgets(bufnum, 32, bq())){

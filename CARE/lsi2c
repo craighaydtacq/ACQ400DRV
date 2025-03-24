@@ -1,0 +1,282 @@
+#!/usr/bin/env python
+"""
+Script to identify and characterise devices on i2c buses of ACQ devices
+"""
+
+import os
+import glob
+import logging
+
+import smbus
+
+logger = logging.getLogger("i2c_dev_identify")
+logger.setLevel(logging.ERROR)
+
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+console_handler.setFormatter(formatter)
+
+logger.addHandler(console_handler)
+
+
+class Maybe:
+    """Not True or False yet.
+
+    If definitely_maybe is set then values have been checked and the best
+    heuristic checks have still come up with the answer Maybe...
+    """
+
+    def __init__(self):
+        self.definitely_maybe = False
+
+    def __repr__(self):
+        return "Maybe"
+
+    def make_definitely_maybe(self):
+        self.definitely_maybe = True
+
+
+def is_ad7417(bus_string, device) -> bool:
+    """Checks for existence of ad7417 at location defined by bus_string and device"""
+    present = "0"
+    hwmon_path = os.path.join(
+        "/sys/bus/i2c/devices", bus_string, device, "hwmon", "hwmon?"
+    )
+    logger.debug("hwmon path : %s" % hwmon_path)
+    hwmon_dirs = glob.glob(hwmon_path)
+    if hwmon_dirs:
+        temp_input_path = os.path.join(hwmon_dirs[0], "temp1_input")
+        try:
+            with open(temp_input_path, "r") as f:
+                present = f.read().strip()
+        except FileNotFoundError:
+            pass
+    if int(present) > 0:  # if temp1_input gives zero the device doesn't exist
+        return True
+    else:
+        return False
+
+
+def is_ad5282(bus_string, device) -> bool:
+    """Checks for existence of ad5282 at location defined by bus_string and device"""
+    present = False
+    rdac_path = os.path.join("/sys/bus/i2c/devices", bus_string, device, "rdac?")
+    logger.debug("path searching: %s" % rdac_path)
+    rdac_dirs = glob.glob(rdac_path)
+    logger.debug("dirs: %s" % rdac_dirs)
+    if rdac_dirs:
+        rdac0_path = rdac_dirs[0]
+        logger.debug("%s" % rdac0_path)
+        try:
+            with open(rdac0_path, "r") as f:
+                present = f.read().strip()
+        except FileNotFoundError:
+            pass
+    if present:
+        return True
+    else:
+        return False
+
+
+def is_24c64_or_spd(bus_string, device) -> bool:
+    """Checks for existence of 24c64 or spd at location defined by bus_string and device"""
+    eeprom_path = os.path.join("/sys/bus/i2c/devices", bus_string, device, "eeprom")
+    if os.path.exists(eeprom_path):
+        return True
+    else:
+        return False
+
+
+def is_tca6424(bus_string, device) -> bool:
+    """Checks for existence of tca6424 by reading ngpio value"""
+    # 24-bit i2c and SMBus I/O expander
+    ngpios = "0"
+    tca_paths = os.path.join("/sys/bus/i2c/devices", bus_string, device, "gpio")
+    logger.debug("path searching: %s" % tca_paths)
+    tca_dirs = glob.glob(tca_paths)
+    logger.debug("dirs: %s" % tca_dirs)
+    if tca_dirs:
+        tca0_path = tca_dirs[0]
+        tca0_gpiochip_paths = os.path.join(tca0_path, "gpiochip???")
+        tca0_gpiochip_dirs = glob.glob(tca0_gpiochip_paths)
+        tca0_gpiochip_dir = tca0_gpiochip_dirs[0]
+        file_to_check = os.path.join(tca0_gpiochip_dir, "ngpio")
+        logger.debug("%s" % tca0_gpiochip_dir)
+        try:
+            with open(file_to_check, "r") as f:
+                ngpios = f.read().strip()
+        except FileNotFoundError:
+            pass
+    if int(ngpios) > 0:
+        return True
+    else:
+        return False
+
+
+def is_isl22313(bus_string, device) -> bool:
+    """Checks isl22313. TODO: heuristic to be implemented"""
+    # digitally controlled potentiometer
+    raise NotImplementedError("Not implemented")
+
+
+def is_lp3943(bus_string, device) -> bool:
+    """Checks for existence of lp3943 by reading ngpio value"""
+    # 16 channel RGB/White LED driver with independent string control via SMBUS/i2c
+    present = "0"
+    lp_path = os.path.join("/sys/bus/i2c/devices", bus_string, device, "lp3943-gpio.?")
+    logger.debug("path searching: %s" % lp_path)
+    lp_dirs = glob.glob(lp_path)
+    logger.debug("dirs: %s" % lp_dirs)
+    if lp_dirs:
+        lp0_path = lp_dirs[0]
+        logger.debug("%s" % lp0_path)
+        try:
+            lp0_gpiochip_paths = glob.glob(
+                os.path.join(lp0_path, "gpio", "gpiochip???")
+            )
+            lp0_gpiochip_path = lp0_gpiochip_paths[0]
+            lp0_ngpio_path = os.path.join(lp0_gpiochip_path, "ngpio")
+            with open(lp0_ngpio_path, "r") as f:
+                present = f.read().strip()
+        except FileNotFoundError:
+            logger.error("FileNotFoundError")
+    if int(present) > 0:
+        return True
+    else:
+        return False
+
+
+def is_si5326(bus_string, device) -> bool:
+    """Checks for existence of si5326 by reading available register"""
+    # Any-frequency precision clock multiplier / jitter attenuator
+    present = "0"
+    si_path = os.path.join("/sys/bus/i2c/devices", bus_string, device, "si5326_reg")
+    si_dirs = glob.glob(si_path)
+    if si_dirs:
+        si5326_reg_path = si_dirs[0]
+        logger.debug("%s" % si5326_reg_path)
+        try:
+            with open(si5326_reg_path, "r") as f:
+                present = f.read().strip()
+        except FileNotFoundError:
+            logger.error("FileNotFoundError")
+    # TODO: this check requires some due diligence, not sure if this condition always holds
+    if len(present) > 4:
+        return True
+    else:
+        return False
+
+
+def is_pca9548(bus_string, device) -> bool:
+    """Checks for existence of pca9548 by going through channels and looking for devices on channel-n"""
+    # 8 channel i2c / SMBus switch
+    total_devices = 0
+    pca_path = os.path.join("/sys/bus/i2c/devices", bus_string, device, "channel-?")
+    pca_dirs = glob.glob(pca_path)
+    if pca_dirs:
+        for d in pca_dirs:
+            channel_number = os.path.split(d)[-1]
+            logger.debug("%s" % channel_number)
+            logger.debug("%s" % os.path.join(d, "*-????"))
+            devices_on_channel = glob.glob(os.path.join(d, "*-????"))
+            logger.debug("%s" % devices_on_channel)
+            total_devices += len(devices_on_channel)
+    # TODO: this check requires some due diligence, not sure if this condition always holds
+    if total_devices > 0:
+        return True
+    else:
+        return False
+
+
+def get_names(bus_num, dev):
+    """Retrieves and displays information about an I2C device."""
+    exists = Maybe()
+    bus_str = f"i2c-{bus_num}"
+    devname_path = os.path.join("/sys/bus/i2c/devices", bus_str, dev, "name")
+    try:
+        with open(devname_path, "r") as f:
+            devname = f.read().strip()
+    except FileNotFoundError:
+        devname = "unknown"
+    try:
+        if devname in ("ad7417"):
+            # 4-input ADC and temperature sensor
+            exists = is_ad7417(bus_str, dev)
+        elif devname in ("24c64", "spd"):
+            # 24c64 - serial i2c bus EEPROM
+            exists = is_24c64_or_spd(bus_str, dev)
+        elif devname in ("tca6424", "tca6424cr"):
+            # 24-bit i2c and SMBus I/O expander
+            exists = is_tca6424(bus_str, dev)
+        elif devname in ("isl22313"):
+            # digitally controlled potentiometer
+            exists = is_isl22313(bus_str, dev)
+        elif devname in ("lp3943"):
+            # 16 channel RGB/White LED driver with independent string control via SMBUS/i2c
+            exists = is_lp3943(bus_str, dev)
+        elif devname in ("si5326"):
+            # Any-frequency precision clock multiplier / jitter attenuator
+            exists = is_si5326(bus_str, dev)
+        elif devname in ("ad5282"):
+            # digitally controlled potentiometer
+            exists = is_ad5282(bus_str, dev)
+        elif devname in ("pca9548"):
+            # 8 channel i2c switch
+            exists = is_pca9548(bus_str, dev)
+        elif devname in (""):
+            print("Empty name")
+        else:
+            print(f"devname: {devname} not found")
+    except NotImplementedError as e:
+        print(devname + ": " + str(e))
+
+    print(f"bus:{bus_str} dev:{dev} {devname} present:{exists}")
+
+
+def list_i2c_devices():
+    """Lists all I2C devices and their information."""
+    i2c_dirs = sorted(
+        [d for d in os.listdir("/sys/bus/i2c/devices") if d.startswith("i2c")],
+        key=lambda x: int(x.split("-")[1]),
+    )
+
+    for bus in i2c_dirs:
+        dev_prefix = bus.split("-")[1] + "-0"
+        dev_dirs = sorted(
+            [
+                d
+                for d in os.listdir(os.path.join("/sys/bus/i2c/devices", bus))
+                if d.startswith(dev_prefix)
+            ]
+        )
+        if dev_dirs:
+            print(bus, " ".join(dev_dirs))
+
+    for bus in i2c_dirs:
+        bus_num = int(bus.split("-")[1])
+        dev_prefix = bus.split("-")[1] + "-0"
+        dev_dirs = sorted(
+            [
+                d
+                for d in os.listdir(os.path.join("/sys/bus/i2c/devices", bus))
+                if d.startswith(dev_prefix)
+            ]
+        )
+        for dev in dev_dirs:
+            get_names(bus_num, dev)
+
+
+def read_i2c_device(bus_num, address, register):
+    """Reads an i2c device from register at address on bus_num"""
+    try:
+        bus = smbus.SMBus(bus_num)
+        data = bus.read_byte_data(address, register)
+        return data
+    except OSError as e:
+        print(f"Error reading from i2c device: {e}")
+        return None
+
+
+if __name__ == "__main__":
+    list_i2c_devices()
