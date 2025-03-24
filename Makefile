@@ -328,9 +328,6 @@ bigmac.x86: bigmac.o
 mgtdram_descgen: 	mgtdram_descgen.o
 	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) -lpopt
 
-wrs_testharness: wrs_testharness.o
-	$(CXX) -std=c++11 -O3 -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
-
 wrtd: 	wrtd.o Multicast.o WrsCast.o knobs.o WrsTriggerDrv.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lpopt -lacq -lrt
 	
