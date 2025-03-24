@@ -611,8 +611,12 @@ int main(int argc, const char* argv[])
 		return Txa::factory()();
 	}else if (strcmp(mode, "tx") == 0){
 		return sleep_if_notenabled("WRTD_TX") || tx();
-	}else{
+	}else if (strcmp(mode, "rx") == 0){
 		return sleep_if_notenabled("WRTD_RX") || rx();
+	}else{
+		printf("Invalid argument to wrtd. WRTD_TX or WRTD_RX must be set as env var.");
+		printf("Or program must be called as wrtd_txq, wrtd_txi or wrtd_txa.");
+		exit(1);
 	}
 }
 
