@@ -49,7 +49,7 @@ range_code=0x02004d00
 set.sys ${KNOBS}/dac_enable 0
 set.sys ${KNOBS}/dacreset 1
 set.sys ${KNOBS}/dacreset 0
-set.sys ${KNOBS}/dacspi 0x03000000       # Clear Code
+set.sys ${KNOBS}/dacspi 0x037f0000       # Clear Code, offset binary
 set.sys ${KNOBS}/dacspi \$range_code
 set.sys ${KNOBS}/dac_range_0$ch \${1:-0}
 set.sys ${KNOBS}/dac_enable 1
@@ -78,9 +78,10 @@ vset_sys ${KNOBS}/dac_enable 0
 vset_sys ${KNOBS}/dacreset 1
 vset_sys ${KNOBS}/dacreset 0
 if [ "$MTYPE" = "$MOD_ID_AO422FMC" ]; then
-	vset_sys ${KNOBS}/dacspi 0x03000000       # Clear Code
+	vset_sys ${KNOBS}/dacspi 0x037f0000      # Clear Code, offset binary
         vset_sys ${KNOBS}/dacspi 0x06000040      # UP_RATE default
         vset_sys ${KNOBS}/dacspi 0x02004d00      # 5V default
+        vset_sys ${KNOBS}/dacspi 0x400002	 # Soft Reset
         vset_sys ${KNOBS}/dac_range_en 1         # works with new mod
 else
 	vset_sys ${KNOBS}/dacspi 0x300000       # Clear Code
