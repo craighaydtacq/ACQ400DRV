@@ -481,6 +481,8 @@ static void di460elf_init_defaults(struct acq400_dev *adev)
 		adev->booleans.data32 = 1;
 		adev->word_size = 4;
 		adev->nchan_enabled = 6;
+		adev->onStart = _qen_onStart;
+		adev->onStop = _qen_onStop;
 	}else{
 		adev->booleans.data32 = 1;           /* assume a single 32 bit status */
 		adev->word_size = 4;
