@@ -52,6 +52,7 @@ set.sys ${KNOBS}/dacreset 0
 set.sys ${KNOBS}/dacspi 0x037f0000       # Clear Code, offset binary
 set.sys ${KNOBS}/dacspi \$range_code
 set.sys ${KNOBS}/dac_range_0$ch \${1:-0}
+set.sys ${KNOBS}/dacspi 0x04000020	 # Soft Reset
 set.sys ${KNOBS}/dac_enable 1
 EOF
                 chmod 555 $knob
