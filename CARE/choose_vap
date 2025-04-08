@@ -54,6 +54,10 @@ do
 		BOLO*)
 			echo "# BOLO DETECTED set VRANGE 12"
 			VRANGE=12;;
+		AO*)
+			echo "# $file: FPN $FRU_PART_NUM PN $PN"
+			echo "# AO DETECTED set VRANGE 13.5"
+			VRANGE=13.5;;
 		*)
 			VSPEC=${PN##*-}
 			VSPEC=$(get_vr $PN)
