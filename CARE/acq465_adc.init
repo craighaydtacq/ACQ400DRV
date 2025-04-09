@@ -146,12 +146,19 @@ check_digif() {
 logger -t acq465_adc.init 01
 caput $(hostname):0:ACQ465:POLL 0
 
+set top_retry=0
+
 while true; do
 	reg_check_fail=0
 	pll_check_fail=0
 	fsettle_fail=0
 	digif_check_fail=0
 	write_regs
+
+	top_retry=$((top_retry+1))
+	if [ $top_retry -gt 10 ]; then
+	    break
+	fi
 
 	### Check all regs
 	acq465_readall
