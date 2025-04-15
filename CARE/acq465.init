@@ -68,9 +68,6 @@ acq465_knobs makeLinks >/tmp/makeLinks
 
 cat - >/tmp/acq465_init.job <<EOF
 #!/bin/sh
-while [ ! -e  /var/www/d-tacq/rc-user-complete ]; do
-	sleep 3
-done
 echo acq465_init.job \$(cat /var/www/d-tacq/rc-user-complete)
 EOF
 
@@ -103,8 +100,4 @@ EOF
 done
 
 chmod a+rx /tmp/acq465_init.job
-nice /tmp/acq465_init.job &
-
-
-
 
