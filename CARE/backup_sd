@@ -1,0 +1,8 @@
+#!/bin/sh
+
+umount /mnt2 || true
+umount /mnt/fpga.d || true
+tar cvf - -C /mnt --exclude=./rootfs.ext2 --exclude=./ko/fpga* .
+
+
+
