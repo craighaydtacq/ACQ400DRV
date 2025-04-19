@@ -1239,7 +1239,7 @@ fi
 
 build_knobs
 set_fans $FANSPEED
-grep acq400\.[0-9] /proc/devices | build_nodes
+grep acq400\.[0-9] /proc/devices | sort -r | build_nodes
 
 [ "x$WHITE_RABBIT" = "x1" ]  && /usr/local/init/wr.init
 
