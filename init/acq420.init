@@ -136,10 +136,10 @@ build_nodes() {
                 mknod /dev/${NAME}.awgc c ${MAJOR} 10
                 mknod /dev/${NAME}.awgr c ${MAJOR} 14
                 mknod /dev/${NAME}.aoi  c ${MAJOR} 38
-                mknod /dev/${NAME}.abcde c ${MAJOR} 41
                 mknod /dev/${NAME}.dac_step c ${MAJOR} 42
                 if [ ! -e /dev/acq400.0.abcde ]; then
-					ln -s /dev/${NAME}.abcde /dev/acq400.0.abcde
+			mknod /dev/${NAME}.abcde c ${MAJOR} 41
+			ln -s /dev/${NAME}.abcde /dev/acq400.0.abcde
                 fi;;
             ${MOD_ID_BOLO8}|${MOD_ID_BOLO8B})
                 mknod /dev/${NAME}.awg c ${MAJOR} 8;;
