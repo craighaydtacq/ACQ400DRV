@@ -1,7 +1,9 @@
 #!/bin/sh
 
-umount /mnt2 || true
-umount /mnt/fpga.d || true
+# use externally as follow
+# ssh root@$UUT /usr/local/CARE/backup_sd > gold_$UUT.tar
+umount $(mount | grep mnt | grep -v mmc | awk '{ print $3 }')
+
 tar cvf - -C /mnt --exclude=./rootfs.ext2 --exclude=./ko/fpga* .
 
 
