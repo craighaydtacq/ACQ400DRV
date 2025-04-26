@@ -847,7 +847,7 @@ int do_scan()
 			VPRINTF("ERROR: rejecting %s\n", alias);
 			perror("stat");
 		}else{
-			if (!S_ISREG(sb.st_mode)){
+			if (!(S_ISREG(sb.st_mode) || S_ISFIFO(sb.st_mode))){
 				VPRINTF("not a regular file:%s", alias);
 			}else{
 				Knob* knob = Knob::create(alias, sb.st_mode);
