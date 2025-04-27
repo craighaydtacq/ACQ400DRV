@@ -227,6 +227,19 @@ protected:
 	bool isValid(char* buf, int maxbuf, const char* args){
 		return validator->isValid(buf, maxbuf, args);
 	}
+	int _set_knob(char* buf, int maxbuf, const char* args) {
+		if (!isValid(buf, maxbuf, args)){
+			return -1;
+		}
+		File knob(name, "w");
+		if (knob.fp == NULL){
+			return -snprintf(buf, maxbuf, "ERROR: failed to open \"%s\"\n", name);
+		}else if (fputs(args, knob.fp) < 0){
+			return -snprintf(buf, maxbuf, "ERROR:");
+		}else{
+			return snprintf(buf, maxbuf, "\n");
+		}
+	}
 	virtual int _set(char* buf, int maxbuf, const char* args) = 0;
 public:
 	virtual ~Knob() {
@@ -291,20 +304,29 @@ public:
 	}
 };
 
+class KnobWO : public Knob {
+protected:
+	virtual int _set(char* buf, int maxbuf, const char* args) {
+		return _set_knob(buf, maxbuf, args);
+	}
+public:
+	KnobWO(const char* _name, const char* _ktype="KnobWO") : Knob(_name, _ktype) {}
+
+
+	virtual int get(char* buf, int maxbuf) {
+		return snprintf(buf, maxbuf, "%s WARNING: knob %s is Write Only\n", getKtype(), name);
+	}
+
+	virtual void print(void) { cprint("KnobRO"); }
+	virtual const char* getAttr() {
+		return "r";
+	}
+};
+
 class KnobRW : public KnobRO {
 protected:
 	virtual int _set(char* buf, int maxbuf, const char* args) {
-		if (!isValid(buf, maxbuf, args)){
-			return -1;
-		}
-		File knob(name, "w");
-		if (knob.fp == NULL){
-			return -snprintf(buf, maxbuf, "ERROR: failed to open \"%s\"\n", name);
-		}else if (fputs(args, knob.fp) < 0){
-			return -snprintf(buf, maxbuf, "ERROR:");
-		}else{
-			return snprintf(buf, maxbuf, "\n");
-		}
+		return _set_knob(buf, maxbuf, args);
 	}
 public:
 	KnobRW(const char* _name) : KnobRO(_name, "KnobRW") {
@@ -461,6 +483,7 @@ KnobX* KnobX::factory(const char* _name) {
 
 #define HASX(mode) 	(((mode)&(S_IXUSR|S_IXGRP|S_IXOTH)) != 0)
 #define HASW(mode)	(((mode)&(S_IWUSR|S_IWGRP|S_IWOTH)) != 0)
+#define HASR(mode)	(((mode)&(S_IRUSR|S_IRGRP|S_IROTH)) != 0)
 
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -577,7 +600,13 @@ Knob* Knob::create(const string _name, mode_t mode)
 	}else if (HASW(mode)){
 		static int limit_check = -2;
 
-		Knob* knob = new KnobRW(name);
+		Knob* knob;
+
+		if (HASR(mode)){
+			knob = new KnobRW(name);
+		}else{
+			knob = new KnobWO(name);
+		}
 
 		if (limit_check == -2){
 			limit_check = access("/usr/share/doc/numerics", F_OK);
@@ -850,6 +879,10 @@ int do_scan()
 			if (!(S_ISREG(sb.st_mode) || S_ISFIFO(sb.st_mode))){
 				VPRINTF("not a regular file:%s", alias);
 			}else{
+				if (S_ISFIFO(sb.st_mode)){
+					// @todo HACK: reading FIFO is problematic, don't do it!
+					sb.st_mode &= ~(S_IRUSR|S_IRGRP|S_IROTH);
+				}
 				Knob* knob = Knob::create(alias, sb.st_mode);
 				if (PeerFinder::instance()->hasPeers(alias)){
 					vector<string>* peer_names = PeerFinder::instance()->getPeernames(alias);
