@@ -98,6 +98,7 @@ namespace G {
 	int TO = 1;					// Timeout, seconds
 	int load_threshold = G_LOAD_THRESHOLD_DEFAULT;
 	unsigned play_bufferlen;			// Change bufferlen on play
+	unsigned playloop_len_disable;		// Stub this change if set .. for segments
 	unsigned initval = 0;				// M_INIT, set all mem this value
 
 	int pad = 1;					// 0: no pad, 1: pad last, 2: pad 0
@@ -433,6 +434,8 @@ int load() {
 
 	if (G::concurrent){
 		_load_concurrent();
+	}else if (G::playloop_len_disable){
+		fill();
 	}else{
 		set_playloop_length(fill());
 	}
@@ -528,6 +531,7 @@ RUN_MODE ui(int argc, const char** argv)
 	G::buffer0 = G::buffer00;
 	getKnob(-1, BUFLEN, &Buffer::bufferlen);
 	getKnob(-1, "/etc/acq400/0/dist_bufferlen_play", &G::play_bufferlen);
+	getKnob(-1, "/etc/acq400/0/playloop_len_disable", &G::playloop_len_disable);
 
 	int rc;
 	int seg_bufs = 0;
