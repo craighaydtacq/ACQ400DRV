@@ -1843,10 +1843,6 @@ int acq400_open_streamdac(struct inode *inode, struct file *file)
 	}
 }
 
-
-
-extern char awg_seg[];
-
 ssize_t acq400_awg_abcde_read(struct file *file, char __user *buf, size_t count,
         loff_t *f_pos)
 {
