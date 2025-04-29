@@ -1922,6 +1922,7 @@ int acq400_awg_abcde_release(struct inode *inode, struct file *file)
 	struct acq400_dev* adev = pdesc->dev;
 	struct XO_dev* xo_dev = container_of(adev, struct XO_dev, adev);
 	xo_dev->awg_abcde.pid = 0;
+	init_cb_empty(&xo_dev->awg_abcde.new_queue, AWG_ABCDE_LEN);
 	init_cb_empty(&xo_dev->awg_abcde.ret_queue, AWG_ABCDE_LEN);
 	return acq400_release(inode, file);
 }
