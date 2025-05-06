@@ -103,6 +103,12 @@ ssize_t acq400_show_bits(
 	unsigned SHL,
 	unsigned MASK);
 
+ssize_t acq400_show_hex32(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf,
+	unsigned REG);
+
 ssize_t acq400_show_bitN(
 	struct device * dev,
 	struct device_attribute *attr,

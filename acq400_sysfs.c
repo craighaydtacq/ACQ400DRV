@@ -2275,8 +2275,8 @@ static ssize_t show_acq426_cal(
 	struct acq400_dev *adev = acq400_devices[dev->id];
 	u32 ctrl = acq400rd32(adev, ADC_CTRL);
 	u32 sta = acq400rd32(adev, ADC_FIFO_STA);
-	u32 ena = ctrl&ACQ426_ADC_CTRL_CALIB != 0;
-	u32 fail = sta&ACQ426_FIFO_STA_CAL_FAIL;
+	u32 ena = (ctrl&ACQ426_ADC_CTRL_CALIB) != 0;
+	u32 fail = (sta&ACQ426_FIFO_STA_CAL_FAIL) != 0;
 	u32 pass = (sta&ACQ426_FIFO_STA_CAL_COMP)==ACQ426_FIFO_STA_CAL_COMP && !fail;
 	sta &= ACQ426_FIFO_STA_CAL_COMP|ACQ426_FIFO_STA_CAL_FAIL;
 	return sprintf(buf, "%d %08x %s\n", ctrl&ACQ426_ADC_CTRL_CALIB? 1: 0, sta, pass? "PASS": fail?"FAIL": ena? "BUSY": "IDLE");
@@ -2284,8 +2284,24 @@ static ssize_t show_acq426_cal(
 
 static DEVICE_ATTR(acq426_cal, S_IRUGO|S_IWUSR, show_acq426_cal, store_acq426_cal);
 
-MAKE_BITS(acq426_cal_point, ACQ426_CAL_POINT, MAKE_BITS_FROM_MASK, 0xffffffff);
-MAKE_BITS(acq426_cal_win,   ACQ426_CAL_WIN,   MAKE_BITS_FROM_MASK, 0xffffffff);
+
+static ssize_t show_acq426_cal_point(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	return acq400_show_hex32(dev, attr, buf, ACQ426_CAL_POINT);
+}
+static DEVICE_ATTR(acq426_cal_point, S_IRUGO, show_acq426_cal_point, 0);
+
+static ssize_t show_acq426_cal_win(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	return acq400_show_hex32(dev, attr, buf, ACQ426_CAL_WIN);
+}
+static DEVICE_ATTR(acq426_cal_win, S_IRUGO, show_acq426_cal_win, 0);
 
 static const struct attribute *acq426_attrs[] = {
 	&dev_attr_va_en.attr,

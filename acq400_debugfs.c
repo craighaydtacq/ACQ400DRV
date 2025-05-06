@@ -516,7 +516,14 @@ void acq400_createDebugfs(struct acq400_dev* adev)
 	DBG_REG_CREATE(MOD_ID);
 
 	if (IS_ACQ42X(adev)){
-		acq420_createDebugfs(adev, pcursor);
+		switch(GET_MOD_ID(adev)){
+		case MOD_ID_ACQ426ELF:
+			acq426_createDebugfs(adev, pcursor);
+			break;
+		default:
+			acq420_createDebugfs(adev, pcursor);
+			break;
+		}
 	}else if (IS_DI460AQB(adev)){
 		di460_aqb_createDebugfs(adev, pcursor);
 	}else if (IS_DIO422AQB(adev)){
@@ -550,9 +557,6 @@ void acq400_createDebugfs(struct acq400_dev* adev)
 			break;
 		case MOD_ID_ACQ494FMC:
 			acq494_createDebugfs(adev, pcursor);
-			break;
-		case MOD_ID_ACQ426ELF:
-			acq426_createDebugfs(adev, pcursor);
 			break;
 		case MOD_ID_ACQ480FMC:
 			acq480_createDebugfs(adev, pcursor);
