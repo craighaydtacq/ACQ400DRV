@@ -5,10 +5,10 @@ SITES=""
 
 hexquad() {
         cat $1 | awk '{
-                aa = sprintf("%2d", substr($1,3,2));
-                bb = sprintf("%2d", substr($1,5,2));
-                cc = sprintf("%2d", substr($1,7,2));
-                dd = sprintf("%2d", substr($1,9,2));
+                aa = sprintf("%2d", "0x"substr($1,3,2));
+                bb = sprintf("%2d", "0x"substr($1,5,2));
+                cc = sprintf("%2d", "0x"substr($1,7,2));
+                dd = sprintf("%2d", "0x"substr($1,9,2));
                 print $1" "aa" "bb" "cc" "dd 
         }'
 }
