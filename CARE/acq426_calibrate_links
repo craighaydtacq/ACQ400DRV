@@ -1,0 +1,47 @@
+#!/bin/sh
+
+SITES=""
+
+
+hexquad() {
+        cat $1 | awk '{
+                aa = sprintf("%2d", "0x"substr($1,1,2));
+                bb = sprintf("%2d", "0x"substr($1,3,2));
+                cc = sprintf("%2d", "0x"substr($1,5,2));
+                dd = sprintf("%2d", "0x"substr($1,7,2));
+                print $1" "aa" "bb" "cc" "dd 
+        }'
+}
+# set pattern
+for dev in /dev/acq426/[123456]; do
+        if [ -d $dev ]; then        
+                for chip in A B C D; do
+                        echo 0xaaaaaaaa >$dev/$chip/in_voltage0_test_pattern32
+                        echo 0x33333333 >$dev/$chip/in_voltage7_test_pattern32
+                        echo ON > $dev/$chip/test_pattern_enable   
+                done
+                
+                SITES="$SITES $(basename $dev)"
+        fi
+done
+
+# set cal
+for site in $SITES; do
+        echo 1 > /dev/acq400.$site.knobs/acq426_cal
+done
+
+sleep 1
+
+# check state
+for site in $SITES; do
+        dk=/dev/acq400.$site.knobs
+        echo "site $site $(cat $dk/acq426_cal) $(hexquad $dk/acq426_cal_point) $(hexquad $dk/acq426_cal_win)"
+done
+
+# return to normal
+for site in $SITES; do
+        echo 0 > /dev/acq400.$site.knobs/acq426_cal
+        for chip in A B C D; do
+                echo OFF > /dev/acq426/$site/$chip/test_pattern_enable
+        done
+done

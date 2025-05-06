@@ -2234,6 +2234,59 @@ MAKE_BITS(vset,  ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_VSET);
 MAKE_BIT_RON(busy,  ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_BSY);
 MAKE_BIT_RON(los,   ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_LOS);
 
+
+static void acq426_cal_en(struct acq400_dev *adev, int cal_en)
+{
+	u32 ctrl = acq400rd32(adev, ADC_CTRL);
+
+	if (cal_en){
+		ctrl |= ADC_CTRL_MODULE_EN;
+		acq400wr32(adev, ADC_CTRL, ctrl |= ADC_CTRL_ADC_EN);
+		acq400wr32(adev, ADC_CTRL, ctrl |= ACQ426_ADC_CTRL_CALIB);
+
+	}else{
+		acq400wr32(adev, ADC_CTRL, ctrl &= ~ACQ426_ADC_CTRL_CALIB);
+		acq400wr32(adev, ADC_CTRL, ctrl &= ~ADC_CTRL_ADC_EN);
+	}
+}
+
+static ssize_t store_acq426_cal(
+	struct device * dev,
+	struct device_attribute *attr,
+	const char * buf,
+	size_t count)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	int cal_en;
+
+	if (sscanf(buf, "%d", &cal_en) == 1){
+		acq426_cal_en(adev, cal_en);
+		return count;
+	}else{
+		return -1;
+	}
+}
+
+static ssize_t show_acq426_cal(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	u32 ctrl = acq400rd32(adev, ADC_CTRL);
+	u32 sta = acq400rd32(adev, ADC_FIFO_STA);
+	u32 ena = ctrl&ACQ426_ADC_CTRL_CALIB != 0;
+	u32 fail = sta&ACQ426_FIFO_STA_CAL_FAIL;
+	u32 pass = (sta&ACQ426_FIFO_STA_CAL_COMP)==ACQ426_FIFO_STA_CAL_COMP && !fail;
+	sta &= ACQ426_FIFO_STA_CAL_COMP|ACQ426_FIFO_STA_CAL_FAIL;
+	return sprintf(buf, "%d %08x %s\n", ctrl&ACQ426_ADC_CTRL_CALIB? 1: 0, sta, pass? "PASS": fail?"FAIL": ena? "BUSY": "IDLE");
+}
+
+static DEVICE_ATTR(acq426_cal, S_IRUGO|S_IWUSR, show_acq426_cal, store_acq426_cal);
+
+MAKE_BITS(acq426_cal_point, ACQ426_CAL_POINT, MAKE_BITS_FROM_MASK, 0xffffffff);
+MAKE_BITS(acq426_cal_win,   ACQ426_CAL_WIN,   MAKE_BITS_FROM_MASK, 0xffffffff);
+
 static const struct attribute *acq426_attrs[] = {
 	&dev_attr_va_en.attr,
 	&dev_attr_vset.attr,
@@ -2244,6 +2297,9 @@ static const struct attribute *acq426_attrs[] = {
 	&dev_attr_adc_status.attr,
 	&dev_attr_bank_mask.attr,
 	&dev_attr_pack24.attr,
+	&dev_attr_acq426_cal.attr,
+	&dev_attr_acq426_cal_point.attr,
+	&dev_attr_acq426_cal_win.attr,
 	NULL
 };
 
