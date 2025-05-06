@@ -3,6 +3,10 @@
 
 echo acq426.init $*  begin 01
 
+echo "REMOVEME acq426 enable chipboard debugs"
+echo 9 > /proc/sys/kernel/printk
+echo "file acq400_core.c func acq400_set_peripheral_SPI_chipboard +p" > /dev/ddc
+
 for s in $*; do
     if [ -z $SITES ]; then
     	SITES=$s
