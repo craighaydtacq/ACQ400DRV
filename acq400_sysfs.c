@@ -1490,6 +1490,7 @@ static ssize_t store_clk_counter_src(
 static DEVICE_ATTR(clk_counter_src,
 		S_IRUGO|S_IWUSR, show_clk_counter_src, store_clk_counter_src);
 
+MAKE_BITS(flip_td, ACQ435_MODE, MAKE_BITS_FROM_MASK, ACQ430_CH_MAP_427TD);
 
 static ssize_t show_hi_res_mode(
 	struct device * dev,
@@ -2184,6 +2185,7 @@ static const struct attribute *acq435_attrs[] = {
 	&dev_attr_sw_emb_word1.attr,
 	&dev_attr_sw_emb_word2.attr,
 	&dev_attr_gate_sync.attr,
+	&dev_attr_flip_td.attr,
 	NULL
 };
 

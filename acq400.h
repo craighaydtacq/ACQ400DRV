@@ -315,6 +315,8 @@
 #define HITIDE			2048
 
 
+#define ACQ430_CH_MAP_427TD     (1<<5)
+
 #define ACQ435_MODE_HIRES_512	(1<<4)
 #define ACQ435_MODE_B3DIS	(1<<3)
 #define ACQ435_MODE_B2DIS	(1<<2)
