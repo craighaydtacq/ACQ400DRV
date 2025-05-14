@@ -2074,6 +2074,7 @@ protected:
 	}
 
 	void do_soft_trigger() {
+		// @@todo soft_trg 1 pulses the trigger, the other two calls are REDUNDANT .. test this
 		setKnob(0, "soft_trig", "0");
 		setKnob(0, "soft_trig", "1");
 		setKnob(0, "soft_trig", "0");

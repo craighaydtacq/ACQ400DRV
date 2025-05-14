@@ -110,6 +110,17 @@ ssize_t acq400_show_bits(
 	return sprintf(buf, "%x\n", field);
 }
 
+ssize_t acq400_show_hex32(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf,
+	unsigned REG)
+{
+	u32 regval = acq400rd32(acq400_devices[dev->id], REG);
+
+	return sprintf(buf, "0x%08x\n", regval);
+}
+
 ssize_t acq400_store_bits(
 		struct device * dev,
 		struct device_attribute *attr,

@@ -1526,7 +1526,7 @@ static ssize_t store_hi_res_mode(
 	}
 }
 
-static DEVICE_ATTR(hi_res_mode,
+DEVICE_ATTR(hi_res_mode,
 		S_IRUGO|S_IWUSR, show_hi_res_mode, store_hi_res_mode);
 
 /** NB inverted to 1: enabled */
@@ -2234,6 +2234,75 @@ MAKE_BITS(vset,  ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_VSET);
 MAKE_BIT_RON(busy,  ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_BSY);
 MAKE_BIT_RON(los,   ACQ426_BCSR, MAKE_BITS_FROM_MASK, ACQ426_BCSR_LOS);
 
+
+static void acq426_cal_en(struct acq400_dev *adev, int cal_en)
+{
+	u32 ctrl = acq400rd32(adev, ADC_CTRL);
+
+	if (cal_en){
+		ctrl |= ADC_CTRL_MODULE_EN;
+		acq400wr32(adev, ADC_CTRL, ctrl |= ADC_CTRL_ADC_EN);
+		acq400wr32(adev, ADC_CTRL, ctrl |= ACQ426_ADC_CTRL_CALIB);
+
+	}else{
+		acq400wr32(adev, ADC_CTRL, ctrl &= ~ACQ426_ADC_CTRL_CALIB);
+		acq400wr32(adev, ADC_CTRL, ctrl &= ~ADC_CTRL_ADC_EN);
+	}
+}
+
+static ssize_t store_acq426_cal(
+	struct device * dev,
+	struct device_attribute *attr,
+	const char * buf,
+	size_t count)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	int cal_en;
+
+	if (sscanf(buf, "%d", &cal_en) == 1){
+		acq426_cal_en(adev, cal_en);
+		return count;
+	}else{
+		return -1;
+	}
+}
+
+static ssize_t show_acq426_cal(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	struct acq400_dev *adev = acq400_devices[dev->id];
+	u32 ctrl = acq400rd32(adev, ADC_CTRL);
+	u32 sta = acq400rd32(adev, ADC_FIFO_STA);
+	u32 ena = (ctrl&ACQ426_ADC_CTRL_CALIB) != 0;
+	u32 fail = (sta&ACQ426_FIFO_STA_CAL_FAIL) != 0;
+	u32 pass = (sta&ACQ426_FIFO_STA_CAL_COMP)==ACQ426_FIFO_STA_CAL_COMP && !fail;
+	sta &= ACQ426_FIFO_STA_CAL_COMP|ACQ426_FIFO_STA_CAL_FAIL;
+	return sprintf(buf, "%d %08x %s\n", ctrl&ACQ426_ADC_CTRL_CALIB? 1: 0, sta, pass? "PASS": fail?"FAIL": ena? "BUSY": "IDLE");
+}
+
+static DEVICE_ATTR(acq426_cal, S_IRUGO|S_IWUSR, show_acq426_cal, store_acq426_cal);
+
+
+static ssize_t show_acq426_cal_point(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	return acq400_show_hex32(dev, attr, buf, ACQ426_CAL_POINT);
+}
+static DEVICE_ATTR(acq426_cal_point, S_IRUGO, show_acq426_cal_point, 0);
+
+static ssize_t show_acq426_cal_win(
+	struct device * dev,
+	struct device_attribute *attr,
+	char * buf)
+{
+	return acq400_show_hex32(dev, attr, buf, ACQ426_CAL_WIN);
+}
+static DEVICE_ATTR(acq426_cal_win, S_IRUGO, show_acq426_cal_win, 0);
+
 static const struct attribute *acq426_attrs[] = {
 	&dev_attr_va_en.attr,
 	&dev_attr_vset.attr,
@@ -2244,6 +2313,9 @@ static const struct attribute *acq426_attrs[] = {
 	&dev_attr_adc_status.attr,
 	&dev_attr_bank_mask.attr,
 	&dev_attr_pack24.attr,
+	&dev_attr_acq426_cal.attr,
+	&dev_attr_acq426_cal_point.attr,
+	&dev_attr_acq426_cal_win.attr,
 	NULL
 };
 
@@ -3697,7 +3769,10 @@ int _acq400_createSysfsMOD(struct device *dev, struct acq400_dev *adev, const st
 		specials[nspec++] = gpg_attrs;
 	}else if (IS_DI460AQB(adev)){
 		dev_info(dev, "IS_DI460_AQB");
-		specials[nspec++] = sysfs_di460_aqb_attrs;
+		specials[nspec++] =
+			GET_MOD_IDV(adev) == MOD_IDV_DI460_AQB_42?
+			sysfs_di460_aqb42_attrs:
+			sysfs_di460_aqb43_attrs;
 		specials[nspec++] = es_enable_attrs;
 	}else if (IS_DIO422AQB(adev)){
 		dev_info(dev, "IS_DIO422AQB");

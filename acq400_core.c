@@ -665,14 +665,15 @@ void acq400_set_peripheral_SPI_CS(unsigned csword)
 void acq400_set_peripheral_SPI_chipboard(unsigned csword)
 /* chipboard coding : site{1..6} << 4 | chip {0..f} */
 {
-	struct acq400_dev* adev = acq400_devices[0];
+	struct acq400_dev* adev = acq400_sites[0];
 	unsigned site_d = csword >> 4;    /* site 1..N or disable */
 	unsigned chip = csword&0x0f;
 
 	dev_dbg(DEVP(adev), "acq400_set_peripheral_SPI_chipboard() %08x\n", csword);
+	if (spi_cs_debug) dev_info(DEVP(adev), "acq400_set_peripheral_SPI_chipboard() %08x\n", csword);
 
-	if (site_d < MAXDEVICES && acq400_devices[site_d]){
-		struct acq400_dev* bdev = acq400_devices[site_d];
+	if (site_d && site_d <= MAX_PHYSICAL_SITES && acq400_sites[site_d]){
+		struct acq400_dev* bdev = acq400_sites[site_d];
 		if (spi_cs_debug) bdev->booleans.RW32_debug = 1;
 		acq400wr32(bdev, ACQ465_LCS, chip);
 		if (spi_cs_debug) bdev->booleans.RW32_debug = 0;

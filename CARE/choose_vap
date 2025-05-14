@@ -4,18 +4,45 @@ VRANGE=5
 
 get_vr() {
 	# if a {vmax}V exists in PN, return {vmax}+2 as a reasonable value for the rail
-	echo $1 | tr \- \\n | while read xx; do
-		v1=${xx%V*}
-		if [ "$v1" != "$xx" ]; then
-			vdec=${xx##*V}
-			if [ ! -z $vdec ]; then
-				v1=$(echo $v1 | awk '{ print $1+2 }')
-			fi
-			echo $v1
-			return
-		fi
+	local input="$1"
+	local old_ifs="$IFS"
+	local part v1 
+
+	# Set IFS to hyphen for word splitting
+	# Disable globbing temporarily to prevent glob expansion
+	set -f
+	IFS='-'
+	# Loop through parts created by splitting $input based on IFS='-'
+	# Do not quote $input here, relies on word splitting.
+	for part in $input; do
+	    # Restore IFS and globbing
+	    IFS="$old_ifs"
+	    set +f
+
+	    v1=${part%V*}
+	    if [ "$v1" != "$part" ]; then
+		# Found 'V'
+		
+		# Add 2 to V
+		v1=$(echo "$v1" | awk '{ val = $1 + 2; print val }')
+
+		# Success
+		echo "$v1"
+		return 0
+	    fi
+
+	    # Re-enable globbing and set IFS for the next iteration
+	    set -f
+	    IFS='-'
 	done
-	echo 0
+
+	# Restore IFS and globbing if the loop finished without finding 'V'
+	IFS="$old_ifs"
+	set +f
+
+	# Not found
+	echo "0"
+	return 1
 }
 
 for file in /dev/sites/[1-6]/details
@@ -50,13 +77,17 @@ do
 			VRANGE=13;;
 		ACQ465*)
 			echo "# ACQ465 DETECTED set VRANGE 10"
-			VRANGE=10;;
+			VRANGE=9;;
 		BOLO*)
 			echo "# BOLO DETECTED set VRANGE 12"
 			VRANGE=12;;
+		AO*)
+			echo "# $file: FPN $FRU_PART_NUM PN $PN"
+			echo "# AO DETECTED set VRANGE 13.5"
+			VRANGE=13.5;;
 		*)
 			VSPEC=${PN##*-}
-			VSPEC=$(get_vr $PN)
+			VSPEC=$(get_vr "$PN")
 			if [ $VSPEC -gt 0 ]; then
 				VRANGE=$VSPEC
 				echo "# Setting VRANGE:$VRANGE detected from $PN"

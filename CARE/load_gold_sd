@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# for external use:
+# gunzip -c < gold_r743_z7io_035.tgz | ssh root@$UUT /usr/local/CARE/load_gold_sd
+
+umount $(mount | grep mnt | grep -v mmc | awk '{ print $3 }')
+
+tar xvf - -C/mnt
+
+
+
+

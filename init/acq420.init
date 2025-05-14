@@ -136,10 +136,10 @@ build_nodes() {
                 mknod /dev/${NAME}.awgc c ${MAJOR} 10
                 mknod /dev/${NAME}.awgr c ${MAJOR} 14
                 mknod /dev/${NAME}.aoi  c ${MAJOR} 38
-                mknod /dev/${NAME}.abcde c ${MAJOR} 41
                 mknod /dev/${NAME}.dac_step c ${MAJOR} 42
                 if [ ! -e /dev/acq400.0.abcde ]; then
-					ln -s /dev/${NAME}.abcde /dev/acq400.0.abcde
+			mknod /dev/${NAME}.abcde c ${MAJOR} 41
+			ln -s /dev/${NAME}.abcde /dev/acq400.0.abcde
                 fi;;
             ${MOD_ID_BOLO8}|${MOD_ID_BOLO8B})
                 mknod /dev/${NAME}.awg c ${MAJOR} 8;;
@@ -417,10 +417,14 @@ build_knobs_ao420() {
             [ "x$AO420_SITES" != "x" ] && AO420_SITES="${AO420_SITES} "
             AO420_SITES="${AO420_SITES}$site"
             set_max_min_khz ${site} 1000 10;;
+        ${MOD_ID_AO422FMC})
+            echo AO422 call EARLY
+            ao420_init ${site} ${mtype} "$FRU_PART_NUM" EARLY
+            set_max_min_khz ${site} 1000 10;;
         *)
             set_max_min_khz ${site} 1000 10;;
         esac
-        echo "ao420_init ${site} ${mtype} $FRU_PART_NUM" >>/tmp/acq420.init-postpowerup-action
+        echo "ao420_init ${site} ${mtype} \"$FRU_PART_NUM\"" >>/tmp/acq420.init-postpowerup-action
         if [ -e ${ek}/dac_mux_master ]; then
                 ln -s $ULB/muxpattern ${ek}/
         fi
@@ -1235,7 +1239,7 @@ fi
 
 build_knobs
 set_fans $FANSPEED
-grep acq400\.[0-9] /proc/devices | build_nodes
+grep acq400\.[0-9] /proc/devices | sort -r | build_nodes
 
 [ "x$WHITE_RABBIT" = "x1" ]  && /usr/local/init/wr.init
 

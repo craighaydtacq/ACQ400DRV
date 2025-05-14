@@ -30,7 +30,8 @@ REG10=02 # Enable Input Ref Gain Correction
 REG11=00 # Controls number of bits in data word; set below
 REG12=01 # Dual channel mode. D0 and D1
 REG24=01 # VCM = AVDD/2 = 2.5 V
-REG25=28 # Switch on MCLK_CNT and Overvoltage monitor
+REG25=00 # These are not helpful for init; OLD Switch on MCLK_CNT and Overvoltage monitor
+REG42=00 # Check for other chip errors
 
 acq465_reg() {
 	[ $VERBOSE -eq 1 ] && echo /etc/acq400/${SITE}/acq465_reg $args $*
@@ -111,6 +112,30 @@ check_regs() {
 	fi
 }
 
+check_no_err() {
+	test_regs $1 $2
+	if [[ $test = "8" ]];then
+		echo -e "PASS!\n"
+	else
+		if [[ $reg_check_fail == 0 ]]; then # Ignore OFUF reg whose error reporting cannot be switched off
+			echo -e "PASS!\n"
+		else
+			echo -e "FAIL! FAIL! FAIL!\n"
+			reg_check_fail=1
+		fi
+	fi
+}
+
+check_ofuf() {
+	test_regs 0x40 00
+	if [[ $test = "8" ]];then
+		echo -e "PASS!\n"
+	else
+		echo -e "IGNORE OFUF ERR!\n"
+		ofuf_check_fail=1
+	fi
+}
+
 check_pll() {
 	test_regs 0x15 01
 	if [[ $test = "8" ]];then
@@ -146,28 +171,40 @@ check_digif() {
 logger -t acq465_adc.init 01
 caput $(hostname):0:ACQ465:POLL 0
 
+top_retry=0
+
 while true; do
 	reg_check_fail=0
+	ofuf_check_fail=0
 	pll_check_fail=0
 	fsettle_fail=0
 	digif_check_fail=0
 	write_regs
 
-	### Check all regs
+	top_retry=$((top_retry+1))
+	if [ $top_retry -gt 4 ]; then
+		break
+	fi
+
+	### Check all regs - the order is important here, due to the possibility of an OFUF error
 	acq465_readall
-	check_regs 0x02 $REG02
+	acq465_readall
 	check_regs 0x10 $REG10
 	check_regs 0x11 $REG11
 	check_regs 0x12 $REG12
 	check_regs 0x24 $REG24
 	check_regs 0x25 $REG25
+	check_regs 0x42 $REG42
+	check_regs 0x47 $REG42
+	check_no_err 0x02 $REG02 # Check NO_CHIP_ERROR whilst ignoring the OFUF Error Reg
+	check_ofuf 				 # Presumably we still want to be aware of an OFUF so check it anyway
 
 	### Enable ODR; DCLK will automatically enable after the DIG_IF_RESET
 	set.site $SITE _adc_hax 0x02
 
 	### Wait for PLL lock
 	sleep 1
-	set retry=0
+	retry=0
 	acq465_readall
 
 	while true; do
@@ -187,6 +224,7 @@ while true; do
 		fi
 	done
 
+	retry=0
 	# Check for filters settled
 	while true; do
 		retry=$((retry+1))
@@ -199,9 +237,14 @@ while true; do
 			echo -e "Filters SETTLED - PASS!\n";
 			break
 		else
-			echo -e "Filters SETTLED - FAIL! FAIL! FAIL!\n";
-			sleep 1
-			acq465_readall
+			if [[ $ofuf_check_fail == 1 ]]; then
+				fsettle_fail=0
+				echo -e "Filters NOT SETTLED - IGNORE OFUF ERR\n";
+				break
+			else
+				sleep 1
+				acq465_readall
+			fi
 		fi
 	done
 
@@ -220,6 +263,6 @@ sleep 1
 acq465_knobs -r $SITE
 
 
- ### Lockout SW access to SPI & reset
+### Lockout SW access to SPI & reset
 set.site $SITE _adc_hax 0x15
 

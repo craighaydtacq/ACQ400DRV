@@ -252,6 +252,10 @@ void acq465_createDebugfs(struct acq400_dev* adev, char* pcursor)
 void acq426_createDebugfs(struct acq400_dev* adev, char* pcursor)
 {
 	adc_createDebugfs(adev, pcursor);
+
+	DBG_REG_CREATE(ACQ426_BCSR);
+	DBG_REG_CREATE(ACQ426_CAL_POINT);
+	DBG_REG_CREATE(ACQ426_CAL_WIN);
 	DBG_REG_CREATE(ADC_TRANSLEN);
 	DBG_REG_CREATE(ACQ465_DEBUG);
 }
@@ -432,7 +436,22 @@ void di460_aqb_createDebugfs(struct acq400_dev* adev, char* pcursor)
 {
 	int ch;
 
+	DBG_REG_CREATE(MOD_ID);
+	DBG_REG_CREATE(MCR);
+	DBG_REG_CREATE(TIM_CTRL);
+	DBG_REG_CREATE(ADC_FIFO_SAMPLES);
+	DBG_REG_CREATE(ADC_FIFO_STA);
+	DBG_REG_CREATE(ADC_INT_CSR);
+	DBG_REG_CREATE(ADC_SAMPLE_CTR);
+	DBG_REG_CREATE(ADC_SAMPLE_CLK_CTR);
+	if (GET_MOD_IDV(adev) == MOD_IDV_DI460_AQB_43){
+		DBG_REG_CREATE(ACQ435_MODE);
+	}
+	DBG_REG_CREATE(DI460_DBG);
+	DBG_REG_CREATE(ADC_TRANSLEN);
+	DBG_REG_CREATE(QEN_DIO_CTRL);
 	DBG_REG_CREATE(DI460_AQB_CTRL);
+
 
 	for (ch = 1; ch <= DI460_NCHAN; ++ch){
 		DBG_REG_CREATE_NAME_NC_NUM("cnt", ch, "CNTR", DI460_AQB_COUNT(ch));
@@ -497,7 +516,14 @@ void acq400_createDebugfs(struct acq400_dev* adev)
 	DBG_REG_CREATE(MOD_ID);
 
 	if (IS_ACQ42X(adev)){
-		acq420_createDebugfs(adev, pcursor);
+		switch(GET_MOD_ID(adev)){
+		case MOD_ID_ACQ426ELF:
+			acq426_createDebugfs(adev, pcursor);
+			break;
+		default:
+			acq420_createDebugfs(adev, pcursor);
+			break;
+		}
 	}else if (IS_DI460AQB(adev)){
 		di460_aqb_createDebugfs(adev, pcursor);
 	}else if (IS_DIO422AQB(adev)){
@@ -532,8 +558,6 @@ void acq400_createDebugfs(struct acq400_dev* adev)
 		case MOD_ID_ACQ494FMC:
 			acq494_createDebugfs(adev, pcursor);
 			break;
-		case MOD_ID_ACQ426ELF:
-			acq426_createDebugfs(adev, pcursor);
 		case MOD_ID_ACQ480FMC:
 			acq480_createDebugfs(adev, pcursor);
 			break;

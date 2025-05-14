@@ -212,11 +212,12 @@ public:
 class Knob {
 
 protected:
-	Knob(const char* _name) {
+	Knob(const char* _name, const char* _ktype = "Knob"): ktype(_ktype) {
 		name = new char[strlen(_name)+1];
 		strcpy(name, _name);
 		validator = NullValidator::instance();
 	}
+	const char* ktype;
 	char* name;
 	Validator *validator;
 
@@ -226,6 +227,19 @@ protected:
 	bool isValid(char* buf, int maxbuf, const char* args){
 		return validator->isValid(buf, maxbuf, args);
 	}
+	int _set_knob(char* buf, int maxbuf, const char* args) {
+		if (!isValid(buf, maxbuf, args)){
+			return -1;
+		}
+		File knob(name, "w");
+		if (knob.fp == NULL){
+			return -snprintf(buf, maxbuf, "ERROR: failed to open \"%s\"\n", name);
+		}else if (fputs(args, knob.fp) < 0){
+			return -snprintf(buf, maxbuf, "ERROR:");
+		}else{
+			return snprintf(buf, maxbuf, "\n");
+		}
+	}
 	virtual int _set(char* buf, int maxbuf, const char* args) = 0;
 public:
 	virtual ~Knob() {
@@ -234,7 +248,9 @@ public:
 
 	vector<Knob*> peers;
 
-	char* getName() { return name; }
+	const char* getName() { return name; }
+	const char* getKtype() { return ktype; }
+
 	virtual const char* getAttr() {
 		return "";
 	}
@@ -269,7 +285,7 @@ protected:
 		return -snprintf(buf, maxbuf, "ERROR: \"%s\" is read-only", name);
 	}
 public:
-	KnobRO(const char* _name) : Knob(_name) {}
+	KnobRO(const char* _name, const char* _ktype="KnobRO") : Knob(_name, _ktype) {}
 
 
 	virtual int get(char* buf, int maxbuf) {
@@ -288,23 +304,32 @@ public:
 	}
 };
 
+class KnobWO : public Knob {
+protected:
+	virtual int _set(char* buf, int maxbuf, const char* args) {
+		return _set_knob(buf, maxbuf, args);
+	}
+public:
+	KnobWO(const char* _name, const char* _ktype="KnobWO") : Knob(_name, _ktype) {}
+
+
+	virtual int get(char* buf, int maxbuf) {
+		return snprintf(buf, maxbuf, "%s WARNING: knob %s is Write Only\n", getKtype(), name);
+	}
+
+	virtual void print(void) { cprint("KnobRO"); }
+	virtual const char* getAttr() {
+		return "r";
+	}
+};
+
 class KnobRW : public KnobRO {
 protected:
 	virtual int _set(char* buf, int maxbuf, const char* args) {
-		if (!isValid(buf, maxbuf, args)){
-			return -1;
-		}
-		File knob(name, "w");
-		if (knob.fp == NULL){
-			return -snprintf(buf, maxbuf, "ERROR: failed to open \"%s\"\n", name);
-		}else if (fputs(args, knob.fp) < 0){
-			return -snprintf(buf, maxbuf, "ERROR:");
-		}else{
-			return snprintf(buf, maxbuf, "\n");
-		}
+		return _set_knob(buf, maxbuf, args);
 	}
 public:
-	KnobRW(const char* _name) : KnobRO(_name) {
+	KnobRW(const char* _name) : KnobRO(_name, "KnobRW") {
 	}
 
 
@@ -353,7 +378,7 @@ protected:
 		}
 		return 0;
 	}
-	KnobX(const char* _name) : Knob(_name), site(get_site(_name)) {
+	KnobX(const char* _name, const char* _ktype = "KnobX") : Knob(_name, _ktype), site(get_site(_name)) {
 		struct stat sb;
 		int ic = 0; attr[ic] = '\0';
 		if (stat(name, &sb) != -1){
@@ -422,7 +447,7 @@ class KnobCa: public KnobX{
 
 protected:
 	KnobCa(const char* _name, const char* link, bool can_put):
-		KnobX(_name)
+		KnobX(_name, "KnobCA")
 	{
 		/* build explicit "caput PV %s", "caget PV strings" and
 		 * exec them directly when required rather than rely on
@@ -458,6 +483,7 @@ KnobX* KnobX::factory(const char* _name) {
 
 #define HASX(mode) 	(((mode)&(S_IXUSR|S_IXGRP|S_IXOTH)) != 0)
 #define HASW(mode)	(((mode)&(S_IWUSR|S_IWGRP|S_IWOTH)) != 0)
+#define HASR(mode)	(((mode)&(S_IRUSR|S_IRGRP|S_IROTH)) != 0)
 
 
 std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
@@ -574,7 +600,13 @@ Knob* Knob::create(const string _name, mode_t mode)
 	}else if (HASW(mode)){
 		static int limit_check = -2;
 
-		Knob* knob = new KnobRW(name);
+		Knob* knob;
+
+		if (HASR(mode)){
+			knob = new KnobRW(name);
+		}else{
+			knob = new KnobWO(name);
+		}
 
 		if (limit_check == -2){
 			limit_check = access("/usr/share/doc/numerics", F_OK);
@@ -790,7 +822,7 @@ public:
 class Help2: public Help {
 protected:
 	virtual int query(Knob* knob, char* buf, int buflen){
-		snprintf(buf, buflen, "help2 is deprecated, please contact D-TACQ for a copy of your device specific command reference\n");
+		snprintf(buf, buflen, "%-20s : %4s %s\n", knob->getName(), knob->getAttr(), knob->getKtype());
 		return 1;
 	}
 public:
@@ -844,9 +876,13 @@ int do_scan()
 			VPRINTF("ERROR: rejecting %s\n", alias);
 			perror("stat");
 		}else{
-			if (!S_ISREG(sb.st_mode)){
+			if (!(S_ISREG(sb.st_mode) || S_ISFIFO(sb.st_mode))){
 				VPRINTF("not a regular file:%s", alias);
 			}else{
+				if (S_ISFIFO(sb.st_mode)){
+					// @todo HACK: reading FIFO is problematic, don't do it!
+					sb.st_mode &= ~(S_IRUSR|S_IRGRP|S_IROTH);
+				}
 				Knob* knob = Knob::create(alias, sb.st_mode);
 				if (PeerFinder::instance()->hasPeers(alias)){
 					vector<string>* peer_names = PeerFinder::instance()->getPeernames(alias);

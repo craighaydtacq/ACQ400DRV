@@ -331,7 +331,10 @@ MAKE_DNUM(qen_count4,    DI460_AQB_COUNT(4),        0xffffffff);
 MAKE_DNUM(qen_count5,    DI460_AQB_COUNT(5),        0xffffffff);
 MAKE_DNUM(qen_count6,    DI460_AQB_COUNT(6),        0xffffffff);
 
-const struct attribute *sysfs_di460_aqb_attrs[] = {
+extern struct device_attribute dev_attr_hi_res_mode;
+
+const struct attribute *sysfs_di460_aqb43_attrs[] = {
+	&dev_attr_hi_res_mode.attr,
 	&dev_attr_phaseA_en.attr,
 	&dev_attr_phaseB_en.attr,
 	&dev_attr_ctr_reset.attr,
@@ -343,6 +346,8 @@ const struct attribute *sysfs_di460_aqb_attrs[] = {
 	&dev_attr_qen_count6.attr,
 	NULL
 };
+
+
 
 
 #define ACQ1014_REG(FUN, fun)							\
