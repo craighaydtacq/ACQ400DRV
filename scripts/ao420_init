@@ -21,8 +21,6 @@ MODEL=$(cat $KNOBS/module_name)
 EK=/etc/acq400/$SITE
 
 
-
-
 case $FRU_PART_NUM in
 AO420FMC-4-16-CS3*)
         SET_UNIPOLAR=1;;
@@ -65,6 +63,11 @@ vset_sys() {
 #	echo get.sys $1 $(get.sys $1)
 }
 
+
+# done for EARLY and LATE
+[ ! -e /etc/acq400/$SITE/wavegen ] && ln -s /usr/local/bin/wavegen /etc/acq400/$SITE
+[ ! -e /etc/acq400/${SITE}/awg_seg ] && ln -s ${MODP}/awg_seg /etc/acq400/${SITE}
+
 if [ "x$4" = "xEARLY" ]; then
         [ -z $AO422_NO_RANGE_DACSPI ] && make_ao422_range_knobs
         exit 0
@@ -102,9 +105,7 @@ else    # 24-bit writes
 fi
 vset_sys ${KNOBS}/dac_enable ${EN}
 
-[ ! -e /etc/acq400/$SITE/wavegen ] && ln -s /usr/local/bin/wavegen /etc/acq400/$SITE
 
-[ ! -e /etc/acq400/${SITE}/awg_seg ] && ln -s ${MODP}/awg_seg /etc/acq400/${SITE}/awg_seg
 
 for gx in ${KNOBS}/G?; do
 	[ -e $gx ] && set.sys $gx 32767
