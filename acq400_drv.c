@@ -23,7 +23,7 @@
 #include "dmaengine.h"
 
 
-#define REVID 			"3.922"
+#define REVID 			"3.923"
 #define MODULE_NAME             "acq420"
 
 /* Define debugging for use during our driver bringup */
