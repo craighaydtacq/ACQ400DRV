@@ -354,10 +354,11 @@ int _fread(void* buffer, size_t size, size_t nelems, FILE *fp)
 			syslog(LOG_WARNING, "WARNING: exception on fd");
 		}
 		if (rc == 0){
-			if (bp - bp0 == 0){
+			int buf_bytes = bp - bp0;
+			if (buf_bytes == 0){
 				continue;
 			}else{
-				syslog(LOG_WARNING, "TIMEOUT");
+				syslog(LOG_WARNING, "TIMEOUT buf_bytes %d", buf_bytes);
 				break;
 			}
 		}
