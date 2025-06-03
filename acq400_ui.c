@@ -1373,8 +1373,15 @@ void acq400_sc_nacc_service_ioread(unsigned *lbuf, struct GatherDesc* gd0, int m
 		char* src = sdev->dev_virtaddr + gd->src_off;
 		unsigned ii;
 
-		for (ii = 0; ii < imax; ++ii, src += sizeof(unsigned)){
-			ubuf[ii] = ioread32(src);
+		if (sdev->booleans.ramp_en){
+			static unsigned sim_ramp;
+			for (ii = 0; ii < imax; ++ii, src += sizeof(unsigned)){
+				ubuf[ii] = sim_ramp++;
+			}
+		}else{
+			for (ii = 0; ii < imax; ++ii, src += sizeof(unsigned)){
+				ubuf[ii] = ioread32(src);
+			}
 		}
 	}
 }
