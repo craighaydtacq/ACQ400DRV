@@ -47,7 +47,7 @@ if [ "$(basename $0)" = "transient" ]; then
 		OSAM)	OSAM=$(validate $val 0 256);;
 		DEMUX)	DEMUX=$(validate $val -1 1);;
 		SOFT_TRIGGER)
-			SOFT_TRIGGER=$(validate $val 0 1);;
+			SOFT_TRIGGER=$(validate $val 0 10000);;
 		*)
 			echo "ERROR: $pair not supported"
 			exit 1;;

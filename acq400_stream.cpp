@@ -2074,10 +2074,7 @@ protected:
 	}
 
 	void do_soft_trigger() {
-		// @@todo soft_trg 1 pulses the trigger, the other two calls are REDUNDANT .. test this
-		setKnob(0, "soft_trig", "0");
-		setKnob(0, "soft_trig", "1");
-		setKnob(0, "soft_trig", "0");
+		setKnob(0, "soft_trigger", "1");
 	}
 	bool is_triggered() {
 		unsigned trig = 0;
@@ -2089,30 +2086,28 @@ protected:
 		do_soft_trigger();
 		usleep(TRG_POLL_MS*1000);
 		while (!is_triggered()){
-			if (repeat%100 == 0){
+			if (++repeat%100 == 0){
 				fprintf(stderr, "WARNING: failed to trigger in %d ms\n", repeat*TRG_POLL_MS);
 				if (G::exit_on_trigger_fail){
 					system("kill -9 $(cat /var/run/acq400_stream_main.0.pid)");
 					exit(1);
 				}
 			}
+			do_soft_trigger();
 			usleep(TRG_POLL_MS*1000);
-			++repeat;
-			if (!is_triggered()) {
-				do_soft_trigger();
-			}
 		}
 		if (verbose || repeat){
 			fprintf(stderr, "soft_trigger_control() repeat %d\n", repeat);
 		}
 	}
 
-	void schedule_soft_trigger(void) {
+	void schedule_soft_trigger(int delay_ms) {
 		if (verbose) fprintf(stderr, "schedule_soft_trigger()");
 		pid_t child = fork();
 		if (child == 0){
 			ident("acq400_stream_st");
 			goRealTime(10);
+			usleep(delay_ms*1000+1);
 			soft_trigger_control();
 			exit(0);
 		}
@@ -2425,7 +2420,7 @@ public:
 		ident("acq400_stream_headImpl");
 		setState(ST_ARM);
 		if (G::soft_trigger){
-			schedule_soft_trigger();
+			schedule_soft_trigger(G::soft_trigger);
 		}
 		onStreamStart();
 		while((ib = getBufferId()) >= 0){
@@ -4662,7 +4657,7 @@ public:
 		}
 
 		if (G::soft_trigger){
-			schedule_soft_trigger();
+			schedule_soft_trigger(G::soft_trigger);
 		}
 
 		streamCore();

@@ -208,9 +208,7 @@ int pad(int nsamples, int pad_samples)
 }
 
 void do_soft_trigger() {
-	setKnob(0, "soft_trig", "0");
-	setKnob(0, "soft_trig", "1");
-	setKnob(0, "soft_trig", "0");
+	setKnob(0, "soft_trigger", "1");
 }
 
 
